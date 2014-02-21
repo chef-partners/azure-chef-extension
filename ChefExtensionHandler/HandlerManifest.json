@@ -1,0 +1,12 @@
+[{
+  "version": 1.0,
+  "handlerManifest": {
+    "installCommand": "scripts/chef-install.ps",
+    "uninstallCommand": "scripts/chef-uninstall.ps",
+    "updateCommand": "scripts/chef-update.ps",
+    "enableCommand": "chef-service-manager -a start --config <dynamic-location?>",
+    "disableCommand": "chef-service-manager -a stop --config <dynamic-location?>",
+    "rebootAfterInstall": false,
+    "reportHeartbeat": true
+  }
+}]
