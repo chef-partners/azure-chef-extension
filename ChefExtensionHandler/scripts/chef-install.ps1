@@ -105,7 +105,7 @@ node_name "i-41938e61"' | Out-File C:\chef\client.rb
 echo "Client.rb written"
 
 # json
-echo '"run_list":["git::default"]' | Out-File C:\chef\first-boot.json
+echo '{"run_list":["git::default"]}' | Out-File C:\chef\first-boot.json
 echo "first-boot.json written"
 
 # set path
