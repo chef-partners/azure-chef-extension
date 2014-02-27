@@ -17,46 +17,46 @@ $chefExtensionRoot = ("{0}{1}" -f (Split-Path -Parent -Path $MyInvocation.MyComm
 
 $handlerSettings = getHandlerSettings
 
-$BOOTSTRAP_DIRECTORY="C:\chef"
-echo "Checking for existing directory $BOOTSTRAP_DIRECTORY"
-if ( !(Test-Path $BOOTSTRAP_DIRECTORY) ) {
+$bootstrapDirectory="C:\chef"
+echo "Checking for existing directory $bootstrapDirectory"
+if ( !(Test-Path $bootstrapDirectory) ) {
   echo "Existing directory not found, creating."
-  mkdir $BOOTSTRAP_DIRECTORY
+  mkdir $bootstrapDirectory
 } else {
   echo "Existing directory found, skipping creation."
 }
 
 $machineOS = getMachineOS
 $machineArch = getMachineArch
-$REMOTE_SOURCE_MSI_URL="https://www.opscode.com/chef/download?p=windows&pv=$machineOS&m=$machineArch"
+$remoteSourceMsiUrl="https://www.opscode.com/chef/download?p=windows&pv=$machineOS&m=$machineArch"
 if ($handlerSettings.publicSettings.chefClientVersion)
 {
   $version = $handlerSettings.publicSettings.chefClientVersion
-  $REMOTE_SOURCE_MSI_URL = "$REMOTE_SOURCE_MSI_URL&v=$version"
+  $remoteSourceMsiUrl = "$remoteSourceMsiUrl&v=$version"
 }
 
 # TODO: Set the following paths dynamically
-$LOCAL_DESTINATION_MSI_PATH = "$env:temp\chef-client-latest.msi"
-$CHEF_CLIENT_MSI_LOG_PATH = "$env:temp\chef-client-msi806.log"
+$localDestinationMsiPath = "$env:temp\chef-client-latest.msi"
+$chefClientMsiLogPath = "$env:temp\chef-client-msi806.log"
 
-echo "Checking for existing downloaded package at $LOCAL_DESTINATION_MSI_PATH"
-if (Test-Path $LOCAL_DESTINATION_MSI_PATH) {
+echo "Checking for existing downloaded package at $localDestinationMsiPath"
+if (Test-Path $localDestinationMsiPath) {
   echo "Found existing downloaded package, deleting."
-  rm -rf $LOCAL_DESTINATION_MSI_PATH
+  rm -rf $localDestinationMsiPath
   # Handle above delete failure
 }
 
-if (Test-Path $CHEF_CLIENT_MSI_LOG_PATH) {
-  echo "Deleting previous chef-client msi log."
-  rm -rf $CHEF_CLIENT_MSI_LOG_PATH
+if (Test-Path $chefClientMsiLogPath) {
+  echo "Archiving previous chef-client msi log."
+  mv $chefClientMsiLogPath "$chefClientMsiLogPath.$(get-date -f yyyyMMddhhmmss)"
 }
 
 $webClient = New-Object System.Net.WebClient
-$webClient.DownloadFile($REMOTE_SOURCE_MSI_URL, $LOCAL_DESTINATION_MSI_PATH)
+$webClient.DownloadFile($remoteSourceMsiUrl, $localDestinationMsiPath)
 # Handle download failure
 
 echo "Installing chef"
-msiexec /qn /log $CHEF_CLIENT_MSI_LOG_PATH /i $LOCAL_DESTINATION_MSI_PATH
+msiexec /qn /log $chefClientMsiLogPath /i $localDestinationMsiPath
 
 # Write validation key
 echo "-----BEGIN RSA PRIVATE KEY-----
@@ -85,7 +85,7 @@ EOV9rCvOQqWVJ2n5aRUsuanKQHCOXiVpqLYTmVMoV/VeDy9Ek4l8H5wy3gQGh3qS
 jRW5AoGBALJ+i7Kj0zJ4fvyCBfG6TS51uP8JEN0br6YGNw/hq5pF6Y7OeZSOi5fb
 TlPSWhtGNK2RYsnLmOiusq+B0oVLDWd2VOPTiBe8WIbYUTZaTmE/zGnbR96xbXqi
 XLmhm+ETuCI+3MvdLjwI2SZheMRXqNP4B7EGaqXg8LP9S914bQ3Q
------END RSA PRIVATE KEY-----" | Out-File $BOOTSTRAP_DIRECTORY\validation.pem
+-----END RSA PRIVATE KEY-----" | Out-File $bootstrapDirectory\validation.pem
 
 echo "Created validation.pem"
 
@@ -100,11 +100,11 @@ log_location    STDOUT
 
 chef_server_url    "$chefServerUrl/$chefOrgName"
 validation_client_name    "$chefOrgName-validator"
-client_key    "$BOOTSTRAP_DIRECTORY/client.pem"
-validation_key    "$BOOTSTRAP_DIRECTORY/validation.pem"
+client_key    "$bootstrapDirectory/client.pem"
+validation_key    "$bootstrapDirectory/validation.pem"
 
 node_name    "$hostName"
-"@ | Out-File $BOOTSTRAP_DIRECTORY\client.rb
+"@ | Out-File $bootstrapDirectory\client.rb
 
 echo "Created client.rb..."
 
@@ -114,7 +114,7 @@ $runList = $handlerSettings.publicSettings.runList
 {
   "runlist": [$runlist]
 }
-"@ | Out-File $BOOTSTRAP_DIRECTORY\first-boot.json
+"@ | Out-File $bootstrapDirectory\first-boot.json
 echo "created first-boot.json"
 
 # set path
@@ -123,4 +123,4 @@ echo "PATH set = $env:Path"
 
 # run chef-client
 echo "Running chef client"
-chef-client -c $BOOTSTRAP_DIRECTORY\client.rb -j $BOOTSTRAP_DIRECTORY\first-boot.json -E _default
+chef-client -c $bootstrapDirectory\client.rb -j $bootstrapDirectory\first-boot.json -E _default
