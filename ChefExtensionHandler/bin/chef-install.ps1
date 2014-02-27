@@ -11,22 +11,33 @@ Copyright:: Copyright (c) 2014 Opscode, Inc.
 
 #>
 
+# Source the shared PS
+$chefExtensionRoot = ("{0}{1}" -f (Split-Path -Parent -Path $MyInvocation.MyCommand.Definition), "\..")
+. $chefExtensionRoot\bin\shared.ps1
+
+$handlerSettings = getHandlerSettings
+
 $BOOTSTRAP_DIRECTORY="C:\chef"
 echo "Checking for existing directory $BOOTSTRAP_DIRECTORY"
 if ( !(Test-Path $BOOTSTRAP_DIRECTORY) ) {
-echo "Existing directory not found, creating."
-mkdir $BOOTSTRAP_DIRECTORY
+  echo "Existing directory not found, creating."
+  mkdir $BOOTSTRAP_DIRECTORY
 } else {
-echo "Existing directory found, skipping creation."
+  echo "Existing directory found, skipping creation."
 }
 
-# TODO: Set MACHINE and MACHINE_ARCH dynamically
-$MACHINE="2012"
-$MACHINE_ARCH="x86_64"
-$REMOTE_SOURCE_MSI_URL="https://opscode-omnibus-packages.s3.amazonaws.com/windows/2008r2/x86_64/chef-client-11.10.4-1.windows.msi"
+$machineOS = getMachineOS
+$machineArch = getMachineArch
+$REMOTE_SOURCE_MSI_URL="https://www.opscode.com/chef/download?p=windows&pv=$machineOS&m=$machineArch"
+if ($handlerSettings.publicSettings.chefClientVersion)
+{
+  $version = $handlerSettings.publicSettings.chefClientVersion
+  $REMOTE_SOURCE_MSI_URL = "$REMOTE_SOURCE_MSI_URL&v=$version"
+}
+
 # TODO: Set the following paths dynamically
-$LOCAL_DESTINATION_MSI_PATH="C:\Users\azure\AppData\Local\Temp\chef-client-latest.msi"
-$CHEF_CLIENT_MSI_LOG_PATH="C:\Users\azure\AppData\Local\Temp\chef-client-msi806.log"
+$LOCAL_DESTINATION_MSI_PATH = "$env:temp\chef-client-latest.msi"
+$CHEF_CLIENT_MSI_LOG_PATH = "$env:temp\chef-client-msi806.log"
 
 echo "Checking for existing downloaded package at $LOCAL_DESTINATION_MSI_PATH"
 if (Test-Path $LOCAL_DESTINATION_MSI_PATH) {
@@ -36,6 +47,7 @@ if (Test-Path $LOCAL_DESTINATION_MSI_PATH) {
 }
 
 if (Test-Path $CHEF_CLIENT_MSI_LOG_PATH) {
+  echo "Deleting previous chef-client msi log."
   rm -rf $CHEF_CLIENT_MSI_LOG_PATH
 }
 
@@ -48,60 +60,67 @@ msiexec /qn /log $CHEF_CLIENT_MSI_LOG_PATH /i $LOCAL_DESTINATION_MSI_PATH
 
 # Write validation key
 echo "-----BEGIN RSA PRIVATE KEY-----
-MIIEpQIBAAKCAQEAxwWuU8H7u361HlE4RfAFaOpQDvp3A5EvXbu/R6gvsBiJgLVJ
-uiGdswKouyMUJX0LGLdHpdnShCsTR2tQd8ILwy5F31NpjhtflPMx7oqt9zrSyY/D
-KqNTmXLlLOoOuDgzXXxse/qtI3AAKXYbWcxTC6o6XK/nrKxxOeK6v/BgVp0nCLNw
-kh0j68uXz9JidqmuD+42oYv+ArdricGvJ5tHxrjWmRVL5S96UW4YDZGgElEp1wvI
-cfItooC7QOwy+lh2cpYkrxSVssSQyx2UEaYVzPeuh/ieMtES0q04al40ObhnhnRJ
-b/rxaLTqSj7HybldEpChKrVQj307huxNwUoSwQIDAQABAoIBADZQIZPwA1/Wo1zj
-s2S6rO9FypVb2vDZRUDiRMAscN8www2h673lAKFin2N6njvg1Q9orR/gwueYzckW
-yz3zcbxRO3ZH0C2c4MfIWp8Lr5AhuHaTSiKvsdfVmB9avKufgr0HgJ+Q+IEMRq8J
-8UrfTOaJDSZQRvxDjx7J9kb9NX1NKAH4swA5o5DOu6Pi63O7EtUnLce8gk3R4etJ
-V9fcKYh5umYfZujK/LtpxqrXQRUE6q1zQQvPCo1HGCHM6Cvlio5R6N4td/WU0MFJ
-InGEzUTOIqoqbRzf2cVaDdMOwnj6mteTHtdzohdW7a9iQYYk3Eg0MPp0Wc4VhVUY
-T3CeyHECgYEA+rE4q3UWabU0fVz9i+PBfjvuhh/p5lb8JeQiO6M8yt/YVcLAPSg9
-c6lyQvrvkeIVQZ78dY2JroyI02YBl1dkQjdD1E4qll8xlmkJUCV4k9sj8dHuD0uT
-/iWcaqEs6DlVMI2+h1Oclrn/WjzXCVD8khtSJSyWk/+hoc2JLlp5cW0CgYEAyzxm
-/ScJZIoe3LDF4CPwnAlGK8M6hKaBHo3NGH5XzDvA193SN0HdF4a5zVz6tySgKhXS
-kckcW1q1K2N34mCkjmjrERi5s3pEZ89HnMIXkVoNr70VD3qKhdZG9tmow/fXWBc9
-2L8xsBQFZ2z6fTW6zBEoy+kz/RiXdiGuhPjwpiUCgYEA2J0RTnWZrDU66afUHW/q
-3VyDubkRrkozDbqWKdneyZ2pnFDvMuj2UF51sJKLNw6XN2Bc3GY0NXKRN7jIXzDQ
-HLcMEQKJoe0XN9QCjBIUog2UfXrbrLOtaMiu4yPpXa9MgOu5Wc1RXJvSnPI9DHvC
-Aa1ByYVBhxg3XUvv4PGkRfECgYEAuqhUModK0iMk6y4T3qNDlhvSbdkVgsVl60jz
-KF7JhlMO73PUYVnFlJjxRxLxVYl27JA0YB7kQ2cQ47OsZKa8G+tykbYywAs4jltK
-e0er25xo25H+qMO0O+2sKYWIwct75XUbIVmgagZJXE8z1BGn6UqNPJKHZBnU6fNP
-VONKKl0CgYEAnKpVLMKm3WDW6c4Un0kGONFSIEx9fpGx67gFcSfCICpiip9Tc4oC
-Ob6kpa+odBPUKG8ufm/dIE//BMiZXeb4B5HAHHegJbGUE7LROarE8u8wFsB5Nbt4
-HzvvPMxrgt7MOIGbTdoHclPo8+V0Yonh4EBid9wdV12iSc0rG6LT8nA=
------END RSA PRIVATE KEY-----" | Out-File C:\chef\validation.pem
+MIIEowIBAAKCAQEAoURVHwetS62ARjTiZvq+DSYzqR/F/23LHXukwl744FIvt9iw
+YhVJQktLfc4H7rJYUUUNDe6Bh5dKsiDSgTbUDHoih+ZTAhVdOTCehTAsOvdmynlN
+oL0/5aSExDSP2KZ1r+Vwd+1MFA9gtyMCrLjtT+RGKPwahJgvsWX6TZ+42FnDXda8
+zKVhurdCrhLYwZYa8oHff6I8wbMJgTeE0lotNGIgoWRESG6Ll34+NffwzeP+Ks1y
+Ko7Qc+EVqDvQXF8QPMHgiP1+qBOqQFJde6WCPWhnTlrZuEW/2lqSMdQQshKD7HHD
+CPbAv9bwAUItW9xun2aLotr9q/xVXO8HGyQEyQIDAQABAoIBAElLX0ydFpwgnP5L
+puKa76nWRQCG2lx/MCOUQIu+0mpRsDJkn7XUatlgk0z4SQ6prA4zzf0Y+3H+xwoy
+dLoZi0Kod+1AN1XpE9ecS0/JVzDtpKA9hZSaruHWZikuonobHb32D6nSBhPP8WsK
+1HpgCiuXWnPiMMM2z+ZWrO5+u2pImRSfN0wGvP4P2TQewvPrbEwdbVLbzlFIz0YS
+pQZ/g0qpk8POBp3YN16y5SkLIXtzwDvTW79ruVuJYQqAKs2xcx5AjGTvlT6yx+UP
+bFirLY3JveZO4Ge0lhmVq/0BW49ieoWsc8zrHZADXyiJ50SzcCl3id6KjuMlWFOD
+apbixwECgYEAznkznRVraypYQ6/fg/8EZDJlReCujmJEhG3HwNYcwDwTSt/NkvH3
+I69EuCE13p2W6KQeFJUKQni7is1FJM7IVhHDtK1tan4ioQDytSeIDpXnsRXRaf1w
+R8GxWjOvBq7KYcHsdoS4hl6I2OEJcni6GdY2gm4BFFifEEZHH38sFNECgYEAx/Mo
+23JHp3yCnlrnEflL8NHe4NEDuc+8n4XMLtL2vsFLdlOdCC3bseYtSUQT4zSSFaZr
+gYUoe2xHuheu0yzyzaD3PQ0nci/R74Q9Yx+stJHm4zjSiU1uyDJpmteuQZ0gIoIx
+4kIBQOb+yT3zLxB9lOlMv23qfJ+HLpArTHkuznkCgYAicoov7QDs8jWjpVYPOZ7L
+8LSAwgmda7uutHodLBvD3sIBPfGYUJJA+97lMXVBXN1uluMF4A/EI0x2zeR5TZ6S
+7YfPPxgAKmcwoW3c12mVtWDgZJl5q3TuI9ypBfJvlP3i7W28IEyA7oi6VmEzHf0+
+jkSt4hiAAoEXQAJhuN/r4QKBgGxAKBmOqF5z2V+URU+E0WlipjC+2C6L2knfLSkY
+i//ANHOuVvDrquqIfHITClVSy9guzjtD9SPE/pwwYDTyO8253MDP01BNtXHf/UAi
+EOV9rCvOQqWVJ2n5aRUsuanKQHCOXiVpqLYTmVMoV/VeDy9Ek4l8H5wy3gQGh3qS
+jRW5AoGBALJ+i7Kj0zJ4fvyCBfG6TS51uP8JEN0br6YGNw/hq5pF6Y7OeZSOi5fb
+TlPSWhtGNK2RYsnLmOiusq+B0oVLDWd2VOPTiBe8WIbYUTZaTmE/zGnbR96xbXqi
+XLmhm+ETuCI+3MvdLjwI2SZheMRXqNP4B7EGaqXg8LP9S914bQ3Q
+-----END RSA PRIVATE KEY-----" | Out-File $BOOTSTRAP_DIRECTORY\validation.pem
 
-echo "Validation key written"
+echo "Created validation.pem"
 
 # Write client.rb
-echo 'log_level        :info
-log_location     STDOUT
+$chefServerUrl = $handlerSettings.publicSettings.chefServerUrl
+$chefOrgName = $handlerSettings.publicSettings.chefOrgName
+$hostName = hostname
 
-chef_server_url  "https://api.opscode.com/organizations/mukta_training"
-validation_client_name "mukta_training-validator"
-client_key        "c:/chef/client.pem"
-validation_key    "c:/chef/validation.pem"
+@"
+log_level    :info
+log_location    STDOUT
 
-file_cache_path   "c:/chef/cache"
-file_backup_path  "c:/chef/backup"
-cache_options     ({:path => "c:/chef/cache/checksums", :skip_expires => true})
+chef_server_url    "$chefServerUrl/$chefOrgName"
+validation_client_name    "$chefOrgName-validator"
+client_key    "$BOOTSTRAP_DIRECTORY/client.pem"
+validation_key    "$BOOTSTRAP_DIRECTORY/validation.pem"
 
-node_name "i-41938e61"' | Out-File C:\chef\client.rb
+node_name    "$hostName"
+"@ | Out-File $BOOTSTRAP_DIRECTORY\client.rb
 
-echo "Client.rb written"
+echo "Created client.rb..."
 
 # json
-echo '{"run_list":["git::default"]}' | Out-File C:\chef\first-boot.json
-echo "first-boot.json written"
+$runList = $handlerSettings.publicSettings.runList
+@"
+{
+  "runlist": [$runlist]
+}
+"@ | Out-File $BOOTSTRAP_DIRECTORY\first-boot.json
+echo "created first-boot.json"
 
 # set path
-$PATH="$PATH;C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0\;C:\Program Files\Amazon\cfn-bootstrap\;C:\ruby\bin;C:\opscode\chef\bin;C:\opscode\chef\embedded\bin"
-echo "PATH set = $PATH"
+$env:Path += ";C:\opscode\chef\bin;C:\opscode\chef\embedded\bin"
+echo "PATH set = $env:Path"
 
 # run chef-client
 echo "Running chef client"
-chef-client -c c:/chef/client.rb -j c:/chef/first-boot.json -E _default
+chef-client -c $BOOTSTRAP_DIRECTORY\client.rb -j $BOOTSTRAP_DIRECTORY\first-boot.json -E _default
