@@ -1,11 +1,11 @@
 [{
   "version": 1.0,
   "handlerManifest": {
-    "installCommand": "scripts\\chef-install.ps1",
-    "uninstallCommand": "scripts\\chef-uninstall.ps1",
-    "updateCommand": "scripts\\chef-update.ps1",
-    "enableCommand": "",
-    "disableCommand": "",
+    "installCommand": "install.cmd",
+    "uninstallCommand": "uninstall.cmd",
+    "updateCommand": "update.cmd",
+    "enableCommand": "enable.cmd",
+    "disableCommand": "disable.cmd",
     "rebootAfterInstall": false,
     "reportHeartbeat": false
   }
