@@ -35,14 +35,13 @@ if ($handlerSettings.publicSettings.chefClientVersion)
   $remoteSourceMsiUrl = "$remoteSourceMsiUrl&v=$version"
 }
 
-# TODO: Set the following paths dynamically
 $localDestinationMsiPath = "$env:temp\chef-client-latest.msi"
 $chefClientMsiLogPath = "$env:temp\chef-client-msi806.log"
 
 echo "Checking for existing downloaded package at $localDestinationMsiPath"
 if (Test-Path $localDestinationMsiPath) {
   echo "Found existing downloaded package, deleting."
-  rm -rf $localDestinationMsiPath
+  Remove-Item -Recurse -Force $localDestinationMsiPath
   # Handle above delete failure
 }
 
@@ -86,14 +85,13 @@ echo "Created client.rb..."
 $runList = $handlerSettings.publicSettings.runList
 @"
 {
-  "runlist": [$runlist]
+  "run_list": [$runlist]
 }
 "@ | Out-File -filePath $bootstrapDirectory\first-boot.json -encoding "Default"
 echo "created first-boot.json"
 
 # set path
 $env:Path += ";C:\opscode\chef\bin;C:\opscode\chef\embedded\bin"
-echo "PATH set = $env:Path"
 
 # run chef-client
 echo "Running chef client"
