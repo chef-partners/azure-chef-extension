@@ -9,3 +9,17 @@
 #        do we need to purge older sequencenumber.status files, say maintain max of 10 recent files?)
 #      - reporting heartbeat i.e. this service is ready/notready with more info to heartbeat file
 #      - service should manage file read/write conflicts with Guest Agent.
+
+# XXX - For demo start service using existing service manager which cannot report any azure expected status
+
+$bootstrapDirectory="C:\\chef"
+
+# check if service is already installed?
+$serviceStatus = chef-service-manager -a status
+IF ( $serviceStatus -eq "Service chef-client doesn't exist on the system." )
+{
+  chef-service-manager -a install -c $bootstrapDirectory\client.rb -L $bootstrapDirectory\logs
+}
+
+# start the chef service
+chef-service-manager -a start
