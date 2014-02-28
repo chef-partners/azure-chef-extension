@@ -85,7 +85,7 @@ EOV9rCvOQqWVJ2n5aRUsuanKQHCOXiVpqLYTmVMoV/VeDy9Ek4l8H5wy3gQGh3qS
 jRW5AoGBALJ+i7Kj0zJ4fvyCBfG6TS51uP8JEN0br6YGNw/hq5pF6Y7OeZSOi5fb
 TlPSWhtGNK2RYsnLmOiusq+B0oVLDWd2VOPTiBe8WIbYUTZaTmE/zGnbR96xbXqi
 XLmhm+ETuCI+3MvdLjwI2SZheMRXqNP4B7EGaqXg8LP9S914bQ3Q
------END RSA PRIVATE KEY-----" | Out-File $bootstrapDirectory\validation.pem
+-----END RSA PRIVATE KEY-----" | Out-File -filePath $bootstrapDirectory\validation.pem  -encoding "Default"
 
 echo "Created validation.pem"
 
@@ -104,7 +104,7 @@ client_key    "$bootstrapDirectory/client.pem"
 validation_key    "$bootstrapDirectory/validation.pem"
 
 node_name    "$hostName"
-"@ | Out-File $bootstrapDirectory\client.rb
+"@ | Out-File -filePath $bootstrapDirectory\client.rb -encoding "Default"
 
 echo "Created client.rb..."
 
@@ -114,7 +114,7 @@ $runList = $handlerSettings.publicSettings.runList
 {
   "runlist": [$runlist]
 }
-"@ | Out-File $bootstrapDirectory\first-boot.json
+"@ | Out-File -filePath $bootstrapDirectory\first-boot.json -encoding "Default"
 echo "created first-boot.json"
 
 # set path
