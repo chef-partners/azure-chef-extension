@@ -59,33 +59,7 @@ echo "Installing chef"
 msiexec /qn /log $chefClientMsiLogPath /i $localDestinationMsiPath
 
 # Write validation key
-echo "-----BEGIN RSA PRIVATE KEY-----
-MIIEowIBAAKCAQEAoURVHwetS62ARjTiZvq+DSYzqR/F/23LHXukwl744FIvt9iw
-YhVJQktLfc4H7rJYUUUNDe6Bh5dKsiDSgTbUDHoih+ZTAhVdOTCehTAsOvdmynlN
-oL0/5aSExDSP2KZ1r+Vwd+1MFA9gtyMCrLjtT+RGKPwahJgvsWX6TZ+42FnDXda8
-zKVhurdCrhLYwZYa8oHff6I8wbMJgTeE0lotNGIgoWRESG6Ll34+NffwzeP+Ks1y
-Ko7Qc+EVqDvQXF8QPMHgiP1+qBOqQFJde6WCPWhnTlrZuEW/2lqSMdQQshKD7HHD
-CPbAv9bwAUItW9xun2aLotr9q/xVXO8HGyQEyQIDAQABAoIBAElLX0ydFpwgnP5L
-puKa76nWRQCG2lx/MCOUQIu+0mpRsDJkn7XUatlgk0z4SQ6prA4zzf0Y+3H+xwoy
-dLoZi0Kod+1AN1XpE9ecS0/JVzDtpKA9hZSaruHWZikuonobHb32D6nSBhPP8WsK
-1HpgCiuXWnPiMMM2z+ZWrO5+u2pImRSfN0wGvP4P2TQewvPrbEwdbVLbzlFIz0YS
-pQZ/g0qpk8POBp3YN16y5SkLIXtzwDvTW79ruVuJYQqAKs2xcx5AjGTvlT6yx+UP
-bFirLY3JveZO4Ge0lhmVq/0BW49ieoWsc8zrHZADXyiJ50SzcCl3id6KjuMlWFOD
-apbixwECgYEAznkznRVraypYQ6/fg/8EZDJlReCujmJEhG3HwNYcwDwTSt/NkvH3
-I69EuCE13p2W6KQeFJUKQni7is1FJM7IVhHDtK1tan4ioQDytSeIDpXnsRXRaf1w
-R8GxWjOvBq7KYcHsdoS4hl6I2OEJcni6GdY2gm4BFFifEEZHH38sFNECgYEAx/Mo
-23JHp3yCnlrnEflL8NHe4NEDuc+8n4XMLtL2vsFLdlOdCC3bseYtSUQT4zSSFaZr
-gYUoe2xHuheu0yzyzaD3PQ0nci/R74Q9Yx+stJHm4zjSiU1uyDJpmteuQZ0gIoIx
-4kIBQOb+yT3zLxB9lOlMv23qfJ+HLpArTHkuznkCgYAicoov7QDs8jWjpVYPOZ7L
-8LSAwgmda7uutHodLBvD3sIBPfGYUJJA+97lMXVBXN1uluMF4A/EI0x2zeR5TZ6S
-7YfPPxgAKmcwoW3c12mVtWDgZJl5q3TuI9ypBfJvlP3i7W28IEyA7oi6VmEzHf0+
-jkSt4hiAAoEXQAJhuN/r4QKBgGxAKBmOqF5z2V+URU+E0WlipjC+2C6L2knfLSkY
-i//ANHOuVvDrquqIfHITClVSy9guzjtD9SPE/pwwYDTyO8253MDP01BNtXHf/UAi
-EOV9rCvOQqWVJ2n5aRUsuanKQHCOXiVpqLYTmVMoV/VeDy9Ek4l8H5wy3gQGh3qS
-jRW5AoGBALJ+i7Kj0zJ4fvyCBfG6TS51uP8JEN0br6YGNw/hq5pF6Y7OeZSOi5fb
-TlPSWhtGNK2RYsnLmOiusq+B0oVLDWd2VOPTiBe8WIbYUTZaTmE/zGnbR96xbXqi
-XLmhm+ETuCI+3MvdLjwI2SZheMRXqNP4B7EGaqXg8LP9S914bQ3Q
------END RSA PRIVATE KEY-----" | Out-File -filePath $bootstrapDirectory\validation.pem  -encoding "Default"
+$handlerSettings.publicSettings.validation_key | Out-File -filePath $bootstrapDirectory\validation.pem  -encoding "Default"
 
 echo "Created validation.pem"
 
