@@ -59,7 +59,7 @@ echo "Installing chef"
 msiexec /qn /log $chefClientMsiLogPath /i $localDestinationMsiPath
 
 # Write validation key
-$handlerSettings.publicSettings.validation_key | Out-File -filePath $bootstrapDirectory\validation.pem  -encoding "Default"
+$handlerSettings.protectedSettings.validation_key | Out-File -filePath $bootstrapDirectory\validation.pem  -encoding "Default"
 
 echo "Created validation.pem"
 
