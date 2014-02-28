@@ -17,7 +17,7 @@ $chefExtensionRoot = ("{0}{1}" -f (Split-Path -Parent -Path $MyInvocation.MyComm
 
 $handlerSettings = getHandlerSettings
 
-$bootstrapDirectory="C:\chef"
+$bootstrapDirectory="C:\\chef"
 echo "Checking for existing directory $bootstrapDirectory"
 if ( !(Test-Path $bootstrapDirectory) ) {
   echo "Existing directory not found, creating."
