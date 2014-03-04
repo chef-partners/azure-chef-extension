@@ -12,7 +12,64 @@
 
 # XXX - For demo start service using existing service manager which cannot report any azure expected status
 
+# Source the shared PS
+$chefExtensionRoot = ("{0}{1}" -f (Split-Path -Parent -Path $MyInvocation.MyCommand.Definition), "\..")
+. $chefExtensionRoot\bin\shared.ps1
+
 $bootstrapDirectory="C:\\chef"
+
+$handlerSettings = getHandlerSettings
+
+# Setup the client.rb, validation.pem and first run of chef-client, do this only once post install.
+# "node-registered" file also indicates that enabled was called once and configs are already generated.
+if (! (Test-Path $bootstrapDirectory\node-registered) ) {
+  echo "Checking for existing directory $bootstrapDirectory"
+  if ( !(Test-Path $bootstrapDirectory) ) {
+    echo "Existing directory not found, creating."
+    mkdir $bootstrapDirectory
+  } else {
+    echo "Existing directory found, skipping creation."
+  }
+
+  # Write validation key
+  $handlerSettings.protectedSettings.validation_key | Out-File -filePath $bootstrapDirectory\validation.pem  -encoding "Default"
+
+  echo "Created validation.pem"
+
+  # Write client.rb
+  $chefServerUrl = $handlerSettings.publicSettings.chefServerUrl
+  $chefOrgName = $handlerSettings.publicSettings.chefOrgName
+  $hostName = hostname
+
+  @"
+log_level    :info
+log_location    STDOUT
+
+chef_server_url    "$chefServerUrl/$chefOrgName"
+validation_client_name    "$chefOrgName-validator"
+client_key    "$bootstrapDirectory/client.pem"
+validation_key    "$bootstrapDirectory/validation.pem"
+
+node_name    "$hostName"
+"@ | Out-File -filePath $bootstrapDirectory\client.rb -encoding "Default"
+
+  echo "Created client.rb..."
+
+  # json
+  $runList = $handlerSettings.publicSettings.runList
+  @"
+{
+"run_list": [$runlist]
+}
+"@ | Out-File -filePath $bootstrapDirectory\first-boot.json -encoding "Default"
+  echo "created first-boot.json"
+
+  # run chef-client for first time
+  echo "Running chef client"
+  chef-client -c $bootstrapDirectory\client.rb -j $bootstrapDirectory\first-boot.json -E _default
+
+  echo "Node registered." > $bootstrapDirectory\node-registered
+}
 
 # check if service is already installed?
 $serviceStatus = chef-service-manager -a status
