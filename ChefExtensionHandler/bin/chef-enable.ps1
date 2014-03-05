@@ -18,6 +18,8 @@ $chefExtensionRoot = ("{0}{1}" -f (Split-Path -Parent -Path $MyInvocation.MyComm
 
 $bootstrapDirectory="C:\\chef"
 
+$env:Path += ";C:\opscode\chef\bin;C:\opscode\chef\embedded\bin"
+
 $handlerSettings = getHandlerSettings
 
 # Setup the client.rb, validation.pem and first run of chef-client, do this only once post install.
