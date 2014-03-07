@@ -10,7 +10,7 @@ function readJsonFromFile
 # returns the handler settings read from the latest settings file
 function getHandlerSettings
 {
-  $latestSettingFile = (Get-ChildItem "$chefExtensionRoot\RuntimeSettings" -Include *settings* | Sort-Object Name -descending | Select-Object -First 1 ).Name
+  $latestSettingFile = (Get-ChildItem "$chefExtensionRoot\RuntimeSettings" -Filter *.settings | Sort-Object Name -descending | Select-Object -First 1 ).Name
   $runtimeSettingsJson = readJsonFromFile $chefExtensionRoot"\RuntimeSettings\$latestSettingFile"
   $runtimeSettingsJson.runtimeSettings[0].handlerSettings
 }
