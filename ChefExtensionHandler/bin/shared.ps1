@@ -45,15 +45,33 @@ function Get-ChefLogFolder
   (readJsonFromFile $chefExtensionRoot"\\HandlerEnvironment.json").handlerEnvironment.logFolder
 }
 
+# returns major os version
+function getMajorOSVersion
+{
+  [System.Environment]::OSVersion.Version.Major
+}
+
+# returns minor os version
+function getMinorOSVersion
+{
+  [System.Environment]::OSVersion.Version.Minor
+}
+
+# returns os build
+function getOSVersionBuild
+{
+  [System.Environment]::OSVersion.Version.Build
+}
+
 # returns the machine os version
 function getMachineOS
 {
 
-  $winMajor = [System.Environment]::OSVersion.Version.Major
-  $winMinor = [System.Environment]::OSVersion.Version.Minor
-  $winBuild = [System.Environment]::OSVersion.Version.Build
+  $winMajor = getMajorOSVersion
+  $winMinor = getMinorOSVersion
+  $winBuild = getOSVersionBuild
 
-  echo "Detected Windows Version $winMajor.$winMinor Build $winBuild"
+  write-host "Detected Windows Version $winMajor.$winMinor Build $winBuild"
 
   $latestOSVersionMajor = 6
   $latestOSVersionMinor = 3
@@ -78,7 +96,7 @@ function getMachineOS
     "VersionUnknown" {
       # If this is an unknown version of windows set the default
       $machineOS ="2008r2"
-      Write-ChefStatus "chef-install" "warning" "Unknown version of Windows, assuming default of Windows $machineOS"
+      write-host "Warning: Unknown version of Windows, assuming default of Windows $machineOS"
     }
 
     "Version6.0" {
