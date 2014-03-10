@@ -21,5 +21,9 @@ $chef_pkg = Get-WmiObject -Class Win32_Product | Where-Object { $_.Name.contains
 $chef_pkg.Uninstall()
 
 # clean up config files and install folder
-Remove-Item -Recurse -Force $bootstrapDirectory
-Remove-Item -Recurse -Force $chefInstallDirectory
+if (Test-Path $bootstrapDirectory) {
+  Remove-Item -Recurse -Force $bootstrapDirectory
+}
+if (Test-Path $chefInstallDirectory) {
+  Remove-Item -Recurse -Force $chefInstallDirectory
+}
