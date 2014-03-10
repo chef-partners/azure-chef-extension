@@ -16,6 +16,17 @@
 $chefExtensionRoot = ("{0}{1}" -f (Split-Path -Parent -Path $MyInvocation.MyCommand.Definition), "\..")
 . $chefExtensionRoot\bin\shared.ps1
 
+function validate-client-rb-file ([string] $client_rb)
+{
+  echo $client_rb
+
+  #compulsory: chef_server_url, validation_client_name
+  #log_location should be c:/chef/chef.log
+  #org should be same in chef_server_url and validation_client_name
+  #hard code validation_key and client_key to c:/chef/<v/c>.pem
+
+}
+
 $bootstrapDirectory="C:\\chef"
 
 $env:Path += ";C:\opscode\chef\bin;C:\opscode\chef\embedded\bin"
@@ -35,26 +46,13 @@ if (! (Test-Path $bootstrapDirectory\node-registered) ) {
 
   # Write validation key
   $handlerSettings.protectedSettings.validation_key | Out-File -filePath $bootstrapDirectory\validation.pem  -encoding "Default"
-
   echo "Created validation.pem"
 
   # Write client.rb
-  $chefServerUrl = $handlerSettings.publicSettings.chefServerUrl
-  $chefOrgName = $handlerSettings.publicSettings.chefOrgName
-  $hostName = hostname
-
-  @"
-log_level    :info
-log_location    STDOUT
-
-chef_server_url    "$chefServerUrl/$chefOrgName"
-validation_client_name    "$chefOrgName-validator"
-client_key    "$bootstrapDirectory/client.pem"
-validation_key    "$bootstrapDirectory/validation.pem"
-
-node_name    "$hostName"
-"@ | Out-File -filePath $bootstrapDirectory\client.rb -encoding "Default"
-
+  $client_rb_file = $handlerSettings.publicSettings.client_rb
+  echo "Client.rb input by user: $client_rb_file"
+  $client_rb_file = validate-client-rb-file $client_rb_file
+  $client_rb_file | Out-File -filePath $bootstrapDirectory\client.rb -encoding "Default"
   echo "Created client.rb..."
 
   # json
