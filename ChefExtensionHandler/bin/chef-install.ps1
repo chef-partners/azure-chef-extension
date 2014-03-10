@@ -29,7 +29,7 @@ if (Test-Path $chefClientMsiLogPath) {
 
 $localDestinationMsiPath = [System.IO.Path]::GetFullPath("$chefExtensionRoot\installer\chef-client-latest.msi")
 echo "Installing chef"
-msiexec /qn /log $chefClientMsiLogPath /i $localDestinationMsiPath
+Start-Process -FilePath "msiexec.exe" -ArgumentList "/qn /log $chefClientMsiLogPath /i $localDestinationMsiPath" -Wait -Passthru
 
 # set path
 $env:Path += ";C:\opscode\chef\bin;C:\opscode\chef\embedded\bin"
