@@ -20,18 +20,18 @@ task :clean do
   puts %x{ powershell -Command if (Test-Path "#{CHEF_BUILD_DIR}") { Remove-Item -Recurse -Force "#{CHEF_BUILD_DIR}"}}
 end
 
-task :spec do
+task :init_pester do
   puts "Initializing Pester to run powershell unit tests..."
   puts %x{powershell -Command if (Test-Path "../Pester") {Remove-Item -Recurse -Force ../Pester"}}
   puts %x{powershell "git clone https://github.com/muktaa/Pester ../Pester"}
 end
 
 # Its runs pester unit tests
-task :pester_test, [:spec_path] => [:spec] do |t, args|
+task :spec, [:spec_path] => [:init_pester] do |t, args|
   puts "\nRunning unit tests..."
   # Default: runs all tests under spec dir,
   # user can specify individual test file
-  # Ex: rake pester_test["spec/sample.Tests.ps1"]
+  # Ex: rake spec["spec/sample.Tests.ps1"]
   args.with_defaults(:spec_path => "spec")
 
   # run pester tests
