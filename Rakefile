@@ -19,3 +19,10 @@ end
 task :clean do
   puts %x{ powershell -Command if (Test-Path "#{CHEF_BUILD_DIR}") { Remove-Item -Recurse -Force "#{CHEF_BUILD_DIR}"}}
 end
+
+task :spec do
+  puts "Running spec..."
+  puts %x{powershell -Command if (Test-Path "../Pester") {Remove-Item -Recurse -Force ../Pester"}}
+  puts %x{powershell "git clone https://github.com/muktaa/Pester ../Pester"}
+  puts %x{powershell Import-Module ../Pester/Pester.psm1}
+end
