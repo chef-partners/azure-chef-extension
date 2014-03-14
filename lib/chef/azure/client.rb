@@ -1,7 +1,13 @@
 
 require 'json'
+require 'chef/mixin/shell_out'
+
+require 'chef/azure/heartbeat'
 
 class AzureChefClient
+  include Chef::Mixin::ShellOut
+  CHEF_BINS_PATH = "C:\\opscode\\chef\\bin;C:\\opscode\\chef\\embedded\\bin"
+
   def initialize(extension_root, *chef_client_args)
     @chef_extension_root = extension_root
     @chef_client_args = chef_client_args
@@ -24,10 +30,12 @@ class AzureChefClient
     @azure_heart_beat_file = handler_env["handlerEnvironment"]["heartbeatFile"]
     @azure_status_folder = handler_env["handlerEnvironment"]["statusFolder"]
     @azure_plugin_log_location = handler_env["handlerEnvironment"]["logFolder"]
+    @azure_config_folder = handler_env["handlerEnvironment"]["configFolder"]
   end
 
   def report_heart_beat_to_azure
     # update @azure_heart_beat_file
+    AzureHeartBeat.update(@azure_heart_beat_file, AzureHeartBeat::READY, 0, "chef-service is running properly")
   end
 
   def run_chef_client
@@ -36,7 +44,10 @@ class AzureChefClient
     begin
       # Pass config params to the new process
       config_params = "" #<form these from chef_client_args> " --no-fork"
-      
+
+      # set path so original chef-client is picked up
+      ENV["PATH"] = "#{CHEF_BINS_PATH};#{ENV["PATH"]}"
+
       # Starts a new process and waits till the process exits
       @last_run_result = shell_out("chef-client #{config_params}")
 
