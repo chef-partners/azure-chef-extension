@@ -26,11 +26,11 @@ class AzureChefClient
   private
   def load_handler_env
     # Load environment from @chef_extension_root/HandlerEnvironment.json
-    handler_env = JSON.parse(File.read("#{@chef_extension_root}/HandlerEnvironment.json"))
-    @azure_heart_beat_file = handler_env["handlerEnvironment"]["heartbeatFile"]
-    @azure_status_folder = handler_env["handlerEnvironment"]["statusFolder"]
-    @azure_plugin_log_location = handler_env["handlerEnvironment"]["logFolder"]
-    @azure_config_folder = handler_env["handlerEnvironment"]["configFolder"]
+    handler_env = JSON.parse(File.read("#{@chef_extension_root}\\HandlerEnvironment.json"))
+    @azure_heart_beat_file = handler_env[0]["handlerEnvironment"]["heartbeatFile"]
+    @azure_status_folder = handler_env[0]["handlerEnvironment"]["statusFolder"]
+    @azure_plugin_log_location = handler_env[0]["handlerEnvironment"]["logFolder"]
+    @azure_config_folder = handler_env[0]["handlerEnvironment"]["configFolder"]
   end
 
   def report_heart_beat_to_azure
