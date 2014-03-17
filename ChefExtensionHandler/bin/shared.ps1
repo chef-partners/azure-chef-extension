@@ -110,7 +110,6 @@ function Write-Status ($operation, $statusMessage, $message)
   $statusHash = @{name = "Chef Handler Extension"; operation = "$operation"; configurationAppliedTime = "null"; status = "$statusMessage"; code = 0; message = "null"; formattedMessage = $formattedMessageHash; substatus = @($subStatusHash) }
 
   ConvertTo-Json @(@{version = "1"; timestampUTC = "$timestampUTC"; status = $statusHash}) -Depth 4 | Out-File -filePath $statusFile
-
 }
 
 # write heartbeat
