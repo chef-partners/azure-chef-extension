@@ -1,6 +1,5 @@
 
 $chefExtensionRoot = ("{0}{1}" -f (Split-Path -Parent -Path $MyInvocation.MyCommand.Definition), "\..")
-$sequenceNumber = getHandlerSettings.Split(".")[0]
 
 # Returns a json object from json file
 function readJsonFromFile
@@ -8,10 +7,15 @@ function readJsonFromFile
   (Get-Content $args[0]) -join "`n" | ConvertFrom-Json
 }
 
+function getHandlerSettingsFileName
+{
+  (Get-ChildItem "$chefExtensionRoot\RuntimeSettings" -Filter *.settings | Sort-Object Name -descending | Select-Object -First 1 ).Name
+}
+
 # returns the handler settings read from the latest settings file
 function getHandlerSettings
 {
-  $latestSettingFile = (Get-ChildItem "$chefExtensionRoot\RuntimeSettings" -Filter *.settings | Sort-Object Name -descending | Select-Object -First 1 ).Name
+  $latestSettingFile = getHandlerSettingsFileName
   $runtimeSettingsJson = readJsonFromFile $chefExtensionRoot"\RuntimeSettings\$latestSettingFile"
   $runtimeSettingsJson.runtimeSettings[0].handlerSettings
 }
@@ -88,32 +92,29 @@ function getMachineArch
   $machineArch
 }
 
-# write status to file
-function Write-Status operation, status, message
+function Get-FileName ($extension)
 {
-  $statusFile = (readJsonFromFile $chefExtensionRoot"\HandlerEnvironment.json").handlerEnvironment.statusFolder"\"$sequenceNumber".status"
-  echo "Writing status to file $statusFile"
-  $timestampUTC
-  @{"version":"1",
-      "timestampUTC":"$timestampUTC",
-      "status":
-        {"name":"Chef Handler Extension",
-        "operation":"$operation",
-        "configurationAppliedTime":null,
-        "status":"$status",
-        "code":0,
-        "message":null,
-        "formattedMessage":
-          {"lang":"en",
-          "message":"$message"
-          },
-        "substatus":null
-        }
-      } | ConvertTo-Json
+  $handlerSettingsFileName = getHandlerSettingsFileName
+  $sequenceNumber = $handlerSettingsFileName.Split(".")[0]
+  (readJsonFromFile $chefExtensionRoot"\HandlerEnvironment.json").handlerEnvironment.statusFolder + "\" + $sequenceNumber + "." + $extension
+}
+
+# write status to file
+function Write-Status ($operation, $statusMessage, $message)
+{
+  $statusFile = Get-FileName "status"
+
+  $timestampUTC = Get-Date -Format o
+  $formattedMessageHash = @{lang = "en"; message = "$message" }
+  $subStatusHash = @{}
+  $statusHash = @{name = "Chef Handler Extension"; operation = "$operation"; configurationAppliedTime = "null"; status = "$statusMessage"; code = 0; message = "null"; formattedMessage = $formattedMessageHash; substatus = @($subStatusHash) }
+
+  ConvertTo-Json @(@{version = "1"; timestampUTC = "$timestampUTC"; status = $statusHash}) -Depth 4 | Out-File -filePath $statusFile
+
 }
 
 # write heartbeat
 function Write-Heartbeat
 {
-
+  $heartbeatFile = Get-FileName "heartbeat"
 }
