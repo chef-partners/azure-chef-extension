@@ -93,7 +93,7 @@ function decryptProtectedSettings($content, $thumbPrint)
   # load System.Security assembly
   [System.Reflection.Assembly]::LoadWithPartialName("System.Security") | out-null
 
-  $EncryptedByteArray = [Convert]::FromBase64String($content)
+  $encryptedByteArray = [Convert]::FromBase64String($content)
 
   $envelope =  New-Object System.Security.Cryptography.Pkcs.EnvelopedCms
 
@@ -102,7 +102,7 @@ function decryptProtectedSettings($content, $thumbPrint)
   $store.open([System.Security.Cryptography.X509Certificates.OpenFlags]::ReadOnly)
   $cert = $store.Certificates | Where-Object {$_.thumbprint -eq $thumbPrint}
 
-  $envelope.Decode($EncryptedByteArray)
+  $envelope.Decode($encryptedByteArray)
 
   $envelope.Decrypt($cert)
 
