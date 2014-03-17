@@ -12,13 +12,20 @@
 
 # XXX - For demo start service using existing service manager which cannot report any azure expected status
 
+# XXX - this is repeated, we should find how not to
+function Chef-Get-ScriptDirectory
+{
+  $Invocation = (Get-Variable MyInvocation -Scope 1).Value
+  Split-Path $Invocation.MyCommand.Path
+}
+
+$scriptDir = Chef-Get-ScriptDirectory
+
 # Source the shared PS
-$chefExtensionRoot = ("{0}{1}" -f (Split-Path -Parent -Path $MyInvocation.MyCommand.Definition), "\..")
+$chefExtensionRoot = [System.IO.Path]::GetFullPath("$scriptDir\..")
 . $chefExtensionRoot\bin\shared.ps1
 
 $bootstrapDirectory="C:\\chef"
-
-$env:Path += ";C:\opscode\chef\bin;C:\opscode\chef\embedded\bin"
 
 $handlerSettings = getHandlerSettings
 
