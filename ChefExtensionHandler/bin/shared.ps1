@@ -7,10 +7,15 @@ function readJsonFromFile
   (Get-Content $args[0]) -join "`n" | ConvertFrom-Json
 }
 
+function getHandlerSettingsFileName
+{
+  (Get-ChildItem "$chefExtensionRoot\RuntimeSettings" -Filter *.settings | Sort-Object Name -descending | Select-Object -First 1 ).Name
+}
+
 # returns the handler settings read from the latest settings file
 function getHandlerSettings
 {
-  $latestSettingFile = (Get-ChildItem "$chefExtensionRoot\RuntimeSettings" -Filter *.settings | Sort-Object Name -descending | Select-Object -First 1 ).Name
+  $latestSettingFile = getHandlerSettingsFileName
   $runtimeSettingsJson = readJsonFromFile $chefExtensionRoot"\RuntimeSettings\$latestSettingFile"
   $runtimeSettingsJson.runtimeSettings[0].handlerSettings
 }
@@ -85,6 +90,31 @@ function getMachineArch
   }
 
   $machineArch
+}
+
+# write status to file N.status
+function Write-ChefStatus ($operation, $statusMessage, $message)
+{
+  # the path of this file is picked up from HandlerEnvironment.json
+  # the sequence is obtained from the handlerSettings file sequence
+  $handlerSettingsFileName = getHandlerSettingsFileName
+  $sequenceNumber = $handlerSettingsFileName.Split(".")[0]
+  $statusFile = (readJsonFromFile $chefExtensionRoot"\HandlerEnvironment.json").handlerEnvironment.statusFolder + "\" + $sequenceNumber + ".status"
+
+  # the status file is in json format
+  $timestampUTC = Get-Date -Format o
+  $formattedMessageHash = @{lang = "en"; message = "$message" }
+  $subStatusHash = @{}
+  $statusHash = @{name = "Chef Handler Extension"; operation = "$operation"; configurationAppliedTime = "null"; status = "$statusMessage"; code = 0; message = "$message"; formattedMessage = $formattedMessageHash; substatus = @($subStatusHash) }
+
+  ConvertTo-Json @(@{version = "1"; timestampUTC = "$timestampUTC"; status = $statusHash}) -Depth 4 | Out-File -filePath $statusFile
+}
+
+# write heartbeat
+function Write-ChefHeartbeat
+{
+  $handlerSettingsFileName = getHandlerSettingsFileName
+  $heartbeatFile = (readJsonFromFile $chefExtensionRoot"\HandlerEnvironment.json").handlerEnvironment.heartbeatFile
 }
 
 # Decrypt protected settings

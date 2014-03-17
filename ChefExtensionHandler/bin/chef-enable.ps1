@@ -5,7 +5,7 @@
 #      - read <SequenceNumber>.settings to read settings like runlist passed by user
 #        (SequenceNumber: is it specified in HandlerEnvironment.json? docs says but not in sample)
 #      - reporting chef-client run status to status file to be read guest agent: “<SequenceNumber>.status”
-#        (is SequenceNumber per new version of handler deployed to VM? 
+#        (is SequenceNumber per new version of handler deployed to VM?
 #        do we need to purge older sequencenumber.status files, say maintain max of 10 recent files?)
 #      - reporting heartbeat i.e. this service is ready/notready with more info to heartbeat file
 #      - service should manage file read/write conflicts with Guest Agent.
@@ -15,6 +15,8 @@
 # Source the shared PS
 $chefExtensionRoot = ("{0}{1}" -f (Split-Path -Parent -Path $MyInvocation.MyCommand.Definition), "\..")
 . $chefExtensionRoot\bin\shared.ps1
+
+Write-ChefStatus "configuring-chef-service" "transitioning"
 
 function validate-client-rb-file ([string] $client_rb)
 {
@@ -80,5 +82,16 @@ IF ( $serviceStatus -eq "Service chef-client doesn't exist on the system." )
   chef-service-manager -a install -c $bootstrapDirectory\client.rb -L $bootstrapDirectory\logs
 }
 
+Write-ChefStatus "starting-chef-service" "transitioning"
+
 # start the chef service
-chef-service-manager -a start
+$result = chef-service-manager -a start
+
+if ($result -match "Service 'chef-client' is now 'running'.")
+{
+  Write-ChefStatus "chef-service-started" "success"
+}
+else
+{
+  Write-ChefStatus "chef-service" "error" $result
+}
