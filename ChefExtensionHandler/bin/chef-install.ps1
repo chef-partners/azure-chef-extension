@@ -11,8 +11,16 @@ Copyright:: Copyright (c) 2014 Opscode, Inc.
 
 #>
 
+function Chef-Get-ScriptDirectory
+{
+  $Invocation = (Get-Variable MyInvocation -Scope 1).Value
+  Split-Path $Invocation.MyCommand.Path
+}
+
+$scriptDir = Chef-Get-ScriptDirectory
+
 # Source the shared PS
-$chefExtensionRoot = ("{0}{1}" -f (Split-Path -Parent -Path $MyInvocation.MyCommand.Definition), "\..")
+$chefExtensionRoot = [System.IO.Path]::GetFullPath("$scriptDir\..")
 . $chefExtensionRoot\bin\shared.ps1
 
 $machineOS = getMachineOS
@@ -29,7 +37,10 @@ if (Test-Path $chefClientMsiLogPath) {
 
 $localDestinationMsiPath = [System.IO.Path]::GetFullPath("$chefExtensionRoot\installer\chef-client-latest.msi")
 echo "Installing chef"
-msiexec /qn /log $chefClientMsiLogPath /i $localDestinationMsiPath
+Start-Process -FilePath "msiexec.exe" -ArgumentList "/qn /log $chefClientMsiLogPath /i $localDestinationMsiPath" -Wait -Passthru 
 
-# set path
-$env:Path += ";C:\opscode\chef\bin;C:\opscode\chef\embedded\bin"
+# Install the custom gem
+gem install "$chefExtensionRoot\gems\*.gem" --no-ri --no-rdoc
+
+# Add scriptDir to path so azure chef-client is picked up henceforth
+Chef-Add-To-Path $scriptDir
