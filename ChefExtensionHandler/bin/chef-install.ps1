@@ -37,7 +37,7 @@ if (Test-Path $chefClientMsiLogPath) {
 
 $localDestinationMsiPath = [System.IO.Path]::GetFullPath("$chefExtensionRoot\installer\chef-client-latest.msi")
 echo "Installing chef"
-Start-Process -FilePath "msiexec.exe" -ArgumentList "/qn /log $chefClientMsiLogPath /i $localDestinationMsiPath" -Wait -Passthru 
+Start-Process -FilePath "msiexec.exe" -ArgumentList "/qn /log $chefClientMsiLogPath /i $localDestinationMsiPath" -Wait -Passthru
 
 # Install the custom gem
 gem install "$chefExtensionRoot\gems\*.gem" --no-ri --no-rdoc

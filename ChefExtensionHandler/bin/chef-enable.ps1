@@ -5,7 +5,7 @@
 #      - read <SequenceNumber>.settings to read settings like runlist passed by user
 #        (SequenceNumber: is it specified in HandlerEnvironment.json? docs says but not in sample)
 #      - reporting chef-client run status to status file to be read guest agent: “<SequenceNumber>.status”
-#        (is SequenceNumber per new version of handler deployed to VM? 
+#        (is SequenceNumber per new version of handler deployed to VM?
 #        do we need to purge older sequencenumber.status files, say maintain max of 10 recent files?)
 #      - reporting heartbeat i.e. this service is ready/notready with more info to heartbeat file
 #      - service should manage file read/write conflicts with Guest Agent.
@@ -25,6 +25,19 @@ $scriptDir = Chef-Get-ScriptDirectory
 $chefExtensionRoot = [System.IO.Path]::GetFullPath("$scriptDir\..")
 . $chefExtensionRoot\bin\shared.ps1
 
+Write-ChefStatus "configuring-chef-service" "transitioning"
+
+function validate-client-rb-file ([string] $client_rb)
+{
+  echo $client_rb
+
+  #compulsory: chef_server_url, validation_client_name
+  #log_location should be c:/chef/chef.log
+  #org should be same in chef_server_url and validation_client_name
+  #hard code validation_key and client_key to c:/chef/<v/c>.pem
+
+}
+
 $bootstrapDirectory="C:\\chef"
 
 $handlerSettings = getHandlerSettings
@@ -41,27 +54,16 @@ if (! (Test-Path $bootstrapDirectory\node-registered) ) {
   }
 
   # Write validation key
-  $handlerSettings.protectedSettings.validation_key | Out-File -filePath $bootstrapDirectory\validation.pem  -encoding "Default"
+  $decryptedSettings = decryptProtectedSettings $handlerSettings.protectedSettings $handlerSettings.protectedSettingsCertThumbprint | ConvertFrom-Json
 
+  $decryptedSettings.validation_key | Out-File -filePath $bootstrapDirectory\validation.pem  -encoding "Default"
   echo "Created validation.pem"
 
   # Write client.rb
-  $chefServerUrl = $handlerSettings.publicSettings.chefServerUrl
-  $chefOrgName = $handlerSettings.publicSettings.chefOrgName
-  $hostName = hostname
-
-  @"
-log_level    :info
-log_location    STDOUT
-
-chef_server_url    "$chefServerUrl/$chefOrgName"
-validation_client_name    "$chefOrgName-validator"
-client_key    "$bootstrapDirectory/client.pem"
-validation_key    "$bootstrapDirectory/validation.pem"
-
-node_name    "$hostName"
-"@ | Out-File -filePath $bootstrapDirectory\client.rb -encoding "Default"
-
+  $client_rb_file = $handlerSettings.publicSettings.client_rb
+  echo "Client.rb input by user: $client_rb_file"
+  $client_rb_file = validate-client-rb-file $client_rb_file
+  $client_rb_file | Out-File -filePath $bootstrapDirectory\client.rb -encoding "Default"
   echo "Created client.rb..."
 
   # json
@@ -87,5 +89,16 @@ IF ( $serviceStatus -eq "Service chef-client doesn't exist on the system." )
   chef-service-manager -a install -c $bootstrapDirectory\client.rb -L $bootstrapDirectory\logs
 }
 
+Write-ChefStatus "starting-chef-service" "transitioning"
+
 # start the chef service
-chef-service-manager -a start
+$result = chef-service-manager -a start
+
+if ($result -match "Service 'chef-client' is now 'running'.")
+{
+  Write-ChefStatus "chef-service-started" "success"
+}
+else
+{
+  Write-ChefStatus "chef-service" "error" $result
+}

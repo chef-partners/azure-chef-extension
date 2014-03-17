@@ -15,11 +15,16 @@ function readJsonFromFile
   (Get-Content $args[0]) -join "`n" | ConvertFrom-Json
 }
 
+function getHandlerSettingsFileName
+{
+  (Get-ChildItem "$chefExtensionRoot\RuntimeSettings" -Filter *.settings | Sort-Object Name -descending | Select-Object -First 1 ).Name
+}
+
 # returns the handler settings read from the latest settings file
 function getHandlerSettings
 {
-  # XXX: read latest settings file
-  $runtimeSettingsJson = readJsonFromFile $chefExtensionRoot"\RuntimeSettings\1.settings"
+  $latestSettingFile = getHandlerSettingsFileName
+  $runtimeSettingsJson = readJsonFromFile $chefExtensionRoot"\RuntimeSettings\$latestSettingFile"
   $runtimeSettingsJson.runtimeSettings[0].handlerSettings
 }
 
@@ -103,4 +108,55 @@ function Chef-Add-To-Path($folderPath)
   [Environment]::SetEnvironmentVariable("Path", "$folderPath;$currentPath", "User")
   $currentPath = [Environment]::GetEnvironmentVariable("Path", "Process")
   [Environment]::SetEnvironmentVariable("Path", "$folderPath;$currentPath", "Process")
+}
+
+# write status to file N.status
+function Write-ChefStatus ($operation, $statusMessage, $message)
+{
+  # the path of this file is picked up from HandlerEnvironment.json
+  # the sequence is obtained from the handlerSettings file sequence
+  $handlerSettingsFileName = getHandlerSettingsFileName
+  $sequenceNumber = $handlerSettingsFileName.Split(".")[0]
+  $statusFile = (readJsonFromFile $chefExtensionRoot"\HandlerEnvironment.json").handlerEnvironment.statusFolder + "\" + $sequenceNumber + ".status"
+
+  # the status file is in json format
+  $timestampUTC = Get-Date -Format o
+  $formattedMessageHash = @{lang = "en"; message = "$message" }
+  $subStatusHash = @{}
+  $statusHash = @{name = "Chef Handler Extension"; operation = "$operation"; configurationAppliedTime = "null"; status = "$statusMessage"; code = 0; message = "$message"; formattedMessage = $formattedMessageHash; substatus = @($subStatusHash) }
+
+  ConvertTo-Json @(@{version = "1"; timestampUTC = "$timestampUTC"; status = $statusHash}) -Depth 4 | Out-File -filePath $statusFile
+}
+
+# write heartbeat
+function Write-ChefHeartbeat
+{
+  $handlerSettingsFileName = getHandlerSettingsFileName
+  $heartbeatFile = (readJsonFromFile $chefExtensionRoot"\HandlerEnvironment.json").handlerEnvironment.heartbeatFile
+}
+
+# Decrypt protected settings
+function decryptProtectedSettings($content, $thumbPrint)
+{
+  # load System.Security assembly
+  [System.Reflection.Assembly]::LoadWithPartialName("System.Security") | out-null
+
+  $encryptedByteArray = [Convert]::FromBase64String($content)
+
+  $envelope =  New-Object System.Security.Cryptography.Pkcs.EnvelopedCms
+
+  # get certificate from local machine store
+  $store = new-object System.Security.Cryptography.X509Certificates.X509Store([System.Security.Cryptography.X509Certificates.StoreLocation]::LocalMachine)
+  $store.open([System.Security.Cryptography.X509Certificates.OpenFlags]::ReadOnly)
+  $cert = $store.Certificates | Where-Object {$_.thumbprint -eq $thumbPrint}
+
+  $envelope.Decode($encryptedByteArray)
+
+  $envelope.Decrypt($cert)
+
+  $decryptedBytes = $envelope.ContentInfo.Content
+
+  $decryptedResult = [System.Text.Encoding]::UTF8.GetString($decryptedBytes)
+
+  $decryptedResult
 }
