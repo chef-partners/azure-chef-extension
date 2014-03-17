@@ -8,10 +8,11 @@
 $bootstrapDirectory = "C:\\chef"
 $chefInstallDirectory = "C:\\opscode"
 
-$env:Path += ";C:\opscode\chef\bin;C:\opscode\chef\embedded\bin"
-
 # uninstall does both disable and remove the service
 chef-service-manager -a uninstall
+
+# Uninstall the custom gem
+gem uninstall -Ix azure-chef-extension
 
 # Actual uninstall functionality
 # Get chef_pkg by matching "chef client " string with $_.Name
