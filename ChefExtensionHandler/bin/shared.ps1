@@ -1,5 +1,6 @@
 
 $chefExtensionRoot = ("{0}{1}" -f (Split-Path -Parent -Path $MyInvocation.MyCommand.Definition), "\..")
+$sequenceNumber = getHandlerSettings.Split(".")[0]
 
 # Returns a json object from json file
 function readJsonFromFile
@@ -85,4 +86,34 @@ function getMachineArch
   }
 
   $machineArch
+}
+
+# write status to file
+function Write-Status operation, status, message
+{
+  $statusFile = (readJsonFromFile $chefExtensionRoot"\HandlerEnvironment.json").handlerEnvironment.statusFolder"\"$sequenceNumber".status"
+  echo "Writing status to file $statusFile"
+  $timestampUTC
+  @{"version":"1",
+      "timestampUTC":"$timestampUTC",
+      "status":
+        {"name":"Chef Handler Extension",
+        "operation":"$operation",
+        "configurationAppliedTime":null,
+        "status":"$status",
+        "code":0,
+        "message":null,
+        "formattedMessage":
+          {"lang":"en",
+          "message":"$message"
+          },
+        "substatus":null
+        }
+      } | ConvertTo-Json
+}
+
+# write heartbeat
+function Write-Heartbeat
+{
+
 }
