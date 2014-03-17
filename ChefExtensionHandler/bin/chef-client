@@ -1,14 +1,17 @@
 
 # Ruby code that runs the original chef-client and updates the azure extension status
 
-require 'azure-chef-extension/chef/azure/client'
+require 'chef/azure/client'
 
-extension_root = File.Directory(__FILE__)
+extension_root = File.expand_path(File.dirname(File.dirname(__FILE__)))
+puts "extension_root --> #{extension_root}"
 
-chef_client_args = <args for chef-client>
+chef_client_args = ARGV
 
+puts "Creating AzureChefClient object with #{chef_client_args}..."
 extensionObject = AzureChefClient.new(extension_root, chef_client_args)
 
+puts "Running Azure chef-client"
 result = extensionObject.run
 
 # send result.stdout to stdout
