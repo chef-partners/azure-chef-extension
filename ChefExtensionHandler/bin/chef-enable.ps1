@@ -16,7 +16,7 @@
 $chefExtensionRoot = ("{0}{1}" -f (Split-Path -Parent -Path $MyInvocation.MyCommand.Definition), "\..")
 . $chefExtensionRoot\bin\shared.ps1
 
-Write-Status "configuring-chef-service" "transitioning"
+Write-ChefStatus "configuring-chef-service" "transitioning"
 
 function validate-client-rb-file ([string] $client_rb)
 {
@@ -82,16 +82,16 @@ IF ( $serviceStatus -eq "Service chef-client doesn't exist on the system." )
   chef-service-manager -a install -c $bootstrapDirectory\client.rb -L $bootstrapDirectory\logs
 }
 
-Write-Status "starting-chef-service" "transitioning"
+Write-ChefStatus "starting-chef-service" "transitioning"
 
 # start the chef service
 $result = chef-service-manager -a start
 
 if ($result -match "Service 'chef-client' is now 'running'.")
 {
-  Write-Status "chef-service-started" "success"
+  Write-ChefStatus "chef-service-started" "success"
 }
 else
 {
-  Write-Status "chef-service" "error" $result
+  Write-ChefStatus "chef-service" "error" $result
 }

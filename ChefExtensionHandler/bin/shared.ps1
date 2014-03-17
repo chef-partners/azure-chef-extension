@@ -92,30 +92,29 @@ function getMachineArch
   $machineArch
 }
 
-function Get-FileName ($extension)
+# write status to file N.status
+function Write-ChefStatus ($operation, $statusMessage, $message)
 {
+  # the path of this file is picked up from HandlerEnvironment.json
+  # the sequence is obtained from the handlerSettings file sequence
   $handlerSettingsFileName = getHandlerSettingsFileName
   $sequenceNumber = $handlerSettingsFileName.Split(".")[0]
-  (readJsonFromFile $chefExtensionRoot"\HandlerEnvironment.json").handlerEnvironment.statusFolder + "\" + $sequenceNumber + "." + $extension
-}
+  $statusFile = (readJsonFromFile $chefExtensionRoot"\HandlerEnvironment.json").handlerEnvironment.statusFolder + "\" + $sequenceNumber + ".status"
 
-# write status to file
-function Write-Status ($operation, $statusMessage, $message)
-{
-  $statusFile = Get-FileName "status"
-
+  # the status file is in json format
   $timestampUTC = Get-Date -Format o
   $formattedMessageHash = @{lang = "en"; message = "$message" }
   $subStatusHash = @{}
-  $statusHash = @{name = "Chef Handler Extension"; operation = "$operation"; configurationAppliedTime = "null"; status = "$statusMessage"; code = 0; message = "null"; formattedMessage = $formattedMessageHash; substatus = @($subStatusHash) }
+  $statusHash = @{name = "Chef Handler Extension"; operation = "$operation"; configurationAppliedTime = "null"; status = "$statusMessage"; code = 0; message = "$message"; formattedMessage = $formattedMessageHash; substatus = @($subStatusHash) }
 
   ConvertTo-Json @(@{version = "1"; timestampUTC = "$timestampUTC"; status = $statusHash}) -Depth 4 | Out-File -filePath $statusFile
 }
 
 # write heartbeat
-function Write-Heartbeat
+function Write-ChefHeartbeat
 {
-  $heartbeatFile = Get-FileName "heartbeat"
+  $handlerSettingsFileName = getHandlerSettingsFileName
+  $heartbeatFile = (readJsonFromFile $chefExtensionRoot"\HandlerEnvironment.json").handlerEnvironment.heartbeatFile
 }
 
 # Decrypt protected settings
