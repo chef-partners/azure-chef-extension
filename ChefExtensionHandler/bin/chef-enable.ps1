@@ -47,7 +47,9 @@ if (! (Test-Path $bootstrapDirectory\node-registered) ) {
   }
 
   # Write validation key
-  $handlerSettings.protectedSettings.validation_key | Out-File -filePath $bootstrapDirectory\validation.pem  -encoding "Default"
+  $decryptedSettings = decryptProtectedSettings $handlerSettings.protectedSettings $handlerSettings.protectedSettingsCertThumbprint | ConvertFrom-Json
+
+  $decryptedSettings.validation_key | Out-File -filePath $bootstrapDirectory\validation.pem  -encoding "Default"
   echo "Created validation.pem"
 
   # Write client.rb
