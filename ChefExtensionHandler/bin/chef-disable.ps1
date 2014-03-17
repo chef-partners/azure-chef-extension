@@ -11,10 +11,6 @@ $env:Path += ";C:\opscode\chef\bin;C:\opscode\chef\embedded\bin"
 $result = chef-service-manager -a stop
 
 if ($result -match "Service 'chef-client' is now 'stopped'.")
-{
-  Write-ChefStatus "chef-service-stop" "success"
-}
+{ Write-ChefStatus "chef-service-stop" "success" }
 else
-{
-  Write-ChefStatus "chef-service" "error" $result
-}
+{ Write-ChefStatus "chef-service" "error" $result }
