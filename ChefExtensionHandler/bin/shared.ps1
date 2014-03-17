@@ -1,5 +1,13 @@
 
-$chefExtensionRoot = ("{0}{1}" -f (Split-Path -Parent -Path $MyInvocation.MyCommand.Definition), "\..")
+function Chef-Get-ScriptDirectory
+{
+  $Invocation = (Get-Variable MyInvocation -Scope 1).Value
+  Split-Path $Invocation.MyCommand.Path
+}
+
+$scriptDir = Chef-Get-ScriptDirectory
+
+$chefExtensionRoot = [System.IO.Path]::GetFullPath("$scriptDir\..")
 
 # Returns a json object from json file
 function readJsonFromFile
@@ -85,4 +93,14 @@ function getMachineArch
   }
 
   $machineArch
+}
+
+function Chef-Add-To-Path($folderPath)
+{
+  $currentPath = [Environment]::GetEnvironmentVariable("Path", "Machine")
+  [Environment]::SetEnvironmentVariable("Path", "$folderPath;$currentPath", "Machine")
+  $currentPath = [Environment]::GetEnvironmentVariable("Path", "User")
+  [Environment]::SetEnvironmentVariable("Path", "$folderPath;$currentPath", "User")
+  $currentPath = [Environment]::GetEnvironmentVariable("Path", "Process")
+  [Environment]::SetEnvironmentVariable("Path", "$folderPath;$currentPath", "Process")
 }
