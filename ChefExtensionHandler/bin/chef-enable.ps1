@@ -10,8 +10,6 @@
 #      - reporting heartbeat i.e. this service is ready/notready with more info to heartbeat file
 #      - service should manage file read/write conflicts with Guest Agent.
 
-# XXX - For demo start service using existing service manager which cannot report any azure expected status
-
 # XXX - this is repeated, we should find how not to
 function Chef-Get-ScriptDirectory
 {
@@ -25,7 +23,7 @@ $scriptDir = Chef-Get-ScriptDirectory
 $chefExtensionRoot = [System.IO.Path]::GetFullPath("$scriptDir\..")
 . $chefExtensionRoot\bin\shared.ps1
 
-Write-ChefStatus "configuring-chef-service" "transitioning"
+Write-ChefStatus "configuring-chef-service" "transitioning" "Configuring Chef Service"
 
 function validate-client-rb-file ([string] $client_rb)
 {
@@ -77,7 +75,13 @@ if (! (Test-Path $bootstrapDirectory\node-registered) ) {
 
   # run chef-client for first time
   echo "Running chef client"
-  chef-client -c $bootstrapDirectory\client.rb -j $bootstrapDirectory\first-boot.json -E _default
+  $result = chef-client -c $bootstrapDirectory\client.rb -j $bootstrapDirectory\first-boot.json -E _default
+  echo $result
+  if (!($result -match "Chef Run complete"))
+  {
+    Write-ChefStatus "chef-service-error" "error" "Error running first chef-client run. Node not registered"
+    exit 1
+  }
 
   echo "Node registered." > $bootstrapDirectory\node-registered
 }
@@ -89,12 +93,12 @@ IF ( $serviceStatus -eq "Service chef-client doesn't exist on the system." )
   chef-service-manager -a install -c $bootstrapDirectory\client.rb -L $bootstrapDirectory\logs
 }
 
-Write-ChefStatus "starting-chef-service" "transitioning"
+Write-ChefStatus "starting-chef-service" "transitioning" "Starting Chef Service"
 
 # start the chef service
 $result = chef-service-manager -a start
 
 if ($result -match "Service 'chef-client' is now 'running'.")
-{ Write-ChefStatus "chef-service-started" "success" }
+{ Write-ChefStatus "chef-service-started" "success" "Chef Service started successfully"}
 else
 { Write-ChefStatus "chef-service" "error" $result }

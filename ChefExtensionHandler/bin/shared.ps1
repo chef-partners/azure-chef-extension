@@ -122,7 +122,7 @@ function Write-ChefStatus ($operation, $statusType, $message)
   # the status file is in json format
   $timestampUTC = (Get-Date -Format u).Replace(" ", "T")
   $formattedMessageHash = @{lang = "en-US"; message = "$message" }
-  $statusHash = @{name = "Chef Handler Extension"; operation = "$operation"; status = "$statusType"; code = 0; formattedMessage = $formattedMessageHash; }
+  $statusHash = @{name = "Chef Extension Handler"; operation = "$operation"; status = "$statusType"; code = 0; formattedMessage = $formattedMessageHash; }
 
   ConvertTo-Json -Compress @(@{version = "1"; timestampUTC = "$timestampUTC"; status = $statusHash}) -Depth 4 | Out-File -filePath $statusFile
 }
