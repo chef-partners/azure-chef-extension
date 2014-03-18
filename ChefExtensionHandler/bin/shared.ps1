@@ -111,7 +111,7 @@ function Chef-Add-To-Path($folderPath)
 }
 
 # write status to file N.status
-function Write-ChefStatus ($operation, $statusMessage, $message)
+function Write-ChefStatus ($operation, $statusType, $message)
 {
   # the path of this file is picked up from HandlerEnvironment.json
   # the sequence is obtained from the handlerSettings file sequence
@@ -120,12 +120,11 @@ function Write-ChefStatus ($operation, $statusMessage, $message)
   $statusFile = (readJsonFromFile $chefExtensionRoot"\HandlerEnvironment.json").handlerEnvironment.statusFolder + "\" + $sequenceNumber + ".status"
 
   # the status file is in json format
-  $timestampUTC = Get-Date -Format o
-  $formattedMessageHash = @{lang = "en"; message = "$message" }
-  $subStatusHash = @{}
-  $statusHash = @{name = "Chef Handler Extension"; operation = "$operation"; configurationAppliedTime = "null"; status = "$statusMessage"; code = 0; message = "$message"; formattedMessage = $formattedMessageHash; substatus = @($subStatusHash) }
+  $timestampUTC = (Get-Date -Format u).Replace(" ", "T")
+  $formattedMessageHash = @{lang = "en-US"; message = "$message" }
+  $statusHash = @{name = "Chef Handler Extension"; operation = "$operation"; status = "$statusType"; code = 0; formattedMessage = $formattedMessageHash; }
 
-  ConvertTo-Json @(@{version = "1"; timestampUTC = "$timestampUTC"; status = $statusHash}) -Depth 4 | Out-File -filePath $statusFile
+  ConvertTo-Json -Compress @(@{version = "1"; timestampUTC = "$timestampUTC"; status = $statusHash}) -Depth 4 | Out-File -filePath $statusFile
 }
 
 # write heartbeat

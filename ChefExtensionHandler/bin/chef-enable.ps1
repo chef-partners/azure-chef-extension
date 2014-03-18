@@ -95,10 +95,6 @@ Write-ChefStatus "starting-chef-service" "transitioning"
 $result = chef-service-manager -a start
 
 if ($result -match "Service 'chef-client' is now 'running'.")
-{
-  Write-ChefStatus "chef-service-started" "success"
-}
+{ Write-ChefStatus "chef-service-started" "success" }
 else
-{
-  Write-ChefStatus "chef-service" "error" $result
-}
+{ Write-ChefStatus "chef-service" "error" $result }
