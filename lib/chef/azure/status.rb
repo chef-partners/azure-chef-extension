@@ -24,7 +24,8 @@ class AzureExtensionStatus
   def self.log(path, message, status_type="success")
     retries = 3
     begin
-      status_message = (last_chef_run.stdout)[-512, 512] || (last_chef_run.stdout)
+      puts "Logging status message: #{message}"
+      status_message = message[-512, 512] || message
       status = [{
         "version" => "1.0",
         "timestampUTC" => Time.now.utc.iso8601,

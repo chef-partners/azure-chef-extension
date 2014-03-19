@@ -12,9 +12,5 @@ puts "Creating AzureChefClient object with #{chef_client_args}..."
 extensionObject = AzureChefClient.new(extension_root, chef_client_args)
 
 puts "Running Azure chef-client"
-result = extensionObject.run
-
-# send result.stdout to stdout
-$stdout.puts result.stdout
-# send result.stderr to stderr
-$stderr.puts result.stderr
+exit_code = extensionObject.run
+exit exit_code

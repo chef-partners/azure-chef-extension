@@ -23,8 +23,6 @@ $scriptDir = Chef-Get-ScriptDirectory
 $chefExtensionRoot = [System.IO.Path]::GetFullPath("$scriptDir\\..")
 . $chefExtensionRoot\\bin\\shared.ps1
 
-Write-ChefStatus "chef-service-install" "transitioning" "Installing Chef Service"
-
 $machineOS = getMachineOS
 $machineArch = getMachineArch
 
@@ -46,5 +44,3 @@ gem install "$chefExtensionRoot\\gems\\*.gem" --no-ri --no-rdoc
 
 # Add scriptDir to path so azure chef-client is picked up henceforth
 Chef-Add-To-Path $scriptDir
-
-Write-ChefStatus "chef-service-install" "success" "Installed Chef Service"

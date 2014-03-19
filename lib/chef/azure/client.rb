@@ -21,9 +21,8 @@ class AzureChefClient
 
     run_chef_client
 
-    report_status_to_azure
+    return 0
 
-    @last_run_result  # make sure we return result to wrapper
   end
 
   private
@@ -64,22 +63,29 @@ class AzureChefClient
 
       Chef::Log.info "running chef-client with: Args = [#{config_params}], Path = [#{ENV["PATH"]}]"
 
-      # Starts a new process and waits till the process exits
-      @last_run_result = shell_out("chef-client #{config_params}")
+      # Starts chef-client from original chef and waits till the process exits
+      @exit_code = 0
+      last_run_result = shell_out("chef-client #{config_params}")
+      last_run_result.error!
+      report_status_to_azure @azure_status_file, "Chef-client run success", "success"
 
     rescue Mixlib::ShellOut::ShellCommandFailed => e
-      Chef::Log.warn "Not able to start chef-client in new process (#{e})"
+      Chef::Log.warn "Error running chef-client (#{e})"
+      report_status_to_azure @azure_status_file, "#{e} - Check log file for details", "error"
+      exit 1
     rescue => e
       Chef::Log.error e
+      report_status_to_azure @azure_status_file, "#{e} - Check log file for details", "error"
+      exit 1
     ensure
       # Once process exits, we log the current process' pid
       Chef::Log.info "Child process exited (pid: #{Process.pid})"
     end
   end
 
-  def report_status_to_azure
-    # use @last_run_result to write status to @azure_status_folder/<seq number>.status
+  def report_status_to_azure (messahe, status_type)
     Chef::Log.info "Updating the status..."
-    AzureExtensionStatus.log(@azure_status_file, @last_run_result.stdout)
+    AzureExtensionStatus.log(@azure_status_file, message, status_type)
   end
+
 end

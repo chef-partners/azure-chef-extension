@@ -74,16 +74,19 @@ if (! (Test-Path $bootstrapDirectory\\node-registered) ) {
 
   # run chef-client for first time
   echo "Running chef client"
-  $result = chef-client -c $bootstrapDirectory\\client.rb -j $bootstrapDirectory\first-boot.json -E _default
-  if (!($result -match "Chef Run complete"))
+  chef-client -c $bootstrapDirectory\\client.rb -j $bootstrapDirectory\first-boot.json -E _default
+  if (!($?))
   {
     echo "Chef run failed. Exiting..."
-    Write-ChefStatus "chef-service-error" "error" "Error running first chef-client run. Node not registered"
+    #Write-ChefStatus "chef-service-error" "error" "Error running first chef-client run."
     exit 1
   }
 
   echo "Node registered." > $bootstrapDirectory\\node-registered
   echo "Node registered successfully"
+}
+else {
+  echo "Node registered. Not re-configuring."
 }
 
 # check if service is already installed?
