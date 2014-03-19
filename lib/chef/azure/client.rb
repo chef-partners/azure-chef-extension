@@ -28,14 +28,14 @@ class AzureChefClient
 
   private
   def load_handler_env
-    puts "Loading Handler environment..."
+    Chef::Log.info "Loading Handler environment..."
     # Load environment from @chef_extension_root/HandlerEnvironment.json
     handler_env = JSON.parse(File.read("#{@chef_extension_root}\\HandlerEnvironment.json"))
     @azure_heart_beat_file = handler_env[0]["handlerEnvironment"]["heartbeatFile"]
     @azure_status_folder = handler_env[0]["handlerEnvironment"]["statusFolder"]
     @azure_plugin_log_location = handler_env[0]["handlerEnvironment"]["logFolder"]
     @azure_config_folder = handler_env[0]["handlerEnvironment"]["configFolder"]
-    puts "#{@azure_config_folder} --> #{@azure_status_folder} --> #{@azure_heart_beat_file} --> #{@azure_plugin_log_location}"
+    Chef::Log.info "#{@azure_config_folder} --> #{@azure_status_folder} --> #{@azure_heart_beat_file} --> #{@azure_plugin_log_location}"
     # Get name of status file by finding the latest sequence number from runtime settings file
     sequence = 0
     settingsFiles = Dir.entries(@chef_extension_root + "\\RuntimeSettings").sort
@@ -43,12 +43,12 @@ class AzureChefClient
       sequence = settingsFiles[settingsFiles.size-1].split(".")[0]
     end
     @azure_status_file = @azure_status_folder + "\\" + sequence + ".status"
-    puts "Status file name: #{@azure_status_file}"
+    Chef::Log.info "Status file name: #{@azure_status_file}"
   end
 
   def report_heart_beat_to_azure
     # update @azure_heart_beat_file
-    puts "Reporting heartbeat..."
+    Chef::Log.info "Reporting heartbeat..."
     AzureHeartBeat.update(@azure_heart_beat_file, AzureHeartBeat::READY, 0, "chef-service is running properly")
   end
 
@@ -62,13 +62,10 @@ class AzureChefClient
       # set path so original chef-client is picked up
       ENV["PATH"] = "#{CHEF_BINS_PATH};#{ENV["PATH"]}"
 
-      puts "running chef-client with:"
-      puts "Args = [#{config_params}]"
-      puts "Path = [#{ENV["PATH"]}]"
+      Chef::Log.info "running chef-client with: Args = [#{config_params}], Path = [#{ENV["PATH"]}]"
 
       # Starts a new process and waits till the process exits
       @last_run_result = shell_out("chef-client #{config_params}")
-      puts "logging last_run_result from client #{@last_run_result.stderr} \n****\n #{@last_run_result.stdout}"
 
     rescue Mixlib::ShellOut::ShellCommandFailed => e
       Chef::Log.warn "Not able to start chef-client in new process (#{e})"
@@ -82,7 +79,7 @@ class AzureChefClient
 
   def report_status_to_azure
     # use @last_run_result to write status to @azure_status_folder/<seq number>.status
-    puts "Updating the status..."
-    AzureExtensionStatus.log(@azure_status_file, @last_run_result)
+    Chef::Log.info "Updating the status..."
+    AzureExtensionStatus.log(@azure_status_file, @last_run_result.stdout)
   end
 end

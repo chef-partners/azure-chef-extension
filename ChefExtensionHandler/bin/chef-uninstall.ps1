@@ -5,21 +5,30 @@
 #    - disable chef service and remove service
 #    - uninstall chef
 
+# Source the shared PS
+$chefExtensionRoot = ("{0}{1}" -f (Split-Path -Parent -Path $MyInvocation.MyCommand.Definition), "\\..")
+. $chefExtensionRoot\\bin\\shared.ps1
+
+Write-ChefStatus "uninstalling-chef" "transitioning" "Uninstalling Chef"
+
 $bootstrapDirectory = "C:\\chef"
 $chefInstallDirectory = "C:\\opscode"
 
 # uninstall does both disable and remove the service
-chef-service-manager -a uninstall
+$result = chef-service-manager -a uninstall
+echo $result
 
 # Uninstall the custom gem
-gem uninstall -Ix azure-chef-extension
+$result = gem uninstall -Ix azure-chef-extension
+echo $result
 
 # Actual uninstall functionality
 # Get chef_pkg by matching "chef client " string with $_.Name
 $chef_pkg = Get-WmiObject -Class Win32_Product | Where-Object { $_.Name.contains("Chef Client") }
 
 # Uninstall chef_pkg
-$chef_pkg.Uninstall()
+$result = $chef_pkg.Uninstall()
+echo $result
 
 # clean up config files and install folder
 if (Test-Path $bootstrapDirectory) {
@@ -28,3 +37,5 @@ if (Test-Path $bootstrapDirectory) {
 if (Test-Path $chefInstallDirectory) {
   Remove-Item -Recurse -Force $chefInstallDirectory
 }
+
+Write-ChefStatus "uninstalling-chef" "success" "Uninstalled Chef"

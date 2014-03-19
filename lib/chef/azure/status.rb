@@ -19,16 +19,12 @@
 require 'time'
 
 class AzureExtensionStatus
-  def self.log(path, last_chef_run)
+  # status file path
+  # status message
+  def self.log(path, message, status_type="success")
     retries = 3
     begin
-      puts "err #{last_chef_run.stderr}"
-      status_type = "success"
-      status_message = last_chef_run.stdout
-      if (last_chef_run.stderr != "")
-        status_type = "error"
-        status_message = last_chef_run.stderr
-      end
+      status_message = (last_chef_run.stdout)[-512, 512] || (last_chef_run.stdout)
       status = [{
         "version" => "1.0",
         "timestampUTC" => Time.now.utc.iso8601,
@@ -43,6 +39,8 @@ class AzureExtensionStatus
             },
         }
       }]
+      # TODO: if status_type is null, check the message for any errors
+      # TODO: consider using substatus and message in the status json
 
       # Write the new status
       File.open(path, 'w') do |file|

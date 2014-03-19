@@ -7,7 +7,7 @@ function Chef-Get-ScriptDirectory
 
 $scriptDir = Chef-Get-ScriptDirectory
 
-$chefExtensionRoot = [System.IO.Path]::GetFullPath("$scriptDir\..")
+$chefExtensionRoot = [System.IO.Path]::GetFullPath("$scriptDir\\..")
 
 # Returns a json object from json file
 function readJsonFromFile
@@ -17,14 +17,14 @@ function readJsonFromFile
 
 function getHandlerSettingsFileName
 {
-  (Get-ChildItem "$chefExtensionRoot\RuntimeSettings" -Filter *.settings | Sort-Object Name -descending | Select-Object -First 1 ).Name
+  (Get-ChildItem "$chefExtensionRoot\\RuntimeSettings" -Filter *.settings | Sort-Object Name -descending | Select-Object -First 1 ).Name
 }
 
 # returns the handler settings read from the latest settings file
 function getHandlerSettings
 {
   $latestSettingFile = getHandlerSettingsFileName
-  $runtimeSettingsJson = readJsonFromFile $chefExtensionRoot"\RuntimeSettings\$latestSettingFile"
+  $runtimeSettingsJson = readJsonFromFile $chefExtensionRoot"\\RuntimeSettings\\$latestSettingFile"
   $runtimeSettingsJson.runtimeSettings[0].handlerSettings
 }
 
@@ -61,7 +61,7 @@ function getMachineOS
     "VersionUnknown" {
       # If this is an unknown version of windows set the default
       $machineOS ="2008r2"
-      echo "Warning: Unknown version of Windows, assuming default of Windows $machineOS"
+      Write-ChefStatus "chef-install" "warning" "Unknown version of Windows, assuming default of Windows $machineOS"
     }
 
     "Version6.0" {
@@ -117,7 +117,7 @@ function Write-ChefStatus ($operation, $statusType, $message)
   # the sequence is obtained from the handlerSettings file sequence
   $handlerSettingsFileName = getHandlerSettingsFileName
   $sequenceNumber = $handlerSettingsFileName.Split(".")[0]
-  $statusFile = (readJsonFromFile $chefExtensionRoot"\HandlerEnvironment.json").handlerEnvironment.statusFolder + "\" + $sequenceNumber + ".status"
+  $statusFile = (readJsonFromFile $chefExtensionRoot"\\HandlerEnvironment.json").handlerEnvironment.statusFolder + "\\" + $sequenceNumber + ".status"
 
   # the status file is in json format
   $timestampUTC = (Get-Date -Format u).Replace(" ", "T")
@@ -131,7 +131,7 @@ function Write-ChefStatus ($operation, $statusType, $message)
 function Write-ChefHeartbeat
 {
   $handlerSettingsFileName = getHandlerSettingsFileName
-  $heartbeatFile = (readJsonFromFile $chefExtensionRoot"\HandlerEnvironment.json").handlerEnvironment.heartbeatFile
+  $heartbeatFile = (readJsonFromFile $chefExtensionRoot"\\HandlerEnvironment.json").handlerEnvironment.heartbeatFile
 }
 
 # Decrypt protected settings
