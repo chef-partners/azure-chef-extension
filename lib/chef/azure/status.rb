@@ -21,7 +21,7 @@ require 'time'
 class AzureExtensionStatus
   # status file path
   # status message
-  def self.log(path, message, status_type="success")
+  def self.log(path, message, status_type)
     retries = 3
     begin
       puts "Logging status message: #{message}"

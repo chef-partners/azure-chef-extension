@@ -67,24 +67,23 @@ class AzureChefClient
       @exit_code = 0
       last_run_result = shell_out("chef-client #{config_params}")
       last_run_result.error!
-      report_status_to_azure @azure_status_file, "Chef-client run success", "success"
+      report_status_to_azure "Chef-client run success", "success"
 
     rescue Mixlib::ShellOut::ShellCommandFailed => e
       Chef::Log.warn "Error running chef-client (#{e})"
-      report_status_to_azure @azure_status_file, "#{e} - Check log file for details", "error"
+      report_status_to_azure "#{e} - Check log file for details", "error"
       exit 1
     rescue => e
       Chef::Log.error e
-      report_status_to_azure @azure_status_file, "#{e} - Check log file for details", "error"
+      report_status_to_azure "#{e} - Check log file for details", "error"
       exit 1
     ensure
       # Once process exits, we log the current process' pid
-      Chef::Log.info "Child process exited (pid: #{Process.pid})"
+      Chef::Log.info "Process completed (pid: #{Process.pid})"
     end
   end
 
-  def report_status_to_azure (messahe, status_type)
-    Chef::Log.info "Updating the status..."
+  def report_status_to_azure (message, status_type)
     AzureExtensionStatus.log(@azure_status_file, message, status_type)
   end
 

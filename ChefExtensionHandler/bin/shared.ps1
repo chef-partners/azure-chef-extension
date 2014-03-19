@@ -159,3 +159,41 @@ function decryptProtectedSettings($content, $thumbPrint)
 
   $decryptedResult
 }
+
+function Write-ChefExtensionRegistry
+ {
+   param (
+    $Path = "HKCU:\Software\chef_extn",
+    $Name = "Status",
+    $Value = "updated"
+  )
+
+  # Create registry entry, with Status=updated
+  if (Test-Path -Path $Path -PathType Container) {
+    New-ItemProperty -Path $Path -Name $Name -Value $Value
+  }
+  else {
+    New-Item -Path $Path -Name $Name -Value $Value
+  }
+ }
+
+ function Test-ChefExtensionRegistry
+ {
+   param (
+      $Path = "HKCU:\Software\chef_extn",
+      $Name = "Status",
+      $Value = "updated"
+   )
+   # checks if the entry with correct value in registry
+   # if yes, it removes the entry and returns true
+   If (Test-Path -Path $Path -PathType Container) {
+     If ((Get-ItemProperty -Path $Path).$Name -eq $Value) {
+       Remove-ItemProperty -Path $Path -Name $Name
+     return $True
+     }
+     else { return $False }
+   }
+   else {
+     return $False
+   }
+ }
