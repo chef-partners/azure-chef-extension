@@ -45,5 +45,6 @@ if (!(Test-ChefExtensionRegistry))
 Else
 {
   echo "Not tried to uninstall, as the update process is running"
+  Update-ChefExtensionRegistry "X"
   Write-ChefStatus "updating-chef-extension" "transitioning" "Skipping Uninstall"
 }

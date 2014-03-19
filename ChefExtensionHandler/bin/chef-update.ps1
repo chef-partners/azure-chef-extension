@@ -23,11 +23,16 @@ $scriptDir = Chef-Get-ScriptDirectory
 $chefExtensionRoot = [System.IO.Path]::GetFullPath("$scriptDir\\..")
 . $chefExtensionRoot\\bin\\shared.ps1
 
+$bootstrapDirectory = "C:\\chef"
+
 Try
 {
   Write-ChefStatus "updating-chef-extension" "transitioning" "Updating Chef Extension"
-  .\chef-install.ps1
-  Write-ChefExtensionRegistry
+  if (Test-Path $bootstrapDirectory) {
+    Remove-Item -Recurse -Force $bootstrapDirectory
+  }
+  Invoke-Expression $scriptDir + "\\chef-install.ps1"
+  Update-ChefExtensionRegistry "updated"
   Write-ChefStatus "updating-chef-extension" "success" "Updated Chef Extension"
 }
 Catch
