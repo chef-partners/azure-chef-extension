@@ -28,15 +28,23 @@ $bootstrapDirectory = "C:\\chef"
 Try
 {
   Write-ChefStatus "updating-chef-extension" "transitioning" "Updating Chef Extension"
-  if (Test-Path $bootstrapDirectory) {
-    Remove-Item -Recurse -Force $bootstrapDirectory
-  }
-  Invoke-Expression $scriptDir + "\\chef-install.ps1"
+
+  # uninstall chef. this will work since the uninstall script is idempotent.
+  Invoke-Expression $scriptDir"\\chef-uninstall.ps1"
+
+  # install new version of chef extension
+  Invoke-Expression $scriptDir"\\chef-install.ps1"
+
+  # we dont want GA to run uninstall again, after this update.ps1 completes.
+  # we pass this message to uninstall script through windows registry
   Update-ChefExtensionRegistry "updated"
+
   Write-ChefStatus "updating-chef-extension" "success" "Updated Chef Extension"
 }
 Catch
 {
   $ErrorMessage = $_.Exception.Message
   Write-ChefStatus "updating-chef-extension" "error" "$ErrorMessage"
+  # log to CommandExecution log-
+  echo "Error running update: $ErrorMessage"
 }
