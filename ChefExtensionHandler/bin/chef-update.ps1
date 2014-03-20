@@ -45,6 +45,6 @@ Catch
 {
   $ErrorMessage = $_.Exception.Message
   Write-ChefStatus "updating-chef-extension" "error" "$ErrorMessage"
-  # log to CommandExecution log-
+  # log to CommandExecution log:
   echo "Error running update: $ErrorMessage"
 }

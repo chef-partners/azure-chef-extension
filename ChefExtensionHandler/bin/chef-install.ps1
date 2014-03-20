@@ -27,7 +27,6 @@ $machineOS = getMachineOS
 $machineArch = getMachineArch
 
 # In current version we pick up the latest msi from within zip package.
-
 $chefClientMsiLogPath = "$env:temp\\chef-client-msi806.log"
 
 if (Test-Path $chefClientMsiLogPath) {
@@ -38,6 +37,8 @@ if (Test-Path $chefClientMsiLogPath) {
 $localDestinationMsiPath = [System.IO.Path]::GetFullPath("$chefExtensionRoot\\installer\\chef-client-latest.msi")
 echo "Installing chef"
 Start-Process -FilePath "msiexec.exe" -ArgumentList "/qn /log $chefClientMsiLogPath /i $localDestinationMsiPath" -Wait -Passthru
+
+$env:Path += ";C:\\opscode\\chef\\bin;C:\\opscode\\chef\\embedded\\bin"
 
 # Install the custom gem
 gem install "$chefExtensionRoot\\gems\\*.gem" --no-ri --no-rdoc
