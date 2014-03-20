@@ -28,6 +28,12 @@ function getHandlerSettings
   $runtimeSettingsJson.runtimeSettings[0].handlerSettings
 }
 
+# log folder path
+function Get-ChefLogFolder
+{
+  (readJsonFromFile $chefExtensionRoot"\\HandlerEnvironment.json").handlerEnvironment.logFolder
+}
+
 # returns the machine os version
 function getMachineOS
 {

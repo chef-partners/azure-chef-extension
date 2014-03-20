@@ -72,9 +72,13 @@ if (! (Test-Path $bootstrapDirectory\\node-registered) ) {
 "@ | Out-File -filePath $bootstrapDirectory\\first-boot.json -encoding "Default"
   echo "Created first-boot.json"
 
+  # chef-client logs will be written to the folder provided by azure.
+  $logFile = Get-ChefLogFolder
+  $logFile = $logFile + "\\chef-client.log"
+
   # run chef-client for first time
   echo "Running chef client"
-  chef-client -c $bootstrapDirectory\\client.rb -j $bootstrapDirectory\first-boot.json -E _default
+  chef-client -c $bootstrapDirectory\\client.rb -j $bootstrapDirectory\first-boot.json -E _default -L $logFile
   if (!($?))
   {
     echo "Chef run failed. Exiting..."
@@ -93,7 +97,7 @@ else {
 $serviceStatus = chef-service-manager -a status
 IF ( $serviceStatus -eq "Service chef-client doesn't exist on the system." )
 {
-  chef-service-manager -a install -c $bootstrapDirectory\\client.rb -L $bootstrapDirectory\logs
+  chef-service-manager -a install -c $bootstrapDirectory\\client.rb -L $logFile
 }
 
 Write-ChefStatus "starting-chef-service" "transitioning" "Starting Chef Service"

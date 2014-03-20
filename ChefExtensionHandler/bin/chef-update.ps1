@@ -11,6 +11,8 @@
 # We do not want the step 4 above to uninstall this latest installation. So we keep a track of this using the Windows Registry
 # This will update the registry. The uninstall script witll uninstall if the registry "Status" is not "updated"
 
+# We cannot Write-ChefStatus from this script.
+
 function Chef-Get-ScriptDirectory
 {
   $Invocation = (Get-Variable MyInvocation -Scope 1).Value
@@ -27,8 +29,6 @@ $bootstrapDirectory = "C:\\chef"
 
 Try
 {
-  Write-ChefStatus "updating-chef-extension" "transitioning" "Updating Chef Extension"
-
   # uninstall chef. this will work since the uninstall script is idempotent.
   Invoke-Expression $scriptDir"\\chef-uninstall.ps1"
 
@@ -38,8 +38,6 @@ Try
   # we dont want GA to run uninstall again, after this update.ps1 completes.
   # we pass this message to uninstall script through windows registry
   Update-ChefExtensionRegistry "updated"
-
-  Write-ChefStatus "updating-chef-extension" "success" "Updated Chef Extension"
 }
 Catch
 {

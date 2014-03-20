@@ -12,6 +12,7 @@ class AzureChefClient
   def initialize(extension_root, *chef_client_args)
     @chef_extension_root = extension_root
     @chef_client_args = chef_client_args
+    @exit_code = 0
   end
 
   def run
@@ -21,7 +22,7 @@ class AzureChefClient
 
     run_chef_client
 
-    return 0
+    return @exit_code
 
   end
 
@@ -72,11 +73,11 @@ class AzureChefClient
     rescue Mixlib::ShellOut::ShellCommandFailed => e
       Chef::Log.warn "Error running chef-client (#{e})"
       report_status_to_azure "#{e} - Check log file for details", "error"
-      exit 1
+      @exit_code = 1
     rescue => e
       Chef::Log.error e
       report_status_to_azure "#{e} - Check log file for details", "error"
-      exit 1
+      @exit_code = 1
     ensure
       # Once process exits, we log the current process' pid
       Chef::Log.info "Process completed (pid: #{Process.pid})"
