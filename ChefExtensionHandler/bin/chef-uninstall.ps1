@@ -1,4 +1,4 @@
-
+trap [Exception] {echo $_.Exception.Message;exit 1}
 
 # uninstall chef
 # Actions:

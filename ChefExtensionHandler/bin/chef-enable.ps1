@@ -10,6 +10,8 @@
 #      - reporting heartbeat i.e. this service is ready/notready with more info to heartbeat file
 #      - service should manage file read/write conflicts with Guest Agent.
 
+trap [Exception] {echo $_.Exception.Message;exit 1}
+
 # XXX - this is repeated, we should find how not to
 function Chef-Get-ScriptDirectory
 {
@@ -39,6 +41,10 @@ function validate-client-rb-file ([string] $client_rb)
 $bootstrapDirectory="C:\\chef"
 
 $handlerSettings = getHandlerSettings
+
+# chef-client logs will be written to the folder provided by azure.
+$logFile = Get-ChefLogFolder
+ $logFile = $logFile + "\\chef-client.log"
 
 # Setup the client.rb, validation.pem and first run of chef-client, do this only once post install.
 # "node-registered" file also indicates that enabled was called once and configs are already generated.
@@ -72,11 +78,7 @@ if (! (Test-Path $bootstrapDirectory\\node-registered) ) {
 "@ | Out-File -filePath $bootstrapDirectory\\first-boot.json -encoding "Default"
   echo "Created first-boot.json"
 
-  # chef-client logs will be written to the folder provided by azure.
-  $logFile = Get-ChefLogFolder
-  $logFile = $logFile + "\\chef-client.log"
-
-  # run chef-client for first time
+   # run chef-client for first time
   echo "Running chef client"
   chef-client -c $bootstrapDirectory\\client.rb -j $bootstrapDirectory\first-boot.json -E _default -L $logFile
   if (!($?))

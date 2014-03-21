@@ -1,3 +1,5 @@
+trap [Exception] {echo $_.Exception.Message;exit 1}
+
 # Source the shared PS
 $chefExtensionRoot = ("{0}{1}" -f (Split-Path -Parent -Path $MyInvocation.MyCommand.Definition), "\\..")
 . $chefExtensionRoot\\bin\\shared.ps1

@@ -1,7 +1,6 @@
-<#
-Author:: Mukta Aphale (mukta.aphale@clogeny.com)
-Copyright:: Copyright (c) 2014 Opscode, Inc.
+trap [Exception] {echo $_.Exception.Message;exit 1}
 
+<#
 // install chef-client with /i switch
 // Actions: (do what windows bootstrap template)
 //    - install chef-client
