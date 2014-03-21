@@ -44,7 +44,7 @@ $handlerSettings = getHandlerSettings
 
 # chef-client logs will be written to the folder provided by azure.
 $logFile = Get-ChefLogFolder
- $logFile = $logFile + "\\chef-client.log"
+$logFile = $logFile + "\\chef-client.log"
 
 # Setup the client.rb, validation.pem and first run of chef-client, do this only once post install.
 # "node-registered" file also indicates that enabled was called once and configs are already generated.
