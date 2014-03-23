@@ -1,29 +1,50 @@
-
+trap [Exception] {echo $_.Exception.Message;exit 1}
 
 # uninstall chef
 # Actions:
 #    - disable chef service and remove service
 #    - uninstall chef
 
-$bootstrapDirectory = "C:\\chef"
-$chefInstallDirectory = "C:\\opscode"
+# Source the shared PS
+$chefExtensionRoot = ("{0}{1}" -f (Split-Path -Parent -Path $MyInvocation.MyCommand.Definition), "\\..")
+. $chefExtensionRoot\\bin\\shared.ps1
 
-$env:Path += ";C:\opscode\chef\bin;C:\opscode\chef\embedded\bin"
+if (!(Test-ChefExtensionRegistry))
+{
+  Write-ChefStatus "uninstalling-chef" "transitioning" "Uninstalling Chef"
 
-# uninstall does both disable and remove the service
-chef-service-manager -a uninstall
+  $bootstrapDirectory = "C:\\chef"
+  $chefInstallDirectory = "C:\\opscode"
 
-# Actual uninstall functionality
-# Get chef_pkg by matching "chef client " string with $_.Name
-$chef_pkg = Get-WmiObject -Class Win32_Product | Where-Object { $_.Name.contains("Chef Client") }
+  # uninstall does both disable and remove the service
+  $result = chef-service-manager -a uninstall
+  echo $result
 
-# Uninstall chef_pkg
-$chef_pkg.Uninstall()
+  # Uninstall the custom gem
+  $result = gem uninstall -Ix azure-chef-extension
+  echo $result
 
-# clean up config files and install folder
-if (Test-Path $bootstrapDirectory) {
-  Remove-Item -Recurse -Force $bootstrapDirectory
+  # Actual uninstall functionality
+  # Get chef_pkg by matching "chef client " string with $_.Name
+  $chef_pkg = Get-WmiObject -Class Win32_Product | Where-Object { $_.Name.contains("Chef Client") }
+
+  # Uninstall chef_pkg
+  $result = $chef_pkg.Uninstall()
+  echo $result
+
+  # clean up config files and install folder
+  if (Test-Path $bootstrapDirectory) {
+    Remove-Item -Recurse -Force $bootstrapDirectory
+  }
+  if (Test-Path $chefInstallDirectory) {
+    Remove-Item -Recurse -Force $chefInstallDirectory
+  }
+
+  Write-ChefStatus "uninstalling-chef" "success" "Uninstalled Chef"
 }
-if (Test-Path $chefInstallDirectory) {
-  Remove-Item -Recurse -Force $chefInstallDirectory
+Else
+{
+  echo "Not tried to uninstall, as the update process is running"
+  Update-ChefExtensionRegistry "X"
+  Write-ChefStatus "updating-chef-extension" "transitioning" "Skipping Uninstall"
 }

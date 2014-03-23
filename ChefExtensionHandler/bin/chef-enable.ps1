@@ -10,13 +10,22 @@
 #      - reporting heartbeat i.e. this service is ready/notready with more info to heartbeat file
 #      - service should manage file read/write conflicts with Guest Agent.
 
-# XXX - For demo start service using existing service manager which cannot report any azure expected status
+trap [Exception] {echo $_.Exception.Message;exit 1}
+
+# XXX - this is repeated, we should find how not to
+function Chef-Get-ScriptDirectory
+{
+  $Invocation = (Get-Variable MyInvocation -Scope 1).Value
+  Split-Path $Invocation.MyCommand.Path
+}
+
+$scriptDir = Chef-Get-ScriptDirectory
 
 # Source the shared PS
-$chefExtensionRoot = ("{0}{1}" -f (Split-Path -Parent -Path $MyInvocation.MyCommand.Definition), "\..")
-. $chefExtensionRoot\bin\shared.ps1
+$chefExtensionRoot = [System.IO.Path]::GetFullPath("$scriptDir\\..")
+. $chefExtensionRoot\\bin\\shared.ps1
 
-Write-ChefStatus "configuring-chef-service" "transitioning"
+Write-ChefStatus "configuring-chef-service" "transitioning" "Configuring Chef Service"
 
 function validate-client-rb-file ([string] $client_rb)
 {
@@ -31,33 +40,34 @@ function validate-client-rb-file ([string] $client_rb)
 
 $bootstrapDirectory="C:\\chef"
 
-$env:Path += ";C:\opscode\chef\bin;C:\opscode\chef\embedded\bin"
-
 $handlerSettings = getHandlerSettings
+
+# chef-client logs will be written to the folder provided by azure.
+$logFile = Get-ChefLogFolder
+$logFile = $logFile + "\\chef-client.log"
 
 # Setup the client.rb, validation.pem and first run of chef-client, do this only once post install.
 # "node-registered" file also indicates that enabled was called once and configs are already generated.
-if (! (Test-Path $bootstrapDirectory\node-registered) ) {
-  echo "Checking for existing directory $bootstrapDirectory"
+if (! (Test-Path $bootstrapDirectory\\node-registered) ) {
+  echo "Node not registered. Registering node..."
   if ( !(Test-Path $bootstrapDirectory) ) {
-    echo "Existing directory not found, creating."
+    echo "Existing $bootstrapDirectory directory not found, creating."
     mkdir $bootstrapDirectory
   } else {
-    echo "Existing directory found, skipping creation."
+    echo "Existing $bootstrapDirectory directory found, skipping creation."
   }
 
   # Write validation key
   $decryptedSettings = decryptProtectedSettings $handlerSettings.protectedSettings $handlerSettings.protectedSettingsCertThumbprint | ConvertFrom-Json
 
-  $decryptedSettings.validation_key | Out-File -filePath $bootstrapDirectory\validation.pem  -encoding "Default"
+  $decryptedSettings.validation_key | Out-File -filePath $bootstrapDirectory\\validation.pem  -encoding "Default"
   echo "Created validation.pem"
 
   # Write client.rb
   $client_rb_file = $handlerSettings.publicSettings.client_rb
-  echo "Client.rb input by user: $client_rb_file"
   $client_rb_file = validate-client-rb-file $client_rb_file
-  $client_rb_file | Out-File -filePath $bootstrapDirectory\client.rb -encoding "Default"
-  echo "Created client.rb..."
+  $client_rb_file | Out-File -filePath $bootstrapDirectory\\client.rb -encoding "Default"
+  echo "Created client.rb"
 
   # json
   $runList = $handlerSettings.publicSettings.runList
@@ -65,33 +75,41 @@ if (! (Test-Path $bootstrapDirectory\node-registered) ) {
 {
 "run_list": [$runlist]
 }
-"@ | Out-File -filePath $bootstrapDirectory\first-boot.json -encoding "Default"
-  echo "created first-boot.json"
+"@ | Out-File -filePath $bootstrapDirectory\\first-boot.json -encoding "Default"
+  echo "Created first-boot.json"
 
-  # run chef-client for first time
+   # run chef-client for first time
   echo "Running chef client"
-  chef-client -c $bootstrapDirectory\client.rb -j $bootstrapDirectory\first-boot.json -E _default
+  chef-client -c $bootstrapDirectory\\client.rb -j $bootstrapDirectory\first-boot.json -E _default -L $logFile
+  if (!($?))
+  {
+    echo "Chef run failed. Exiting..."
+    #Write-ChefStatus "chef-service-error" "error" "Error running first chef-client run."
+    exit 1
+  }
 
-  echo "Node registered." > $bootstrapDirectory\node-registered
+  echo "Node registered." > $bootstrapDirectory\\node-registered
+  echo "Node registered successfully"
+}
+else {
+  echo "Node registered. Not re-configuring."
 }
 
 # check if service is already installed?
 $serviceStatus = chef-service-manager -a status
 IF ( $serviceStatus -eq "Service chef-client doesn't exist on the system." )
 {
-  chef-service-manager -a install -c $bootstrapDirectory\client.rb -L $bootstrapDirectory\logs
+  chef-service-manager -a install -c $bootstrapDirectory\\client.rb -L $logFile
 }
 
-Write-ChefStatus "starting-chef-service" "transitioning"
+Write-ChefStatus "starting-chef-service" "transitioning" "Starting Chef Service"
 
 # start the chef service
 $result = chef-service-manager -a start
 
 if ($result -match "Service 'chef-client' is now 'running'.")
-{
-  Write-ChefStatus "chef-service-started" "success"
-}
+{ Write-ChefStatus "chef-service-started" "success" "Chef Service started successfully"}
 else
-{
-  Write-ChefStatus "chef-service" "error" $result
-}
+{ Write-ChefStatus "chef-service-start" "error" $result }
+
+echo "chef-enable.ps1 completed sucessfully"
