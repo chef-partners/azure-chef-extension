@@ -24,7 +24,7 @@ function validate-client-rb-file ([string] $user_client_rb)
   $client_rb =  @"
     client_key    "$bootstrapDirectory/client.pem"
     validation_key    "$bootstrapDirectory/validation.pem"
-    log_location    "$logFile"
+    log_location    '$logFile'
 "@
 
   # append client_rb to user_client rb to override client_key and validation_key
