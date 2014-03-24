@@ -43,6 +43,8 @@ Write-ChefStatus "configuring-chef-service" "transitioning" "Configuring Chef Se
 
 $bootstrapDirectory="C:\\chef"
 
+$env:Path += ";C:\opscode\chef\bin;C:\opscode\chef\embedded\bin"
+
 $handlerSettings = getHandlerSettings
 
 # chef-client logs will be written to the folder provided by azure.
