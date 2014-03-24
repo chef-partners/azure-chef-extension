@@ -46,6 +46,8 @@ $handlerSettings = getHandlerSettings
 $logFile = Get-ChefLogFolder
 $logFile = $logFile + "\\chef-client.log"
 
+$firstRun = $false
+
 # Setup the client.rb, validation.pem and first run of chef-client, do this only once post install.
 # "node-registered" file also indicates that enabled was called once and configs are already generated.
 if (! (Test-Path $bootstrapDirectory\\node-registered) ) {
@@ -53,6 +55,7 @@ if (! (Test-Path $bootstrapDirectory\\node-registered) ) {
   if ( !(Test-Path $bootstrapDirectory) ) {
     echo "Existing $bootstrapDirectory directory not found, creating."
     mkdir $bootstrapDirectory
+    $firstRun = $true
   } else {
     echo "Existing $bootstrapDirectory directory found, skipping creation."
   }
@@ -71,6 +74,18 @@ if (! (Test-Path $bootstrapDirectory\\node-registered) ) {
 
   # json
   $runList = $handlerSettings.publicSettings.runList
+
+  # run chef-client for first time with no runlist to register it
+  echo "Running chef client for first time with no runlist..."
+#  chef-client -c $bootstrapDirectory\\client.rb -j $bootstrapDirectory\first-boot.json -E _default -L $logFile
+  chef-client -c $bootstrapDirectory\\client.rb -E _default -L $logFile
+  if (!($?))
+  {
+    echo "Chef run failed. Exiting..."
+    #Write-ChefStatus "chef-service-error" "error" "Error running first chef-client run."
+    exit 1
+  }
+
   @"
 {
 "run_list": [$runlist]
@@ -78,15 +93,6 @@ if (! (Test-Path $bootstrapDirectory\\node-registered) ) {
 "@ | Out-File -filePath $bootstrapDirectory\\first-boot.json -encoding "Default"
   echo "Created first-boot.json"
 
-   # run chef-client for first time
-  echo "Running chef client"
-  chef-client -c $bootstrapDirectory\\client.rb -j $bootstrapDirectory\first-boot.json -E _default -L $logFile
-  if (!($?))
-  {
-    echo "Chef run failed. Exiting..."
-    #Write-ChefStatus "chef-service-error" "error" "Error running first chef-client run."
-    exit 1
-  }
 
   echo "Node registered." > $bootstrapDirectory\\node-registered
   echo "Node registered successfully"
@@ -111,5 +117,13 @@ if ($result -match "Service 'chef-client' is now 'running'.")
 { Write-ChefStatus "chef-service-started" "success" "Chef Service started successfully"}
 else
 { Write-ChefStatus "chef-service-start" "error" $result }
+
+# Re-run chef-client with -j to set the runlist to the desired runlist
+if ($firstRun)
+{
+    echo "Launching chef-client again to set the runlist"
+    $chefClientProcess = start-process 'chef-client' -argumentlist @('-c', "$bootstrapDirectory\\client.rb","-j", "$bootstrapDirectory\first-boot.json", "-E", "_default", "-L", "$logFile") -verb 'runas' -passthru
+    echo "Successfully launched process with PID $chefClientProcess."
+}
 
 echo "chef-enable.ps1 completed sucessfully"
