@@ -126,7 +126,7 @@ if ($firstRun)
 {
     echo "Launching chef-client again to set the runlist"
     $chefClientProcess = start-process 'chef-client' -argumentlist @('-c', "$bootstrapDirectory\\client.rb","-j", "$bootstrapDirectory\first-boot.json", "-E", "_default", "-L", "$logFile") -verb 'runas' -passthru
-    echo "Successfully launched process with PID $chefClientProcess."
+    echo "Successfully launched process with PID $($chefClientProcess.Id) ."
 }
 
 echo "chef-enable.ps1 completed sucessfully"
