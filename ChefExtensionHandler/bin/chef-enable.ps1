@@ -19,6 +19,17 @@ function Chef-Get-ScriptDirectory
   Split-Path $Invocation.MyCommand.Path
 }
 
+function validate-client-rb-file ([string] $client_rb)
+{
+  # following 3 fields should always have the hard coded values
+  $client_rb = $client_rb + "`r #Overriding params, reqd for Chef Azure Extension"
+  $client_rb = $client_rb + "`r client_key    '$bootstrapDirectory/client.pem' "
+  $client_rb = $client_rb + "`r validation_key    '$bootstrapDirectory/validation.pem' "
+  $client_rb = $client_rb + "`r log_location    '$logFile' "
+
+  return $client_rb
+}
+
 $scriptDir = Chef-Get-ScriptDirectory
 
 # Source the shared PS
@@ -26,17 +37,6 @@ $chefExtensionRoot = [System.IO.Path]::GetFullPath("$scriptDir\\..")
 . $chefExtensionRoot\\bin\\shared.ps1
 
 Write-ChefStatus "configuring-chef-service" "transitioning" "Configuring Chef Service"
-
-function validate-client-rb-file ([string] $client_rb)
-{
-  echo $client_rb
-
-  #compulsory: chef_server_url, validation_client_name
-  #log_location should be c:/chef/chef.log
-  #org should be same in chef_server_url and validation_client_name
-  #hard code validation_key and client_key to c:/chef/<v/c>.pem
-
-}
 
 $bootstrapDirectory="C:\\chef"
 
@@ -77,12 +77,10 @@ if (! (Test-Path $bootstrapDirectory\\node-registered) ) {
 
   # run chef-client for first time with no runlist to register it
   echo "Running chef client for first time with no runlist..."
-#  chef-client -c $bootstrapDirectory\\client.rb -j $bootstrapDirectory\first-boot.json -E _default -L $logFile
   chef-client -c $bootstrapDirectory\\client.rb -E _default -L $logFile
   if (!($?))
   {
     echo "Chef run failed. Exiting..."
-    #Write-ChefStatus "chef-service-error" "error" "Error running first chef-client run."
     exit 1
   }
 
@@ -92,7 +90,6 @@ if (! (Test-Path $bootstrapDirectory\\node-registered) ) {
 }
 "@ | Out-File -filePath $bootstrapDirectory\\first-boot.json -encoding "Default"
   echo "Created first-boot.json"
-
 
   echo "Node registered." > $bootstrapDirectory\\node-registered
   echo "Node registered successfully"
