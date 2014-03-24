@@ -58,7 +58,6 @@ if (! (Test-Path $bootstrapDirectory\\node-registered) ) {
   if ( !(Test-Path $bootstrapDirectory) ) {
     echo "Existing $bootstrapDirectory directory not found, creating."
     mkdir $bootstrapDirectory
-    $firstRun = $true
   } else {
     echo "Existing $bootstrapDirectory directory found, skipping creation."
   }
@@ -80,6 +79,10 @@ if (! (Test-Path $bootstrapDirectory\\node-registered) ) {
 
   # run chef-client for first time with no runlist to register it
   echo "Running chef client for first time with no runlist..."
+
+  # Set flag for first run of chef-client
+  $firstRun = $true
+
   chef-client -c $bootstrapDirectory\\client.rb -E _default -L $logFile
   if (!($?))
   {
