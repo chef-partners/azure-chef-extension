@@ -19,15 +19,17 @@ function Chef-Get-ScriptDirectory
   Split-Path $Invocation.MyCommand.Path
 }
 
-function validate-client-rb-file ([string] $client_rb)
+function validate-client-rb-file ([string] $user_client_rb)
 {
-  # following 3 fields should always have the hard coded values
-  $client_rb = $client_rb + "`r #Overriding params, reqd for Chef Azure Extension"
-  $client_rb = $client_rb + "`r client_key    '$bootstrapDirectory/client.pem' "
-  $client_rb = $client_rb + "`r validation_key    '$bootstrapDirectory/validation.pem' "
-  $client_rb = $client_rb + "`r log_location    '$logFile' "
+  $client_rb =  @"
+    client_key    "$bootstrapDirectory/client.pem"
+    validation_key    "$bootstrapDirectory/validation.pem"
+"@
 
-  return $client_rb
+  # append client_rb to user_client rb to override client_key and validation_key
+  $user_client_rb += "`r`n$client_rb"
+
+  $user_client_rb
 }
 
 $scriptDir = Chef-Get-ScriptDirectory
