@@ -19,6 +19,20 @@ function Chef-Get-ScriptDirectory
   Split-Path $Invocation.MyCommand.Path
 }
 
+function validate-client-rb-file ([string] $user_client_rb)
+{
+  $client_rb =  @"
+    client_key    "$bootstrapDirectory/client.pem"
+    validation_key    "$bootstrapDirectory/validation.pem"
+    log_location    '$logFile'
+"@
+
+  # append client_rb to user_client rb to override client_key and validation_key
+  $user_client_rb += "`r`n$client_rb"
+
+  $user_client_rb
+}
+
 $scriptDir = Chef-Get-ScriptDirectory
 
 # Source the shared PS
@@ -27,24 +41,17 @@ $chefExtensionRoot = [System.IO.Path]::GetFullPath("$scriptDir\\..")
 
 Write-ChefStatus "configuring-chef-service" "transitioning" "Configuring Chef Service"
 
-function validate-client-rb-file ([string] $client_rb)
-{
-  echo $client_rb
-
-  #compulsory: chef_server_url, validation_client_name
-  #log_location should be c:/chef/chef.log
-  #org should be same in chef_server_url and validation_client_name
-  #hard code validation_key and client_key to c:/chef/<v/c>.pem
-
-}
-
 $bootstrapDirectory="C:\\chef"
+
+$env:Path += ";C:\opscode\chef\bin;C:\opscode\chef\embedded\bin"
 
 $handlerSettings = getHandlerSettings
 
 # chef-client logs will be written to the folder provided by azure.
 $logFile = Get-ChefLogFolder
 $logFile = $logFile + "\\chef-client.log"
+
+$firstRun = $false
 
 # Setup the client.rb, validation.pem and first run of chef-client, do this only once post install.
 # "node-registered" file also indicates that enabled was called once and configs are already generated.
@@ -71,22 +78,26 @@ if (! (Test-Path $bootstrapDirectory\\node-registered) ) {
 
   # json
   $runList = $handlerSettings.publicSettings.runList
+
+  # run chef-client for first time with no runlist to register it
+  echo "Running chef client for first time with no runlist..."
+
+  # Set flag for first run of chef-client
+  $firstRun = $true
+
+  chef-client -c $bootstrapDirectory\\client.rb -E _default -L $logFile
+  if (!($?))
+  {
+    echo "Chef run failed. Exiting..."
+    exit 1
+  }
+
   @"
 {
 "run_list": [$runlist]
 }
 "@ | Out-File -filePath $bootstrapDirectory\\first-boot.json -encoding "Default"
   echo "Created first-boot.json"
-
-   # run chef-client for first time
-  echo "Running chef client"
-  chef-client -c $bootstrapDirectory\\client.rb -j $bootstrapDirectory\first-boot.json -E _default -L $logFile
-  if (!($?))
-  {
-    echo "Chef run failed. Exiting..."
-    #Write-ChefStatus "chef-service-error" "error" "Error running first chef-client run."
-    exit 1
-  }
 
   echo "Node registered." > $bootstrapDirectory\\node-registered
   echo "Node registered successfully"
@@ -111,5 +122,13 @@ if ($result -match "Service 'chef-client' is now 'running'.")
 { Write-ChefStatus "chef-service-started" "success" "Chef Service started successfully"}
 else
 { Write-ChefStatus "chef-service-start" "error" $result }
+
+# Re-run chef-client with -j to set the runlist to the desired runlist
+if ($firstRun)
+{
+    echo "Launching chef-client again to set the runlist"
+    $chefClientProcess = start-process 'chef-client' -argumentlist @('-c', "$bootstrapDirectory\\client.rb","-j", "$bootstrapDirectory\first-boot.json", "-E", "_default", "-L", "$logFile") -verb 'runas' -passthru
+    echo "Successfully launched process with PID $($chefClientProcess.Id) ."
+}
 
 echo "chef-enable.ps1 completed sucessfully"

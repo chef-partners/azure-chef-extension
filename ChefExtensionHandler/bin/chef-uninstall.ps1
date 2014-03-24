@@ -9,6 +9,8 @@ trap [Exception] {echo $_.Exception.Message;exit 1}
 $chefExtensionRoot = ("{0}{1}" -f (Split-Path -Parent -Path $MyInvocation.MyCommand.Definition), "\\..")
 . $chefExtensionRoot\\bin\\shared.ps1
 
+$env:Path += ";C:\opscode\chef\bin;C:\opscode\chef\embedded\bin"
+
 if (!(Test-ChefExtensionRegistry))
 {
   Write-ChefStatus "uninstalling-chef" "transitioning" "Uninstalling Chef"
