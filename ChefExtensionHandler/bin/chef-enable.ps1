@@ -33,6 +33,28 @@ function validate-client-rb-file ([string] $user_client_rb)
   $user_client_rb
 }
 
+# Parse user runlist
+#Ex:
+#    input: test_recipe,role[testrole] testcookbook::test_recipe
+#    output: "recipe[test_recipe]","role[testrole]","recipe[testcookbook::test_recipe]"
+function getRunlist ([string] $run_list) {
+  $parsedRunlist = @()
+
+  ($run_list -split ',|\s') | ForEach-Object {
+
+    if ($_ -match '\s*"?recipe\[\S*\]"?\s*') {
+      $item = ($_ -split '\s*"?recipe\["?|"?\]"?')[1]
+      $parsedRunlist += "`"recipe[$item]`""
+    } elseif ($_ -match '\s*"?role\[\S*\]"?\s*') {
+      $item = ($_ -split '\s*"?role\["?|"?\]"?')[1]
+      $parsedRunlist += "`"role[$item]`""
+    } else {
+      $parsedRunlist += $_ -replace '\s*"?\[?"?(?<item>\S*[^\p{P}])"?\]?"?\s*', '"recipe[${item}]"'
+    }
+  }
+  $parsedRunlist -join(",")
+}
+
 $scriptDir = Chef-Get-ScriptDirectory
 
 # Source the shared PS
@@ -76,8 +98,7 @@ if (! (Test-Path $bootstrapDirectory\\node-registered) ) {
   $client_rb_file | Out-File -filePath $bootstrapDirectory\\client.rb -encoding "Default"
   echo "Created client.rb"
 
-  # json
-  $runList = $handlerSettings.publicSettings.runList
+  $runList = getRunlist $handlerSettings.publicSettings.runList
 
   # run chef-client for first time with no runlist to register it
   echo "Running chef client for first time with no runlist..."
@@ -94,7 +115,7 @@ if (! (Test-Path $bootstrapDirectory\\node-registered) ) {
 
   @"
 {
-"run_list": [$runlist]
+"run_list": [$runList]
 }
 "@ | Out-File -filePath $bootstrapDirectory\\first-boot.json -encoding "Default"
   echo "Created first-boot.json"
