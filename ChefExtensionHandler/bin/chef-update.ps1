@@ -29,8 +29,15 @@ $bootstrapDirectory = "C:\\chef"
 
 Try
 {
+  # Save chef configuration.
+  $backupLocation = $env:temp + "\\chef_backup"
+  Copy-Item $bootstrapDirectory $backupLocation -recurse
+
   # uninstall chef. this will work since the uninstall script is idempotent.
   Invoke-Expression $scriptDir"\\chef-uninstall.ps1"
+
+  # Restore Chef Configuration
+  Copy-Item $backupLocation $bootstrapDirectory -recurse
 
   # install new version of chef extension
   Invoke-Expression $scriptDir"\\chef-install.ps1"
