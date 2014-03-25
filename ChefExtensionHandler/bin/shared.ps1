@@ -13,6 +13,7 @@ $chefExtensionRoot = [System.IO.Path]::GetFullPath("$scriptDir\\..")
 function readJsonFromFile
 {
   (Get-Content $args[0]) -join "`n" | ConvertFrom-Json
+  #ruby -e "require 'helpers/parse_json'; parse_json_file '$args[0])'"
 }
 
 function getHandlerSettingsFileName
