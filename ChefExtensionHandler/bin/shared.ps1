@@ -31,20 +31,20 @@ function readJsonFileUsingRuby
 {
   $json_handlerSettingsFileName = Get-HandlerSettingsFilePath
 
-  $json_handlerSettings = readRubyJson $handlerSettingsFileName "runtimeSettings" "0" "handlerSettings"
+  $json_handlerSettings = readRubyJson $json_handlerSettingsFileName "runtimeSettings" "0" "handlerSettings"
 
-  $json_handlerProtectedSettings = readRubyJson $handlerSettingsFileName "runtimeSettings" "0" "handlerSettings" "protectedSettings"
+  $json_handlerProtectedSettings = readRubyJson $json_handlerSettingsFileName "runtimeSettings" "0" "handlerSettings" "protectedSettings"
 
-  $json_handlerProtectedSettingsCertThumbprint = readRubyJson $handlerSettingsFileName "runtimeSettings" "0" "handlerSettings" "protectedSettingsCertThumbprint"
+  $json_handlerProtectedSettingsCertThumbprint = readRubyJson $json_handlerSettingsFileName "runtimeSettings" "0" "handlerSettings" "protectedSettingsCertThumbprint"
 
-  $json_handlerPublicSettingsClient_rb = readRubyJson $handlerSettingsFileName "runtimeSettings" "0" "handlerSettings" "publicSettings" "client_rb"
+  $json_handlerPublicSettingsClient_rb = readRubyJson $json_handlerSettingsFileName "runtimeSettings" "0" "handlerSettings" "publicSettings" "client_rb"
 
-  $json_handlerPublicSettingsRunlist = readRubyJson $handlerSettingsFileName "runtimeSettings" "0" "handlerSettings" "publicSettings" "runList"
+  $json_handlerPublicSettingsRunlist = readRubyJson $json_handlerSettingsFileName "runtimeSettings" "0" "handlerSettings" "publicSettings" "runList"
 
   $json_handlerEnvironmentFileName = Get-HandlerEnvironmentFilePath
-  $json_handlerChefLogFolder = readRubyJson $handlerEnvironmentFileName "handlerEnvironment" "logFolder"
-  $json_handlerStatusFolder = readRubyJson $handlerEnvironmentFileName "handlerEnvironment" "statusFolder"
-  $json_handlerHeartbeatFile = readRubyJson $handlerEnvironmentFileName "handlerEnvironment" "heartbeatFile"
+  $json_handlerChefLogFolder = readRubyJson $json_handlerEnvironmentFileName "handlerEnvironment" "logFolder"
+  $json_handlerStatusFolder = readRubyJson $json_handlerEnvironmentFileName "handlerEnvironment" "statusFolder"
+  $json_handlerHeartbeatFile = readRubyJson $json_handlerEnvironmentFileName "handlerEnvironment" "heartbeatFile"
 
   return $json_handlerSettingsFileName, $json_handlerSettings, $json_handlerProtectedSettings, $json_handlerProtectedSettingsCertThumbprint, $json_handlerPublicSettingsClient_rb, $json_handlerPublicSettingsRunlist, $json_handlerChefLogFolder, $json_handlerStatusFolder, $json_handlerHeartbeatFile
 
@@ -59,7 +59,7 @@ function readRubyJson
 }
 
 function Get-HandlerSettingsFilePath {
-  $latestSettingFile = getHandlerSettingsFileName
+  $latestSettingFile = Get-HandlerSettingsFileName
   $fileName = "$chefExtensionRoot\\RuntimeSettings\\$latestSettingFile"
   $fileName
 }
