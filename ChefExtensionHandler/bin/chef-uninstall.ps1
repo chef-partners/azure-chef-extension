@@ -11,6 +11,17 @@ $chefExtensionRoot = ("{0}{1}" -f (Split-Path -Parent -Path $MyInvocation.MyComm
 
 $env:Path += ";C:\opscode\chef\bin;C:\opscode\chef\embedded\bin"
 
+# powershell has in built cmdlets: ConvertFrom-Json and ConvertTo-Json which are supported above PS v 3.0
+# so the hack - use ruby json parsing for versions lower than 3.0
+if ($PSVersionTable.PSVersion.Major -ge 3)
+{
+  $json_handlerSettingsFileName, $json_handlerSettings, $json_protectedSettings,  $json_protectedSettingsCertThumbprint, $json_client_rb , $json_runlist, $json_chefLogFolder, $json_statusFolder, $json_heatbeatFile = readJsonFile
+}
+else
+{
+   readJsonFileUsingRuby
+}
+
 if (!(Test-ChefExtensionRegistry))
 {
   Write-ChefStatus "uninstalling-chef" "transitioning" "Uninstalling Chef"
