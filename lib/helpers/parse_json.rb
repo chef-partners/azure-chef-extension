@@ -13,6 +13,9 @@ class JSONFileReader
     json_key_path = "self"
 
     @keys.each do |key|
+      if key == "client_rb"
+        return @client_rb
+      end
       path_component = key
 
       if path_component.length > 1024
@@ -43,12 +46,32 @@ class JSONFileReader
    if @deserialized_objects.kind_of?(Array)
      @deserialized_objects = @deserialized_objects[0]
    end
+   @deserialized_objects
   end
 
   private
 
   def deserialize_json(file)
-    normalized_content = `powershell -nologo -noninteractive -noprofile -command \"get-content #{file}\"`
+    normalized_content = `powershell -nologo -noninteractive -noprofile -command \"get-content #{file} \"`
+    # This is a bad hack to handle multiple lines in client_rb field of JSON file
+    unless (normalized_content.match("\\\"client_rb\\\":") .nil?)
+      part1 = normalized_content.split("\"client_rb\":")
+      unless (part1[1].match("\\\"runlist\\\":").nil?)
+        part2 = part1[1].split("\"runlist\":")
+        normalized_content = part1[0] + "\"runlist\":" + part2[1]
+        @client_rb = part2[0].gsub(",\n", "").gsub("\\", "").gsub("\"", "'").gsub(" \"", "")
+        @client_rb = @client_rb.strip
+        @client_rb[0] = @client_rb[@client_rb.length-1] = ""
+      else
+        normalized_content = part1[0]
+        @client_rb = part1[1].gsub(",\n", "").gsub("\\", "").gsub("\"", "'").gsub(" \"", "")
+        @client_rb = @client_rb.strip
+        @client_rb[0] = @client_rb[@client_rb.length-1] = ""
+      end
+    else
+      @client_rb = ""
+    end
+
     JSON.parse(normalized_content)
   end
 
@@ -66,8 +89,6 @@ class JSONFileReader
 end
 
 def get_jsonreader_object(file_name, *keys)
-  file = nil
-
   file = file_name
 
   if file.nil?
@@ -104,14 +125,13 @@ def parse_json_contents (contents)
 end
 
 unless ARGV[0].nil?
-  puts "\nparse_json_file"
+  puts
+  puts "..."
   parse_json_file "#{ARGV[0]}"
-
-  puts "\n\nvalue_from_json_file, version"
-  value_from_json_file "#{ARGV[0]}", "version"
-
-  if ARGV.length > 2
-  puts "\n\nvalue_from_json_file, #{ARGV[1]},#{ARGV[2]}"
-  value_from_json_file "#{ARGV[0]}", "handlerManifest", "installCommand"
-  end
+  puts
+  puts
+  value_from_json_file "#{ARGV[0]}", "#{ARGV[1]}"
+  puts
+  puts
+  #value_from_json_file "#{ARGV[0]}", "runtimeSettings", "0", "handlerSettings", "publicSettings"
 end
