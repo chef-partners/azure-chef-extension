@@ -142,16 +142,17 @@ function Write-ChefStatus ($operation, $statusType, $message)
 {
   # the path of this file is picked up from HandlerEnvironment.json
   # the sequence is obtained from the handlerSettings file sequence
-  $handlerSettingsFileName = getHandlerSettingsFileName
-  $sequenceNumber = $handlerSettingsFileName.Split(".")[0]
-  $statusFile = (readJsonFromFile $chefExtensionRoot"\\HandlerEnvironment.json").handlerEnvironment.statusFolder + "\\" + $sequenceNumber + ".status"
+  $sequenceNumber = $json_handlerSettingsFileName.Split(".")[0]
+  $statusFile = $json_statusFolder + "\\" + $sequenceNumber + ".status"
 
   # the status file is in json format
   $timestampUTC = (Get-Date -Format u).Replace(" ", "T")
   $formattedMessageHash = @{lang = "en-US"; message = "$message" }
   $statusHash = @{name = "Chef Extension Handler"; operation = "$operation"; status = "$statusType"; code = 0; formattedMessage = $formattedMessageHash; }
 
-  ConvertTo-Json -Compress @(@{version = "1"; timestampUTC = "$timestampUTC"; status = $statusHash}) -Depth 4 | Out-File -filePath $statusFile
+  if ($PSVersionTable.PSVersion.Major -ge 3) {
+    ConvertTo-Json -Compress @(@{version = "1"; timestampUTC = "$timestampUTC"; status = $statusHash}) -Depth 4 | Out-File -filePath $statusFile
+  }
 }
 
 # write heartbeat
