@@ -9,19 +9,25 @@ $scriptDir = Chef-Get-ScriptDirectory
 
 $chefExtensionRoot = [System.IO.Path]::GetFullPath("$scriptDir\\..")
 
-# Reads all the jsons files needed and sets the fields needed
+# Reads all the json files needed and sets the fields needed
 function readJsonFile
 {
-  $handlerSettingsFileName = Get-HandlerSettingsFileName
-  $handlerSettings = Get-HandlerSettings
-  $protectedSettings = $handlerSettings.protectedSettings
-  $protectedSettingsCertThumbprint = $handlerSettings.protectedSettingsCertThumbprint
-  $client_rb = $handlerSettings.publicSettings.client_rb
-  $runlist = $handlerSettings.publicSettings.runList
+  $json_handlerSettingsFileName = Get-HandlerSettingsFileName
+  $json_handlerSettings = Get-HandlerSettings
+  $json_protectedSettings = $handlerSettings.protectedSettings
+  $json_protectedSettingsCertThumbprint = $handlerSettings.protectedSettingsCertThumbprint
+  $json_client_rb = $handlerSettings.publicSettings.client_rb
+  $json_runlist = $handlerSettings.publicSettings.runList
 
-  $chefLogFolder = Get-ChefLogFolder
-  $statusFolder = (readJsonFromFile $chefExtensionRoot"\\HandlerEnvironment.json").handlerEnvironment.statusFolder
-  $heatbeatFile = (readJsonFromFile $chefExtensionRoot"\\HandlerEnvironment.json").handlerEnvironment.heartbeatFile
+  $json_chefLogFolder = Get-ChefLogFolder
+  $json_statusFolder = (readJsonFromFile $chefExtensionRoot"\\HandlerEnvironment.json").handlerEnvironment.statusFolder
+  $json_heatbeatFile = (readJsonFromFile $chefExtensionRoot"\\HandlerEnvironment.json").handlerEnvironment.heartbeatFile
+}
+
+# Reads all the json files and sets vars using ruby code
+function readJsonFileUsingRuby
+{
+
 }
 
 # Returns a json object from json file
