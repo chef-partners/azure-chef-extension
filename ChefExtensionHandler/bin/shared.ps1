@@ -14,14 +14,16 @@ function readJsonFile
 {
   $json_handlerSettingsFileName = Get-HandlerSettingsFileName
   $json_handlerSettings = Get-HandlerSettings
-  $json_protectedSettings = $handlerSettings.protectedSettings
-  $json_protectedSettingsCertThumbprint = $handlerSettings.protectedSettingsCertThumbprint
-  $json_client_rb = $handlerSettings.publicSettings.client_rb
-  $json_runlist = $handlerSettings.publicSettings.runList
+  $json_protectedSettings = $json_handlerSettings.protectedSettings
+  $json_protectedSettingsCertThumbprint = $json_handlerSettings.protectedSettingsCertThumbprint
+  $json_client_rb = $json_handlerSettings.publicSettings.client_rb
+  $json_runlist = $json_handlerSettings.publicSettings.runList
 
   $json_chefLogFolder = Get-ChefLogFolder
   $json_statusFolder = (readJsonFromFile $chefExtensionRoot"\\HandlerEnvironment.json").handlerEnvironment.statusFolder
   $json_heatbeatFile = (readJsonFromFile $chefExtensionRoot"\\HandlerEnvironment.json").handlerEnvironment.heartbeatFile
+
+  return  $json_handlerSettingsFileName, $json_handlerSettings, $json_protectedSettings,  $json_protectedSettingsCertThumbprint, $json_client_rb , $json_runlist, $json_chefLogFolder, $json_statusFolder, $json_heatbeatFile
 }
 
 # Reads all the json files and sets vars using ruby code
@@ -44,7 +46,7 @@ function Get-HandlerSettingsFileName
 # returns the handler settings read from the latest settings file
 function Get-HandlerSettings
 {
-  $latestSettingFile = getHandlerSettingsFileName
+  $latestSettingFile = Get-HandlerSettingsFileName
   $runtimeSettingsJson = readJsonFromFile $chefExtensionRoot"\\RuntimeSettings\\$latestSettingFile"
   $runtimeSettingsJson.runtimeSettings[0].handlerSettings
 }
@@ -158,7 +160,7 @@ function Write-ChefStatus ($operation, $statusType, $message)
 # write heartbeat
 function Write-ChefHeartbeat
 {
-  $handlerSettingsFileName = getHandlerSettingsFileName
+  $handlerSettingsFileName = Get-HandlerSettingsFileName
   $heartbeatFile = (readJsonFromFile $chefExtensionRoot"\\HandlerEnvironment.json").handlerEnvironment.heartbeatFile
 }
 

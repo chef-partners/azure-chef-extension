@@ -58,19 +58,19 @@ $scriptDir = Chef-Get-ScriptDirectory
 $chefExtensionRoot = [System.IO.Path]::GetFullPath("$scriptDir\\..")
 . $chefExtensionRoot\\bin\\shared.ps1
 
-Write-ChefStatus "configuring-chef-service" "transitioning" "Configuring Chef Service"
-
 $bootstrapDirectory="C:\\chef"
 $env:Path += ";C:\opscode\chef\bin;C:\opscode\chef\embedded\bin"
 
 if ($PSVersionTable.PSVersion.Major -ge 3)
 {
-  readJsonFile
+  $json_handlerSettingsFileName, $json_handlerSettings, $json_protectedSettings,  $json_protectedSettingsCertThumbprint, $json_client_rb , $json_runlist, $json_chefLogFolder, $json_statusFolder, $json_heatbeatFile = readJsonFile
 }
 else
 {
    readJsonFileUsingRuby
 }
+
+Write-ChefStatus "configuring-chef-service" "transitioning" "Configuring Chef Service"
 
 # chef-client logs will be written to the folder provided by azure.
 $logFile = $json_chefLogFolder + "\\chef-client.log"
@@ -97,7 +97,7 @@ if (! (Test-Path $bootstrapDirectory\\node-registered) ) {
   }
   else
   {
-    $tempPath = $env:temp"\decrypted.json"
+    $tempPath = $env:temp + "\decrypted.json"
     $decryptedSettingsJson | Out-File $tempPath
     $validation_key = ruby -e "require 'helpers\parse_json'; value_from_json_file ($tempPath, 'validation_key') "
   }
