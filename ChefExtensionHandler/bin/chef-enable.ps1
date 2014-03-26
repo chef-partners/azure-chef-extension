@@ -83,7 +83,7 @@ $firstRun = $false
 # "node-registered" file also indicates that enabled was called once and configs are already generated.
 if (! (Test-Path $bootstrapDirectory\\node-registered) ) {
   echo "Node not registered. Registering node..."
-  if ( !(Test-Path $bootstrapDirectorwhy) ) {
+  if ( !(Test-Path $bootstrapDirectory) ) {
     echo "Existing $bootstrapDirectory directory not found, creating."
     mkdir $bootstrapDirectory
   } else {
@@ -100,8 +100,9 @@ if (! (Test-Path $bootstrapDirectory\\node-registered) ) {
   else
   {
     $tempPath = $env:temp + "\decrypted.json"
-    $decryptedSettingsJson | Out-File $tempPath
-    $validation_key = ruby -e "require 'helpers\parse_json'; value_from_json_file '$tempPath', 'validation_key' "
+    $decryptedSettingsJson = $decryptedSettingsJson -replace ("{ `"validation_key`":`"", "")
+    $decryptedSettingsJson = $decryptedSettingsJson -replace ("`" }", "")
+    $validation_key = $decryptedSettingsJson
   }
 
   $validation_key | Out-File -filePath $bootstrapDirectory\\validation.pem  -encoding "Default"
