@@ -9,20 +9,34 @@ $scriptDir = Chef-Get-ScriptDirectory
 
 $chefExtensionRoot = [System.IO.Path]::GetFullPath("$scriptDir\\..")
 
+# Reads all the jsons files needed and sets the fields needed
+function readJsonFile
+{
+  $handlerSettingsFileName = Get-HandlerSettingsFileName
+  $handlerSettings = Get-HandlerSettings
+  $protectedSettings = $handlerSettings.protectedSettings
+  $protectedSettingsCertThumbprint = $handlerSettings.protectedSettingsCertThumbprint
+  $client_rb = $handlerSettings.publicSettings.client_rb
+  $runlist = $handlerSettings.publicSettings.runList
+
+  $chefLogFolder = Get-ChefLogFolder
+  $statusFolder = (readJsonFromFile $chefExtensionRoot"\\HandlerEnvironment.json").handlerEnvironment.statusFolder
+  $heatbeatFile = (readJsonFromFile $chefExtensionRoot"\\HandlerEnvironment.json").handlerEnvironment.heartbeatFile
+}
+
 # Returns a json object from json file
 function readJsonFromFile
 {
   (Get-Content $args[0]) -join "`n" | ConvertFrom-Json
-  #ruby -e "require 'helpers/parse_json'; parse_json_file '$args[0])'"
 }
 
-function getHandlerSettingsFileName
+function Get-HandlerSettingsFileName
 {
   (Get-ChildItem "$chefExtensionRoot\\RuntimeSettings" -Filter *.settings | Sort-Object Name -descending | Select-Object -First 1 ).Name
 }
 
 # returns the handler settings read from the latest settings file
-function getHandlerSettings
+function Get-HandlerSettings
 {
   $latestSettingFile = getHandlerSettingsFileName
   $runtimeSettingsJson = readJsonFromFile $chefExtensionRoot"\\RuntimeSettings\\$latestSettingFile"
