@@ -89,9 +89,20 @@ if (! (Test-Path $bootstrapDirectory\\node-registered) ) {
   }
 
   # Write validation key
-  $decryptedSettings = decryptProtectedSettings $json_protectedSettings $json_protectedSettingsCertThumbprint | ConvertFrom-Json
+  $decryptedSettingsJson = decryptProtectedSettings $json_protectedSettings $json_protectedSettingsCertThumbprint
+  if ($PSVersionTable.PSVersion.Major -ge 3)
+  {
+    $decrypted = $decryptedSettingsJson | ConvertFrom-Json
+    $validation_key = $decrypted.validation_key
+  }
+  else
+  {
+    $tempPath = $env:temp"\decrypted.json"
+    $decryptedSettingsJson | Out-File $tempPath
+    $validation_key = ruby -e "require 'helpers\parse_json'; value_from_json_file ($tempPath, 'validation_key') "
+  }
 
-  $decryptedSettings.validation_key | Out-File -filePath $bootstrapDirectory\\validation.pem  -encoding "Default"
+  $validation_key | Out-File -filePath $bootstrapDirectory\\validation.pem  -encoding "Default"
   echo "Created validation.pem"
 
   # Write client.rb
