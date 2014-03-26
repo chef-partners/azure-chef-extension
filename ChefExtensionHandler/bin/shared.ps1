@@ -21,15 +21,17 @@ function readJsonFile
 
   $json_chefLogFolder = Get-ChefLogFolder
   $json_statusFolder = (readJsonFromFile $chefExtensionRoot"\\HandlerEnvironment.json").handlerEnvironment.statusFolder
-  $json_heatbeatFile = (readJsonFromFile $chefExtensionRoot"\\HandlerEnvironment.json").handlerEnvironment.heartbeatFile
+  $json_heartbeatFile = (readJsonFromFile $chefExtensionRoot"\\HandlerEnvironment.json").handlerEnvironment.heartbeatFile
 
-  return  $json_handlerSettingsFileName, $json_handlerSettings, $json_protectedSettings,  $json_protectedSettingsCertThumbprint, $json_client_rb , $json_runlist, $json_chefLogFolder, $json_statusFolder, $json_heatbeatFile
+  return  $json_handlerSettingsFileName, $json_handlerSettings, $json_protectedSettings,  $json_protectedSettingsCertThumbprint, $json_client_rb , $json_runlist, $json_chefLogFolder, $json_statusFolder, $json_heartbeatFile
 }
 
 # Reads all the json files and sets vars using ruby code
 function readJsonFileUsingRuby
 {
   $json_handlerSettingsFileName = Get-HandlerSettingsFilePath
+
+  $json_handlerSettings = readRubyJson $handlerSettingsFileName "runtimeSettings" "0" "handlerSettings"
 
   $json_handlerProtectedSettings = readRubyJson $handlerSettingsFileName "runtimeSettings" "0" "handlerSettings" "protectedSettings"
 
@@ -44,7 +46,8 @@ function readJsonFileUsingRuby
   $json_handlerStatusFolder = readRubyJson $handlerEnvironmentFileName "handlerEnvironment" "statusFolder"
   $json_handlerHeartbeatFile = readRubyJson $handlerEnvironmentFileName "handlerEnvironment" "heartbeatFile"
 
-  return $json_handlerSettingsFileName, $json_handlerProtectedSettings, $json_handlerProtectedSettingsCertThumbprint, $json_handlerPublicSettingsClient_rb, $json_handlerPublicSettingsRunlist, $json_handlerChefLogFolder, $json_handlerHeartbeatFile
+  return $json_handlerSettingsFileName, $json_handlerSettings, $json_handlerProtectedSettings, $json_handlerProtectedSettingsCertThumbprint, $json_handlerPublicSettingsClient_rb, $json_handlerPublicSettingsRunlist, $json_handlerChefLogFolder, $json_handlerStatusFolder, $json_handlerHeartbeatFile
+
 }
 
 function readRubyJson
