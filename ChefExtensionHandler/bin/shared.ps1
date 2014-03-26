@@ -29,7 +29,41 @@ function readJsonFile
 # Reads all the json files and sets vars using ruby code
 function readJsonFileUsingRuby
 {
+  $json_handlerSettingsFileName = Get-HandlerSettingsFilePath
 
+  $json_handlerProtectedSettings = readRubyJson $handlerSettingsFileName "runtimeSettings" "0" "handlerSettings" "protectedSettings"
+
+  $json_handlerProtectedSettingsCertThumbprint = readRubyJson $handlerSettingsFileName "runtimeSettings" "0" "handlerSettings" "protectedSettingsCertThumbprint"
+
+  $json_handlerPublicSettingsClient_rb = readRubyJson $handlerSettingsFileName "runtimeSettings" "0" "handlerSettings" "publicSettings" "client_rb"
+
+  $json_handlerPublicSettingsRunlist = readRubyJson $handlerSettingsFileName "runtimeSettings" "0" "handlerSettings" "publicSettings" "runList"
+
+  $json_handlerEnvironmentFileName = Get-HandlerEnvironmentFilePath
+  $json_handlerChefLogFolder = readRubyJson $handlerEnvironmentFileName "handlerEnvironment" "logFolder"
+  $json_handlerStatusFolder = readRubyJson $handlerEnvironmentFileName "handlerEnvironment" "statusFolder"
+  $json_handlerHeartbeatFile = readRubyJson $handlerEnvironmentFileName "handlerEnvironment" "heartbeatFile"
+
+  return $json_handlerSettingsFileName, $json_handlerProtectedSettings, $json_handlerProtectedSettingsCertThumbprint, $json_handlerPublicSettingsClient_rb, $json_handlerPublicSettingsRunlist, $json_handlerChefLogFolder, $json_handlerHeartbeatFile
+}
+
+function readRubyJson
+{
+  $jsonFilePath = $args[0]
+  $keys = $args[1..$args.length] -join "','"
+  $keysValue = ruby.exe -e "require 'helpers/parse_json'; value_from_json_file '$jsonFilePath','$keys'"
+  $keysValue
+}
+
+function Get-HandlerSettingsFilePath {
+  $latestSettingFile = getHandlerSettingsFileName
+  $fileName = "$chefExtensionRoot\\RuntimeSettings\\$latestSettingFile"
+  $fileName
+}
+
+function Get-HandlerEnvironmentFilePath {
+  $fileName = "$chefExtensionRoot\\HandlerEnvironment.json"
+  $fileName
 }
 
 # Returns a json object from json file

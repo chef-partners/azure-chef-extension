@@ -69,7 +69,7 @@ if ($PSVersionTable.PSVersion.Major -ge 3)
 }
 else
 {
-   readJsonFileUsingRuby
+   $json_handlerSettingsFileName, $json_handlerSettings, $json_protectedSettings,  $json_protectedSettingsCertThumbprint, $json_client_rb , $json_runlist, $json_chefLogFolder, $json_statusFolder, $json_heatbeatFile = readJsonFileUsingRuby
 }
 
 Write-ChefStatus "configuring-chef-service" "transitioning" "Configuring Chef Service"
