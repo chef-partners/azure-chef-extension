@@ -52,7 +52,7 @@ class JSONFileReader
   private
 
   def deserialize_json(file)
-    normalized_content = `powershell -nologo -noninteractive -noprofile -command \"get-content #{file} \"`
+    normalized_content = File.read(file)
     # This is a bad hack to handle multiple lines in client_rb field of JSON file
     unless (normalized_content.match("\\\"client_rb\\\":") .nil?)
       part1 = normalized_content.split("\"client_rb\":")
@@ -127,11 +127,12 @@ end
 unless ARGV[0].nil?
   puts
   puts "..."
-  parse_json_file "#{ARGV[0]}"
+  #parse_json_file "#{ARGV[0]}"
   puts
   puts
-  value_from_json_file "#{ARGV[0]}", "#{ARGV[1]}"
+  #value_from_json_file "#{ARGV[0]}", "#{ARGV[1]}"
   puts
   puts
   #value_from_json_file "#{ARGV[0]}", "runtimeSettings", "0", "handlerSettings", "publicSettings"
+  value_from_json_file 'C:\\Users\\clogeny\\github\\azure-chef-extn3\\0.settings','client_rb'
 end
