@@ -59,19 +59,21 @@ class JSONFileReader
       unless (part1[1].match("\\\"runlist\\\":").nil?)
         part2 = part1[1].split("\"runlist\":")
         normalized_content = part1[0] + "\"runlist\":" + part2[1]
-        @client_rb = part2[0].gsub(",\n", "").gsub("\\", "").gsub("\"", "'").gsub(" \"", "")
-        @client_rb = @client_rb.strip
-        @client_rb[0] = @client_rb[@client_rb.length-1] = ""
+        @client_rb = part2[0]
+        #@client_rb = part2[0].gsub(",\n", "").gsub("\\", "").gsub("\"", "'").gsub(" \"", "")
+        #@client_rb = @client_rb.strip
+        #@client_rb[0] = @client_rb[@client_rb.length-1] = ""
       else
         normalized_content = part1[0]
-        @client_rb = part1[1].gsub(",\n", "").gsub("\\", "").gsub("\"", "'").gsub(" \"", "")
-        @client_rb = @client_rb.strip
-        @client_rb[0] = @client_rb[@client_rb.length-1] = ""
+        @client_rb = part1[1]
+        #@client_rb = part1[1].gsub(",\n", "").gsub("\\", "").gsub("\"", "'").gsub(" \"", "")
+        #@client_rb = @client_rb.strip
+        #@client_rb[0] = @client_rb[@client_rb.length-1] = ""
       end
     else
       @client_rb = ""
     end
-
+    @client_rb = escape_unescaped_content(@client_rb)
     JSON.parse(normalized_content)
   end
 
@@ -87,6 +89,39 @@ class JSONFileReader
     end
   end
 end
+
+def escape_unescaped_content(file_content)
+   lines = file_content.lines.to_a
+   # convert tabs to spaces -- technically invalidates content, but
+   # if we know the content in question treats tabs and spaces the
+   # same, we can do this.
+   untabified_lines = lines.map { | line | line.gsub(/\t/," ") }
+
+   # remove whitespace and trailing newline
+   stripped_lines = untabified_lines.map { | line | line.strip }
+   escaped_content = ""
+   line_index = 0
+
+   stripped_lines.each do | line |
+     escaped_line = line
+
+     # assume lines ending in json delimiters are not content,
+     # and that lines followed by a line that starts with ','
+     # are not content
+     if !!(line[line.length - 1] =~ /[\,\}\]]/) ||
+         (line_index < (lines.length - 1) && lines[line_index + 1][0] == ',')
+       escaped_line += "\n"
+     else
+       escaped_line += "\\n"
+     end
+
+     escaped_content += escaped_line
+     line_index += 1
+   end
+
+   escaped_content
+
+ end
 
 def get_jsonreader_object(file_name, *keys)
   file = file_name
@@ -134,5 +169,5 @@ unless ARGV[0].nil?
   puts
   puts
   #value_from_json_file "#{ARGV[0]}", "runtimeSettings", "0", "handlerSettings", "publicSettings"
-  value_from_json_file 'C:\\Users\\clogeny\\github\\azure-chef-extn3\\0.settings','client_rb'
+  value_from_json_file '0.settings','client_rb'
 end
