@@ -15,16 +15,16 @@ $env:Path += ";C:\opscode\chef\bin;C:\opscode\chef\embedded\bin"
 # so the hack - use ruby json parsing for versions lower than 3.0
 if ($PSVersionTable.PSVersion.Major -ge 3)
 {
-  $json_handlerSettingsFileName, $json_handlerSettings, $json_protectedSettings,  $json_protectedSettingsCertThumbprint, $json_client_rb , $json_runlist, $json_chefLogFolder, $json_statusFolder, $json_heartbeatFile = readJsonFile
+  $logStatus = true
 }
 else
 {
-   $json_handlerSettingsFileName, $json_handlerSettings, $json_protectedSettings,  $json_protectedSettingsCertThumbprint, $json_client_rb , $json_runlist, $json_chefLogFolder, $json_statusFolder, $json_heartbeatFile = readJsonFileUsingRuby
+   $logStatus = false
 }
 
 if (!(Test-ChefExtensionRegistry))
 {
-  Write-ChefStatus "uninstalling-chef" "transitioning" "Uninstalling Chef"
+  if ($logStatus) {  Write-ChefStatus "uninstalling-chef" "transitioning" "Uninstalling Chef" }
 
   $bootstrapDirectory = "C:\\chef"
   $chefInstallDirectory = "C:\\opscode"
@@ -53,11 +53,11 @@ if (!(Test-ChefExtensionRegistry))
     Remove-Item -Recurse -Force $chefInstallDirectory
   }
 
-  Write-ChefStatus "uninstalling-chef" "success" "Uninstalled Chef"
+   if ($logStatus) { Write-ChefStatus "uninstalling-chef" "success" "Uninstalled Chef" }
 }
 Else
 {
   echo "Not tried to uninstall, as the update process is running"
   Update-ChefExtensionRegistry "X"
-  Write-ChefStatus "updating-chef-extension" "transitioning" "Skipping Uninstall"
+   if ($logStatus) { Write-ChefStatus "updating-chef-extension" "transitioning" "Skipping Uninstall" }
 }
