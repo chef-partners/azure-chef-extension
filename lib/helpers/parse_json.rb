@@ -60,15 +60,15 @@ class JSONFileReader
         part2 = part1[1].split("\"runlist\":")
         normalized_content = part1[0] + "\"runlist\":" + part2[1]
         @client_rb = part2[0]
-        #@client_rb = part2[0].gsub(",\n", "").gsub("\\", "").gsub("\"", "'").gsub(" \"", "")
-        #@client_rb = @client_rb.strip
-        #@client_rb[0] = @client_rb[@client_rb.length-1] = ""
+        @client_rb = part2[0].gsub(",\n", "").gsub("\\", "").gsub("\"", "'").gsub(" \"", "")
+        @client_rb = @client_rb.strip
+        @client_rb[0] = ""
       else
         normalized_content = part1[0]
         @client_rb = part1[1]
-        #@client_rb = part1[1].gsub(",\n", "").gsub("\\", "").gsub("\"", "'").gsub(" \"", "")
-        #@client_rb = @client_rb.strip
-        #@client_rb[0] = @client_rb[@client_rb.length-1] = ""
+        @client_rb = part1[1].gsub(",\n", "").gsub("\\", "").gsub("\"", "'").gsub(" \"", "")
+        @client_rb = @client_rb.strip
+        @client_rb[0] = @client_rb[@client_rb.length-1] = ""
       end
     else
       @client_rb = ""
@@ -159,29 +159,17 @@ def parse_json_contents (contents)
   deserialized_contents
 end
 
+# TODO: Writes JSON file.
 def write_json_file (file, contents)
   begin
-    f = File.open(file, "w")
-    f.write(contents.to_json)
+    #f = File.open(file, "w")
+    #f.write(contents.to_json)
     return 0
   rescue IOError => e
     #some error occur, dir not writable etc.
     print e
     return 1
   ensure
-    f.close unless f == nil
+    #f.close unless f == nil
   end
-end
-
-unless ARGV[0].nil?
-  puts
-  puts "..."
-  #parse_json_file "#{ARGV[0]}"
-  puts
-  puts
-  #value_from_json_file "#{ARGV[0]}", "#{ARGV[1]}"
-  puts
-  puts
-  #value_from_json_file "#{ARGV[0]}", "runtimeSettings", "0", "handlerSettings", "publicSettings"
-  value_from_json_file '0.settings','client_rb'
 end
