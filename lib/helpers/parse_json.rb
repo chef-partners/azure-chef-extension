@@ -159,6 +159,20 @@ def parse_json_contents (contents)
   deserialized_contents
 end
 
+def write_json_file (file, contents)
+  begin
+    f = File.open(file, "w")
+    f.write(contents.to_json)
+    return 0
+  rescue IOError => e
+    #some error occur, dir not writable etc.
+    print e
+    return 1
+  ensure
+    f.close unless f == nil
+  end
+end
+
 unless ARGV[0].nil?
   puts
   puts "..."

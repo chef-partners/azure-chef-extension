@@ -140,8 +140,14 @@ function Write-ChefStatus ($operation, $statusType, $message)
   $formattedMessageHash = @{lang = "en-US"; message = "$message" }
   $statusHash = @{name = "Chef Extension Handler"; operation = "$operation"; status = "$statusType"; code = 0; formattedMessage = $formattedMessageHash; }
 
+  $hash = @(@{version = "1"; timestampUTC = "$timestampUTC"; status = $statusHash})
+
   if ($PSVersionTable.PSVersion.Major -ge 3) {
-    ConvertTo-Json -Compress @(@{version = "1"; timestampUTC = "$timestampUTC"; status = $statusHash}) -Depth 4 | Out-File -filePath $statusFile
+    ConvertTo-Json -Compress $hash -Depth 4 | Out-File -filePath $statusFile
+  }
+  else
+  {
+    ruby.exe -e "require 'helpers/parse_json'; write_json_file '$statusFile', '$hash'"
   }
 }
 
