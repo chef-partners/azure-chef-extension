@@ -15,15 +15,26 @@ function readJsonFromFile
   (Get-Content $args[0]) -join "`n" | ConvertFrom-Json
 }
 
-function getHandlerSettingsFileName
+function Get-HandlerSettingsFileName
 {
   (Get-ChildItem "$chefExtensionRoot\\RuntimeSettings" -Filter *.settings | Sort-Object Name -descending | Select-Object -First 1 ).Name
 }
 
+function Get-HandlerSettingsFilePath {
+  $latestSettingFile = Get-HandlerSettingsFileName
+  $fileName = "$chefExtensionRoot\\RuntimeSettings\\$latestSettingFile"
+  $fileName
+}
+
+function Get-HandlerEnvironmentFilePath {
+  $fileName = "$chefExtensionRoot\\HandlerEnvironment.json"
+  $fileName
+}
+
 # returns the handler settings read from the latest settings file
-function getHandlerSettings
+function Get-HandlerSettings
 {
-  $latestSettingFile = getHandlerSettingsFileName
+  $latestSettingFile = Get-HandlerSettingsFileName
   $runtimeSettingsJson = readJsonFromFile $chefExtensionRoot"\\RuntimeSettings\\$latestSettingFile"
   $runtimeSettingsJson.runtimeSettings[0].handlerSettings
 }
@@ -121,22 +132,29 @@ function Write-ChefStatus ($operation, $statusType, $message)
 {
   # the path of this file is picked up from HandlerEnvironment.json
   # the sequence is obtained from the handlerSettings file sequence
-  $handlerSettingsFileName = getHandlerSettingsFileName
-  $sequenceNumber = $handlerSettingsFileName.Split(".")[0]
-  $statusFile = (readJsonFromFile $chefExtensionRoot"\\HandlerEnvironment.json").handlerEnvironment.statusFolder + "\\" + $sequenceNumber + ".status"
+  $sequenceNumber = $json_handlerSettingsFileName.Split(".")[0]
+  $statusFile = $json_statusFolder + "\\" + $sequenceNumber + ".status"
 
   # the status file is in json format
   $timestampUTC = (Get-Date -Format u).Replace(" ", "T")
   $formattedMessageHash = @{lang = "en-US"; message = "$message" }
   $statusHash = @{name = "Chef Extension Handler"; operation = "$operation"; status = "$statusType"; code = 0; formattedMessage = $formattedMessageHash; }
 
-  ConvertTo-Json -Compress @(@{version = "1"; timestampUTC = "$timestampUTC"; status = $statusHash}) -Depth 4 | Out-File -filePath $statusFile
+  $hash = @(@{version = "1"; timestampUTC = "$timestampUTC"; status = $statusHash})
+
+  if ($PSVersionTable.PSVersion.Major -ge 3) {
+    ConvertTo-Json -Compress $hash -Depth 4 | Out-File -filePath $statusFile
+  }
+  else
+  {
+    ruby.exe -e "require 'helpers/parse_json'; write_json_file '$statusFile', '$hash'"
+  }
 }
 
 # write heartbeat
 function Write-ChefHeartbeat
 {
-  $handlerSettingsFileName = getHandlerSettingsFileName
+  $handlerSettingsFileName = Get-HandlerSettingsFileName
   $heartbeatFile = (readJsonFromFile $chefExtensionRoot"\\HandlerEnvironment.json").handlerEnvironment.heartbeatFile
 }
 
@@ -203,3 +221,48 @@ function Update-ChefExtensionRegistry
      return $False
    }
  }
+
+# Reads all the json files needed and sets the fields needed
+function readJsonFile
+{
+  $json_handlerSettingsFileName = Get-HandlerSettingsFileName
+  $json_handlerSettings = Get-HandlerSettings
+  $json_protectedSettings = $json_handlerSettings.protectedSettings
+  $json_protectedSettingsCertThumbprint = $json_handlerSettings.protectedSettingsCertThumbprint
+  $json_client_rb = $json_handlerSettings.publicSettings.client_rb
+  $json_runlist = $json_handlerSettings.publicSettings.runList
+
+  $json_chefLogFolder = Get-ChefLogFolder
+  $json_statusFolder = (readJsonFromFile $chefExtensionRoot"\\HandlerEnvironment.json").handlerEnvironment.statusFolder
+  $json_heartbeatFile = (readJsonFromFile $chefExtensionRoot"\\HandlerEnvironment.json").handlerEnvironment.heartbeatFile
+
+  return  $json_handlerSettingsFileName, $json_handlerSettings, $json_protectedSettings,  $json_protectedSettingsCertThumbprint, $json_client_rb , $json_runlist, $json_chefLogFolder, $json_statusFolder, $json_heartbeatFile
+}
+
+# Reads all the json files and sets vars using ruby code
+function readJsonFileUsingRuby
+{
+  $json_handlerSettingsFileName = Get-HandlerSettingsFilePath
+
+  $json_handlerSettings = ruby.exe -e "require 'helpers/parse_json'; value_from_json_file '$json_handlerSettingsFileName', 'runtimeSettings', '0', 'handlerSettings'"
+
+  $json_handlerProtectedSettings = ruby.exe -e "require 'helpers/parse_json'; value_from_json_file '$json_handlerSettingsFileName','runtimeSettings','0','handlerSettings', 'protectedSettings'"
+
+  $json_handlerProtectedSettingsCertThumbprint = ruby.exe -e "require 'helpers/parse_json'; value_from_json_file '$json_handlerSettingsFileName', 'runtimeSettings', '0',  'handlerSettings' ,'protectedSettingsCertThumbprint'"
+
+  $json_handlerPublicSettingsClient_rb = ruby.exe -e "require 'helpers/parse_json'; value_from_json_file '$json_handlerSettingsFileName', 'runtimeSettings', '0', 'handlerSettings', 'publicSettings', 'client_rb'"
+
+  $json_handlerPublicSettingsRunlist = ruby.exe -e "require 'helpers/parse_json'; value_from_json_file '$json_handlerSettingsFileName', 'runtimeSettings', '0', 'handlerSettings', 'publicSettings', 'runList'"
+
+  $json_handlerEnvironmentFileName = Get-HandlerEnvironmentFilePath
+
+  $json_handlerChefLogFolder = ruby.exe -e "require 'helpers/parse_json'; value_from_json_file '$json_handlerEnvironmentFileName', 'handlerEnvironment', 'logFolder'"
+
+  $json_handlerStatusFolder = ruby.exe -e "require 'helpers/parse_json'; value_from_json_file '$json_handlerEnvironmentFileName', 'handlerEnvironment', 'statusFolder'"
+
+  $json_handlerHeartbeatFile = ruby.exe -e "require 'helpers/parse_json'; value_from_json_file '$json_handlerEnvironmentFileName', 'handlerEnvironment', 'heartbeatFile'"
+
+  return $json_handlerSettingsFileName, $json_handlerSettings, $json_handlerProtectedSettings, $json_handlerProtectedSettingsCertThumbprint, $json_handlerPublicSettingsClient_rb, $json_handlerPublicSettingsRunlist, $json_handlerChefLogFolder, $json_handlerStatusFolder, $json_handlerHeartbeatFile
+
+}
+

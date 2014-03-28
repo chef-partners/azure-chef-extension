@@ -1,5 +1,3 @@
-
-
 #    - may start additional service or modified chef-service that is capable of
 #      - read HandlerEnvironment.json from root folder and pass info like log location to chef-client run
 #      - read <SequenceNumber>.settings to read settings like runlist passed by user
@@ -12,7 +10,6 @@
 
 trap [Exception] {echo $_.Exception.Message;exit 1}
 
-# XXX - this is repeated, we should find how not to
 function Chef-Get-ScriptDirectory
 {
   $Invocation = (Get-Variable MyInvocation -Scope 1).Value
@@ -61,17 +58,24 @@ $scriptDir = Chef-Get-ScriptDirectory
 $chefExtensionRoot = [System.IO.Path]::GetFullPath("$scriptDir\\..")
 . $chefExtensionRoot\\bin\\shared.ps1
 
-Write-ChefStatus "configuring-chef-service" "transitioning" "Configuring Chef Service"
-
 $bootstrapDirectory="C:\\chef"
-
 $env:Path += ";C:\opscode\chef\bin;C:\opscode\chef\embedded\bin"
 
-$handlerSettings = getHandlerSettings
+# powershell has in built cmdlets: ConvertFrom-Json and ConvertTo-Json which are supported above PS v 3.0
+# so the hack - use ruby json parsing for versions lower than 3.0
+if ($PSVersionTable.PSVersion.Major -ge 3)
+{
+  $json_handlerSettingsFileName, $json_handlerSettings, $json_protectedSettings,  $json_protectedSettingsCertThumbprint, $json_client_rb , $json_runlist, $json_chefLogFolder, $json_statusFolder, $json_heartbeatFile = readJsonFile
+}
+else
+{
+   $json_handlerSettingsFileName, $json_handlerSettings, $json_protectedSettings,  $json_protectedSettingsCertThumbprint, $json_client_rb , $json_runlist, $json_chefLogFolder, $json_statusFolder, $json_heartbeatFile = readJsonFileUsingRuby
+}
+
+Write-ChefStatus "configuring-chef-service" "transitioning" "Configuring Chef Service"
 
 # chef-client logs will be written to the folder provided by azure.
-$logFile = Get-ChefLogFolder
-$logFile = $logFile + "\\chef-client.log"
+$logFile = $json_chefLogFolder + "\\chef-client.log"
 
 $firstRun = $false
 
@@ -87,18 +91,31 @@ if (! (Test-Path $bootstrapDirectory\\node-registered) ) {
   }
 
   # Write validation key
-  $decryptedSettings = decryptProtectedSettings $handlerSettings.protectedSettings $handlerSettings.protectedSettingsCertThumbprint | ConvertFrom-Json
+  $decryptedSettingsJson = decryptProtectedSettings $json_protectedSettings $json_protectedSettingsCertThumbprint
+  if ($PSVersionTable.PSVersion.Major -ge 3)
+  {
+    $decrypted = $decryptedSettingsJson | ConvertFrom-Json
+    $validation_key = $decrypted.validation_key
+  }
+  else
+  {
+    $tempPath = $env:temp + "\decrypted.json"
+    $decryptedSettingsJson = $decryptedSettingsJson -replace ("{ `"validation_key`":`"", "")
+    $decryptedSettingsJson = $decryptedSettingsJson -replace ("`" }", "")
+    $validation_key = $decryptedSettingsJson
+  }
 
-  $decryptedSettings.validation_key | Out-File -filePath $bootstrapDirectory\\validation.pem  -encoding "Default"
+  $validation_key | Out-File -filePath $bootstrapDirectory\\validation.pem  -encoding "Default"
   echo "Created validation.pem"
 
   # Write client.rb
-  $client_rb_file = $handlerSettings.publicSettings.client_rb
+  $client_rb_file = $json_client_rb
   $client_rb_file = validate-client-rb-file $client_rb_file
+  $client_rb_file = $client_rb_file -Replace "\\n", "`r`n"
   $client_rb_file | Out-File -filePath $bootstrapDirectory\\client.rb -encoding "Default"
   echo "Created client.rb"
 
-  $runList = getRunlist $handlerSettings.publicSettings.runList
+  $runList = getRunlist $json_runlist
 
   # run chef-client for first time with no runlist to register it
   echo "Running chef client for first time with no runlist..."
@@ -150,6 +167,6 @@ if ($firstRun)
     echo "Launching chef-client again to set the runlist"
     $chefClientProcess = start-process 'chef-client' -argumentlist @('-c', "$bootstrapDirectory\\client.rb","-j", "$bootstrapDirectory\first-boot.json", "-E", "_default", "-L", "$logFile") -verb 'runas' -passthru
     echo "Successfully launched process with PID $($chefClientProcess.Id) ."
-}
+ }
 
 echo "chef-enable.ps1 completed sucessfully"

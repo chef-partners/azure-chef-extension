@@ -11,9 +11,20 @@ $chefExtensionRoot = ("{0}{1}" -f (Split-Path -Parent -Path $MyInvocation.MyComm
 
 $env:Path += ";C:\opscode\chef\bin;C:\opscode\chef\embedded\bin"
 
+# powershell has in built cmdlets: ConvertFrom-Json and ConvertTo-Json which are supported above PS v 3.0
+# so the hack - use ruby json parsing for versions lower than 3.0
+if ($PSVersionTable.PSVersion.Major -ge 3)
+{
+  $logStatus = true
+}
+else
+{
+   $logStatus = false
+}
+
 if (!(Test-ChefExtensionRegistry))
 {
-  Write-ChefStatus "uninstalling-chef" "transitioning" "Uninstalling Chef"
+  if ($logStatus) {  Write-ChefStatus "uninstalling-chef" "transitioning" "Uninstalling Chef" }
 
   $bootstrapDirectory = "C:\\chef"
   $chefInstallDirectory = "C:\\opscode"
@@ -42,11 +53,11 @@ if (!(Test-ChefExtensionRegistry))
     Remove-Item -Recurse -Force $chefInstallDirectory
   }
 
-  Write-ChefStatus "uninstalling-chef" "success" "Uninstalled Chef"
+   if ($logStatus) { Write-ChefStatus "uninstalling-chef" "success" "Uninstalled Chef" }
 }
 Else
 {
   echo "Not tried to uninstall, as the update process is running"
   Update-ChefExtensionRegistry "X"
-  Write-ChefStatus "updating-chef-extension" "transitioning" "Skipping Uninstall"
+   if ($logStatus) { Write-ChefStatus "updating-chef-extension" "transitioning" "Skipping Uninstall" }
 }

@@ -27,6 +27,17 @@ $chefExtensionRoot = [System.IO.Path]::GetFullPath("$scriptDir\\..")
 
 $bootstrapDirectory = "C:\\chef"
 
+# powershell has in built cmdlets: ConvertFrom-Json and ConvertTo-Json which are supported above PS v 3.0
+# so the hack - use ruby json parsing for versions lower than 3.0
+if ($PSVersionTable.PSVersion.Major -ge 3)
+{
+  $json_handlerSettingsFileName, $json_handlerSettings, $json_protectedSettings,  $json_protectedSettingsCertThumbprint, $json_client_rb , $json_runlist, $json_chefLogFolder, $json_statusFolder, $json_heartbeatFile = readJsonFile
+}
+else
+{
+   $json_handlerSettingsFileName, $json_handlerSettings, $json_protectedSettings,  $json_protectedSettingsCertThumbprint, $json_client_rb , $json_runlist, $json_chefLogFolder, $json_statusFolder, $json_heartbeatFile = readJsonFileUsingRuby
+}
+
 Try
 {
   # Save chef configuration.
