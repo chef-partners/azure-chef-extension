@@ -12,7 +12,7 @@
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 $sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace(".Tests.", ".")
 
-. $here.Replace("\spec", "\ChefExtensionHandler\bin\$sut")
+. $here.Replace("\spec\ps_specs", "\ChefExtensionHandler\bin\$sut")
 
 describe "#getMachineArch" {
 
