@@ -20,6 +20,7 @@ task :build do
 end
 
 task :clean do
+  puts "Cleaning Chef Package..."
   puts %x{ powershell -Command if (Test-Path "#{CHEF_BUILD_DIR}") { Remove-Item -Recurse -Force "#{CHEF_BUILD_DIR}"}}
   puts %x{powershell -Command if (Test-Path "#{PESTER_SANDBOX}") {Remove-Item -Recurse -Force #{PESTER_SANDBOX}"}}
 end
@@ -31,12 +32,12 @@ task :init_pester do
 end
 
 # Its runs pester unit tests
-task :spec, [:spec_path] => [:init_pester] do |t, args|
-  puts "\nRunning unit tests..."
+task :winspec, [:spec_path] => [:init_pester] do |t, args|
+  puts "\nRunning unit tests for powershell scripts..."
   # Default: runs all tests under spec dir,
   # user can specify individual test file
-  # Ex: rake spec["spec/sample.Tests.ps1"]
-  args.with_defaults(:spec_path => "spec")
+  # Ex: rake spec["spec\ps_specs\sample.Tests.ps1"]
+  args.with_defaults(:spec_path => "spec/ps_specs")
 
   # run pester tests
   puts %x{powershell -ExecutionPolicy Unrestricted Import-Module #{PESTER_SANDBOX}/Pester/Pester.psm1; Invoke-Pester -relative_path #{args.spec_path}}
