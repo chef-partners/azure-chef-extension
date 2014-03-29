@@ -15,11 +15,11 @@ $env:Path += ";C:\opscode\chef\bin;C:\opscode\chef\embedded\bin"
 # so the hack - use ruby json parsing for versions lower than 3.0
 if ($PSVersionTable.PSVersion.Major -ge 3)
 {
-  $logStatus = true
+  $logStatus = $True
 }
 else
 {
-   $logStatus = false
+   $logStatus = $False
 }
 
 if (!(Test-ChefExtensionRegistry))
