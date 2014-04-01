@@ -11,11 +11,12 @@ PACKAGE_NAME = "ChefExtensionHandler"
 VERSION = "1.0"
 CHEF_BUILD_DIR = "pkg"
 
-task :build do
+task :build, :chef_version, :machine_os, :machine_arch do |t, args|
+  args.with_defaults(:chef_version => nil, :machine_os => "2008r2", :machine_arch => "x86_64")
   puts "Building Chef Package..."
-  puts %x{powershell "scripts\\createzip.ps1 #{CHEF_BUILD_DIR} #{PACKAGE_NAME}_#{VERSION}.zip #{PACKAGE_NAME}"}
+  puts %x{powershell -executionpolicy unrestricted "scripts\\createzip.ps1 #{CHEF_BUILD_DIR} #{PACKAGE_NAME}_#{VERSION}.zip #{PACKAGE_NAME} #{args.machine_os} #{args.machine_arch} #{args.chef_version}"}
 end
 
 task :clean do
-  puts %x{ powershell -Command if (Test-Path "#{CHEF_BUILD_DIR}") { Remove-Item -Recurse -Force "#{CHEF_BUILD_DIR}"}}
+  puts %x{ powershell -executionpolicy unrestricted -Command if (Test-Path "#{CHEF_BUILD_DIR}") { Remove-Item -Recurse -Force "#{CHEF_BUILD_DIR}"}}
 end
