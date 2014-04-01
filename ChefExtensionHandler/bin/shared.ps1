@@ -187,7 +187,7 @@ function decryptProtectedSettings($content, $thumbPrint)
 function Update-ChefExtensionRegistry
  {
    param (
-    $Path = "HKCU:\Software\chef_extn",
+    $Path = "HKLM:\Software\Chef\AzureExtension",
     $Name = "Status",
     [Parameter(Mandatory=$True,Position=1)]
     [string]$Value
@@ -196,16 +196,22 @@ function Update-ChefExtensionRegistry
   # Create registry entry, with Status=updated
   if (Test-Path -Path $Path -PathType Container) {
     New-ItemProperty -Path $Path -Force -Name $Name -Value $Value
+    echo "Registry entry exists, so just updated the value"
   }
   else {
     New-Item -Path $Path -Force -Name $Name -Value $Value
+    # New-ItemProperty additionally needed below, to work for PS v 2.0
+    New-ItemProperty -Path $Path -Force -Name $Name -Value $Value
+    echo "Added new registry entry and updated $Name with $Value"
   }
+  $temp = (Get-ItemProperty -Path $Path).$Name
+  echo "Registry entry after updating: $temp"
  }
 
  function Test-ChefExtensionRegistry
  {
    param (
-      $Path = "HKCU:\Software\chef_extn",
+      $Path = "HKLM:\Software\Chef\AzureExtension",
       $Name = "Status",
       $Value = "updated"
    )
