@@ -205,7 +205,7 @@ function Update-ChefExtensionRegistry
     echo "Added new registry entry and updated $Name with $Value"
   }
   $temp = (Get-ItemProperty -Path $Path).$Name
-  echo "Registry entry after updating: $temp"
+  echo "Registry entry $Path after updating: $temp"
  }
 
  function Test-ChefExtensionRegistry
