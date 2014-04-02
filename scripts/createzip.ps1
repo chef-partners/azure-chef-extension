@@ -4,7 +4,12 @@ $chefPackageName = $args[1]
 $sourceDir = [System.IO.Path]::GetFullPath($args[2])
 $machineOS = $args[3]
 $machineArch = $args[4]
-$chefVersion = $args[5]
+
+if ($args[5] -ne $null) {
+  $chefVersion = $args[5]
+  $chefVersion = ($chefVersion -split '\.|\-')
+  $chefVersion = ($chefVersion[0..2] -join("."))+"-$($chefVersion[3])"
+}
 
 function Chef-Get-ScriptDirectory
 {
@@ -18,33 +23,63 @@ $chefExtensionRoot = [System.IO.Path]::GetFullPath("$scriptDir\\..")
 
 $installerDir= "$chefExtensionRoot\\ChefExtensionHandler\\installer"
 
+function Get-Property ($Object, $PropertyName, [object[]]$ArgumentList) {
+  return $Object.GetType().InvokeMember($PropertyName, 'Public, Instance, GetProperty', $null, $Object, $ArgumentList)
+}
+
+function Invoke-Method ($Object, $MethodName, $ArgumentList) {
+  return $Object.GetType().InvokeMember($MethodName, 'Public, Instance, InvokeMethod', $null, $Object, $ArgumentList)
+}
+
+function Get-Chef-Installer-Version($Path) {
+  $msiOpenDatabaseModeReadOnly = 0
+  $installer = New-Object -ComObject WindowsInstaller.Installer
+  $database = Invoke-Method $installer OpenDatabase  @($Path, $msiOpenDatabaseModeReadOnly)
+  $view = Invoke-Method $database OpenView @("SELECT Value FROM Property WHERE Property='ProductVersion'")
+  Invoke-Method $view Execute
+  $record = Invoke-Method $view Fetch
+  $productVersion = $null
+
+  if ($record) {
+    $productVersion = (Get-Property $record StringData 1)
+  }
+
+  Invoke-Method $view Close @()
+  Remove-Variable -Name record, view, database, installer
+
+  $productVersion
+}
+
 function Download-Chef-Client-Pkg
 {
-  if ( !(Test-Path $installerDir) ) {
-    write-host "Chef Installer directory not found, creating $installerDir."
-    mkdir $installerDir
-  } else {
-    # TODO: If chef installer already exist, and its version and user specified version both are same then don't download/remove existance installer
-    Remove-Item $installerDir\\*
-  }
-
   $localPath = "$installerDir\\chef-client-latest.msi"
-
   $remoteUrl="https://www.opscode.com/chef/download?p=windows&pv=$machineOS&m=$machineArch"
 
-  if ( $chefVersion -ne $null ) {
-    $remoteUrl += "&v=$chefVersion"
+  if ( !(Test-Path $installerDir) ) {
+    Write-Host "Chef Installer directory not found, creating $installerDir."
+    mkdir $installerDir
   }
 
-
-  $webClient = new-object System.Net.WebClient
-  write-host "remoteUrl::::$remoteUrl::::localPath:::$localPath"
-  $webClient.DownloadFile($remoteUrl, $localPath)
-  if ( $? -eq $True ) {
-    write-host "Download via PowerShell succeeded"
+  if ( (Test-Path $localPath) -and $chefVersion -ne $null -and (Get-Chef-Installer-Version $localPath) -eq ($chefVersion -replace("-", ".")) ) {
+    Write-Host "Chef Client installer already exist, skipping downloading..."
   } else {
-    write-host "Failed to download $remoteUrl. with status code $LASTEXITCODE"
-    exit 1
+
+    # TODO: Fix issue: Unable to remove existing file because another process using it
+    Remove-Item -Force -path "$installerDir\\*"
+
+    if ( $chefVersion -ne $null ) {
+      $remoteUrl += "&v=$chefVersion"
+    }
+
+    $webClient = new-object System.Net.WebClient
+    $webClient.DownloadFile($remoteUrl, $localPath)
+
+    if ( $? -eq $True ) {
+      Write-Host "Download via PowerShell succeeded"
+    } else {
+      Write-Host "Failed to download $remoteUrl. with status code $LASTEXITCODE"
+      exit 1
+    }
   }
 }
 
@@ -70,13 +105,13 @@ function Add-Zip
 
     while($zipPackage.Items().Item($file.Name) -Eq $null) {
         start-sleep -seconds 1
-        write-host "." -nonewline
+        Write-Host "." -nonewline
     }
   }
   echo "Created zip successfully."
 }
 
-write-host "Downloading chef client package..."
+Write-Host "Downloading chef client package..."
 Download-Chef-Client-Pkg
 
 # Main
