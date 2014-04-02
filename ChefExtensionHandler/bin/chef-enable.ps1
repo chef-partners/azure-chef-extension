@@ -37,16 +37,16 @@ function validate-client-rb-file ([string] $user_client_rb)
 function getRunlist ([string] $run_list) {
   $parsedRunlist = @()
 
-  ($run_list -split ',|\s') | ForEach-Object {
+  ($run_list -split ',\s*|\s') | ForEach-Object {
 
     if ($_ -match '\s*"?recipe\[\S*\]"?\s*') {
-      $item = ($_ -split '\s*"?recipe\["?|"?\]"?')[1]
+      $item = ($_ -split '\s*"?''?recipe\["?''?|"?''?\]"?''?')[1]
       $parsedRunlist += "`"recipe[$item]`""
     } elseif ($_ -match '\s*"?role\[\S*\]"?\s*') {
-      $item = ($_ -split '\s*"?role\["?|"?\]"?')[1]
+      $item = ($_ -split '\s*"?''?role\["?''?|"?''?\]"?''?')[1]
       $parsedRunlist += "`"role[$item]`""
     } else {
-      $parsedRunlist += $_ -replace '\s*"?\[?"?(?<item>\S*[^\p{P}])"?\]?"?\s*', '"recipe[${item}]"'
+      $parsedRunlist += $_ -replace '\s*"?''?\[?"?''?(?<item>\S*[^\p{P}])"?''?\]?"?''?\s*', '"recipe[${item}]"'
     }
   }
   $parsedRunlist -join(",")
