@@ -31,7 +31,7 @@ function Invoke-Method ($Object, $MethodName, $ArgumentList) {
   return $Object.GetType().InvokeMember($MethodName, 'Public, Instance, InvokeMethod', $null, $Object, $ArgumentList)
 }
 
-function Get-Chef-Installer-Version($Path) {
+function Get-ChefInstallerVersion($Path) {
   $msiOpenDatabaseModeReadOnly = 0
   $installer = New-Object -ComObject WindowsInstaller.Installer
   $database = Invoke-Method $installer OpenDatabase  @($Path, $msiOpenDatabaseModeReadOnly)
@@ -50,7 +50,7 @@ function Get-Chef-Installer-Version($Path) {
   $productVersion
 }
 
-function Download-Chef-Client-Pkg
+function Download-ChefClientPkg
 {
   $localPath = "$installerDir\\chef-client-latest.msi"
   $remoteUrl="https://www.opscode.com/chef/download?p=windows&pv=$machineOS&m=$machineArch"
@@ -60,11 +60,14 @@ function Download-Chef-Client-Pkg
     mkdir $installerDir
   }
 
-  if ( (Test-Path $localPath) -and $chefVersion -ne $null -and (Get-Chef-Installer-Version $localPath) -eq ($chefVersion -replace("-", ".")) ) {
-    Write-Host "Chef Client installer already exist, skipping downloading..."
-  } else {
+  # Check chefversion(i.e specified as rake params) and existing local chef installer version are same, if yes skip downloading
+  # if ( (Test-Path $localPath) -and $chefVersion -ne $null -and (Get-ChefInstallerVersion $localPath) -eq ($chefVersion -replace("-", ".")) ) {
+  #   Write-Host "Chef Client installer already exist, skipping downloading..."
+  # } else {
 
-    # TODO: Fix issue: Unable to remove existing file because another process using it
+    # Above code commented becuase, currently Get-ChefInstallerVersion process not releasing local chef-installer msi file,
+    # So when we trying to remove existing local chef-installer its gives an error: "Unable to remove existing file because another process using it".
+
     Remove-Item -Force -path "$installerDir\\*"
 
     if ( $chefVersion -ne $null ) {
@@ -80,7 +83,7 @@ function Download-Chef-Client-Pkg
       Write-Host "Failed to download $remoteUrl. with status code $LASTEXITCODE"
       exit 1
     }
-  }
+  # }
 }
 
 function Build-ChefExtensionGem
@@ -134,7 +137,7 @@ Write-Host "Building Chef Extension Gem"
 Build-ChefExtensionGem
 
 Write-Host "Downloading chef client package..."
-Download-Chef-Client-Pkg
+Download-ChefClientPkg
 
 # Main
 if ( !(Test-Path $buildDir) ) {
