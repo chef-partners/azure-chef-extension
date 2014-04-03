@@ -14,7 +14,7 @@ PESTER_VER_TAG = "2.0.4" # we lock down to specific tag version
 PESTER_GIT_URL = 'https://github.com/pester/Pester.git'
 PESTER_SANDBOX = './PESTER_SANDBOX'
 
-task :build, :chef_version, :machine_os, :machine_arch do |t, args|
+task :build, [:chef_version, :machine_os, :machine_arch] => [:clean] do |t, args|
   args.with_defaults(:chef_version => nil, :machine_os => "2008r2", :machine_arch => "x86_64")
   puts "Building Chef Package..."
   puts %x{powershell -executionpolicy unrestricted "scripts\\createzip.ps1 #{CHEF_BUILD_DIR} #{PACKAGE_NAME}_#{VERSION}.zip #{PACKAGE_NAME} #{args.machine_os} #{args.machine_arch} #{args.chef_version}"}
