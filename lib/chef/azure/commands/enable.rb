@@ -30,7 +30,6 @@ class EnableChef
     end
 
     return @exit_code
-
   end
 
   private
