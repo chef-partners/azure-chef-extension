@@ -66,7 +66,7 @@ class EnableChef
     if @exit_code == 0
       report_status_to_azure "chef-service installed", "success"
     else
-      report_status_to_azure "chef-service install failed - #{error_message}", "success"
+      report_status_to_azure "chef-service install failed - #{error_message}", "error"
     end
     @exit_code
   end
@@ -76,7 +76,7 @@ class EnableChef
     if @exit_code == 0
       report_status_to_azure "chef-service enabled", "success"
     else
-      report_status_to_azure "chef-service enable failed - #{error_message}", "success"
+      report_status_to_azure "chef-service enable failed - #{error_message}", "error"
     end
     @exit_code
   end
