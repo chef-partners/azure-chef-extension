@@ -4,7 +4,7 @@ require "azure-chef-extension/version"
 
 Gem::Specification.new do |s|
   s.name        = "azure-chef-extension"
-  s.version     = Chef::Azure::VERSION
+  s.version     = ChefAzure::VERSION
   s.platform    = Gem::Platform::RUBY
   s.extra_rdoc_files = ["README.md", "LICENSE" ]
   s.authors     = ["Kaustubh Deorukhkar"]
