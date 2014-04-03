@@ -83,6 +83,25 @@ function Download-Chef-Client-Pkg
   }
 }
 
+function Build-ChefExtensionGem
+{
+  $gemFilePath = "$chefExtensionRoot\\azure-chef-extension.gemspec"
+  $gemsDir = "$chefExtensionRoot\\ChefExtensionHandler\\gems"
+
+  if ( !(Test-Path $gemsDir) ) {
+    Write-Host "gems directory not found, creating $gemsDir ."
+    mkdir $gemsDir
+  }
+
+  if ( (Test-Path $gemFilePath) ) {
+    gem build $gemFilePath
+    Get-ChildItem $chefExtensionRoot\\* -Filter *azure-chef-extension-* -Include *.gem* | Move-Item -Force -Destination $gemsDir
+  } else {
+    Write-Host "Gem build Failed...Not found gemspec file"
+    exit 1
+  }
+}
+
 # Courtesy http://blogs.msdn.com/b/daiken/archive/2007/02/12/compress-files-with-windows-powershell-then-package-a-windows-vista-sidebar-gadget.aspx
 function Add-Zip
 {
@@ -110,6 +129,9 @@ function Add-Zip
   }
   echo "Created zip successfully."
 }
+
+Write-Host "Building Chef Extension Gem"
+Build-ChefExtensionGem
 
 Write-Host "Downloading chef client package..."
 Download-Chef-Client-Pkg
