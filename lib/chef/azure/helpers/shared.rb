@@ -1,4 +1,3 @@
-
 require 'json'
 require 'chef/azure/heartbeat'
 require 'chef/azure/status'
