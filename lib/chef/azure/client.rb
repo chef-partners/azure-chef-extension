@@ -65,5 +65,4 @@ class AzureChefClient
       Chef::Log.info "Process completed (pid: #{Process.pid})"
     end
   end
-
 end
