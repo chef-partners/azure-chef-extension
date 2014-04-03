@@ -43,7 +43,7 @@ module ChefAzure
       Chef::Log.info "Loading Handler environment..."
 
       # Load environment from chef_extension_root/HandlerEnvironment.json
-      handler_env = JSON.parse(File.read("#{chef_extension_root}\\HandlerEnvironment.json"))
+      handler_env = JSON.parse(File.read("#{chef_extension_root}/HandlerEnvironment.json"))
       azure_heart_beat_file = handler_env[0]["handlerEnvironment"]["heartbeatFile"]
       azure_status_folder = handler_env[0]["handlerEnvironment"]["statusFolder"]
       azure_plugin_log_location = handler_env[0]["handlerEnvironment"]["logFolder"]
@@ -52,11 +52,11 @@ module ChefAzure
 
       # Get name of status file by finding the latest sequence number from runtime settings file
       sequence = 0
-      settingsFiles = Dir.entries(chef_extension_root + "\\RuntimeSettings").sort
+      settingsFiles = Dir.entries(chef_extension_root + "/RuntimeSettings").sort
       if(settingsFiles.size) > 2
         sequence = settingsFiles[settingsFiles.size-1].split(".")[0]
       end
-      azure_status_file = azure_status_folder + "\\" + sequence + ".status"
+      azure_status_file = azure_status_folder + "/" + sequence + ".status"
       Chef::Log.info "Status file name: #{@azure_status_file}"
 
       # return configs read
