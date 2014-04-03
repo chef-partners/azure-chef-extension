@@ -1,4 +1,3 @@
-
 # This implements the azure extension 'enable' command.
 
 require 'chef'
@@ -295,4 +294,3 @@ CONFIG
     return validation_key
   end
 end
-
