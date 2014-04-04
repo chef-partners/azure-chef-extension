@@ -31,7 +31,7 @@ class AzureChefClient
 
   def report_heart_beat
     # update @azure_heart_beat_file
-    report_heart_beat_to_azure(@azure_heart_beat_file, AzureHeartBeat::READY, 0, "chef-service is running properly")
+    report_heart_beat_to_azure(AzureHeartBeat::READY, 0, "chef-service is running properly")
   end
 
   def run_chef_client

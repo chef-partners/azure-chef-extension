@@ -57,7 +57,7 @@ module ChefAzure
         sequence = settingsFiles[settingsFiles.size-1].split(".")[0]
       end
       azure_status_file = azure_status_folder + "/" + sequence + ".status"
-      Chef::Log.info "Status file name: #{@azure_status_file}"
+      Chef::Log.info "Status file name: #{azure_status_file}"
 
       # return configs read
       [ azure_heart_beat_file, azure_status_folder,
@@ -68,14 +68,14 @@ module ChefAzure
   end
 
   module Reporting
-    def report_heart_beat_to_azure(azure_heart_beat_file, status, code, message))
+    def report_heart_beat_to_azure(status, code, message)
       # update @azure_heart_beat_file
       Chef::Log.info "Reporting heartbeat..."
-      AzureHeartBeat.update(azure_heart_beat_file, status, code, message)
+      AzureHeartBeat.update(@azure_heart_beat_file, status, code, message)
     end
 
     def report_status_to_azure (message, status_type)
-      AzureExtensionStatus.log(azure_status_file, message, status_type)
+      AzureExtensionStatus.log(@azure_status_file, message, status_type)
     end
   end
 end

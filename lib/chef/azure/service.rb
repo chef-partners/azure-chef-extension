@@ -2,9 +2,10 @@
 require 'chef/azure/helpers/shared'
 
 class ChefService
+  include Chef::Mixin::ShellOut
   include ChefAzure::Shared
 
-  def self.install(log_location)
+  def install(log_location)
     log_location = log_location || bootstrap_directory # example default logs go to C:\chef\
     exit_code = 0
     message = "success"
@@ -27,7 +28,7 @@ class ChefService
     [exit_code, message]
   end
 
-  def self.enable(log_location)
+  def enable(log_location)
     log_location = log_location || bootstrap_directory
     exit_code = 0
     message = "success"
