@@ -85,7 +85,6 @@ class EnableChef
   #   => Perform node registration executing first chef run
   #   => run the user supplied runlist from first_boot.json in async manner
   def configure_chef_only_once
-
     # "node-registered" file also indicates that enabled was called once and 
     # configs are already generated.
     if not File.exists?("#{bootstrap_directory}/node-registered")
