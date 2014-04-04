@@ -3,6 +3,7 @@
 
 require 'chef'
 require 'chef/azure/helpers/shared'
+require 'chef/azure/service'
 
 class EnableChef
   include Chef::Mixin::ShellOut
@@ -19,14 +20,14 @@ class EnableChef
   def run
     load_env
 
-    report_heart_beat_to_azure(@azure_heart_beat_file, AzureHeartBeat::NOTREADY, 0, "Enabling chef-service...")
+    report_heart_beat_to_azure(AzureHeartBeat::NOTREADY, 0, "Enabling chef-service...")
 
     enable_chef
 
     if @exit_code == 0
-      report_heart_beat_to_azure(@azure_heart_beat_file, AzureHeartBeat::READY, 0, "chef-service is enabled")
+      report_heart_beat_to_azure(AzureHeartBeat::READY, 0, "chef-service is enabled")
     else
-      report_heart_beat_to_azure(@azure_heart_beat_file, AzureHeartBeat::NOTREADY, 0, "chef-service enable failed")
+      report_heart_beat_to_azure(AzureHeartBeat::NOTREADY, 0, "chef-service enable failed")
     end
 
     return @exit_code
@@ -62,7 +63,7 @@ class EnableChef
   end
 
   def install_chef_service
-    @exit_code, error_message = ChefService.install(@azure_plugin_log_location)
+    @exit_code, error_message = ChefService.new.install(@azure_plugin_log_location)
     if @exit_code == 0
       report_status_to_azure "chef-service installed", "success"
     else
@@ -72,7 +73,7 @@ class EnableChef
   end
 
   def enable_chef_service
-    @exit_code, error_message = ChefService.enable(@azure_plugin_log_location)
+    @exit_code, error_message = ChefService.new.enable(@azure_plugin_log_location)
     if @exit_code == 0
       report_status_to_azure "chef-service enabled", "success"
     else
