@@ -88,5 +88,54 @@ class EnableChef
   #   => run the user supplied runlist from first_boot.json in async manner
   def configure_chef_only_once
 
+    # "node-registered" file also indicates that enabled was called once and 
+    # configs are already generated.
+    if not File.exists?("#{bootstrap_directory}/node-registered")
+      if File.directory?("#{bootstrap_directory}")
+        puts "Bootstrap directory [#{bootstrap_directory}] already exists, skipping creation..."
+      else
+        puts "Bootstrap directory [#{bootstrap_directory}] does not exist, creating..."
+        FileUtils.mkdir_p("#{bootstrap_directory}")
+      end
+    
+      # Write validation key
+
+      # Write client.rb
+
+      # write the first_boot.json
+
+      # run chef-client for first time with no runlist to register the node
+      puts "Running chef client for first time with no runlist..."
+
+      begin
+        params = " -c #{bootstrap_directory}/client.rb -E _default -L #{@azure_plugin_log_location}/chef-client.log "
+        result = shell_out("chef-client #{params}")
+        result.error!
+      rescue Mixlib::ShellOut::ShellCommandFailed => e
+        Chef::Log.warn "chef-client run - node registration failed (#{e})"
+        report_status_to_azure "#{e} - Check log file for details", "error"
+        @exit_code = 1
+        return
+      rescue => e
+        Chef::Log.error e
+        report_status_to_azure "#{e} - Check log file for details", "error"
+        @exit_code = 1
+        return
+      end
+
+      puts "Node registered successfully"
+      File.open("#{bootstrap_directory}/node-registered", "w") do |file|
+        file.write("Node registered.")
+      end
+
+      # Now the run chef-client with runlist in background, as we done want enable command to wait, else long running chef-client with runlist will timeout azure.
+      puts "Launching chef-client again to set the runlist"
+      params = "-c #{bootstrap_directory}/client.rb -j #{bootstrap_directory}/first-boot.json -E _default -L #{@azure_plugin_log_location}/chef-client.log "
+      child_pid = Process.spawn "chef-client #{params}"
+      Process.detach child_pid
+      puts "Successfully launched chef-client process with PID [#{child_pid}]"
+
+    end
   end
+
 end
