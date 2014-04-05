@@ -5,6 +5,7 @@ class ChefService
   include Chef::Mixin::ShellOut
   include ChefAzure::Shared
 
+  # TODO - make these methods idempotent
   def install(log_location)
     log_location = log_location || bootstrap_directory # example default logs go to C:\chef\
     exit_code = 0
