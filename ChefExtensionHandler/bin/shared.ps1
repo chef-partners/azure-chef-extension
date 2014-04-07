@@ -165,7 +165,7 @@ function Write-ChefStatus ($operation, $statusType, $message)
   }
   else
   {
-    ruby.exe -e "require 'helpers/parse_json'; write_json_file '$statusFile', '$hash'"
+    # TODO, code change available in another branch
   }
 }
 
