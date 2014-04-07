@@ -107,14 +107,14 @@ class EnableChef
 
       # Write client.rb
       File.open("#{bootstrap_directory}/client.rb", "w") do |f|
-        f.write(@client_rb)
+        f.write(override_clientrb_file(@client_rb))
       end
 
       # write the first_boot.json
       File.open("#{bootstrap_directory}/first-boot.json", "w") do |f|
         f.write(<<-RUNLIST
 {
-"run_list": [#{@run_list}]
+"run_list": [#{escape_runlist(@run_list)}]
 }
 RUNLIST
 )
@@ -237,6 +237,33 @@ RUNLIST
       end
     end
     result + literalized_content.join("")
+  end
+
+  def override_clientrb_file(user_client_rb)
+    client_rb = <<-CONFIG
+client_key        "#{bootstrap_directory}/client.pem"
+validation_key    "#{bootstrap_directory}/validation.pem"
+log_location  "#{@azure_plugin_log_location}/chef-client.log"
+CONFIG
+
+    "#{user_client_rb}\r\n#{client_rb}"
+  end
+
+  def escape_runlist(run_list)
+    parsedRunlist = []
+    run_list.split(/,\s*|\s/).reject(&:empty?).each do |item|
+      if(item.match(/\s*"?recipe\[\S*\]"?\s*/))
+        run_list_item = item.split(/\s*"?'?recipe\["?'?|"?'?\]"?'?/)[1]
+        parsedRunlist << "\"recipe[#{run_list_item}]\""
+      elsif(item.match(/\s*"?role\[\S*\]"?\s*/))
+        run_list_item = item.split(/\s*"?'?role\["?'?|"?'?\]"?'?/)[1]
+        parsedRunlist << "\"role[#{run_list_item}]\""
+      else
+        item = item.match(/\s*"?'?\[?"?'?(?<itm>\S*[^\p{Punct}])"?'?\]?"?'?\s*/)[:itm]
+        parsedRunlist << "\"recipe[#{item}]\""
+      end
+    end
+    parsedRunlist.join(",")
   end
 end
 
