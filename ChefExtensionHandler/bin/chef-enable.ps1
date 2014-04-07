@@ -111,6 +111,7 @@ if (! (Test-Path $bootstrapDirectory\\node-registered) ) {
   # Write client.rb
   $client_rb_file = $json_client_rb
   $client_rb_file = validate-client-rb-file $client_rb_file
+  $client_rb_file = $client_rb_file -Replace "\\n", "`r`n"
   $client_rb_file | Out-File -filePath $bootstrapDirectory\\client.rb -encoding "Default"
   echo "Created client.rb"
 

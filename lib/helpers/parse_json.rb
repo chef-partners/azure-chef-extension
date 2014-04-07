@@ -89,7 +89,7 @@ def escape_unescaped_content(file_content)
          (line_index < (lines.length - 1) && lines[line_index + 1][0] == ',')
        escaped_line += "\n"
      else
-       escaped_line += "\\n"
+       escaped_line += "\\\\n"
      end
 
      escaped_content += escaped_line
@@ -134,19 +134,4 @@ def parse_json_contents (contents)
      deserialized_contents = deserialized_contents[0]
   end
   deserialized_contents
-end
-
-# TODO: Writes JSON file.
-def write_json_file (file, contents)
-  begin
-    #f = File.open(file, "w")
-    #f.write(contents.to_json)
-    return 0
-  rescue IOError => e
-    #some error occur, dir not writable etc.
-    print e
-    return 1
-  ensure
-    #f.close unless f == nil
-  end
 end
