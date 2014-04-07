@@ -97,18 +97,34 @@ class EnableChef
         puts "Bootstrap directory [#{bootstrap_directory}] does not exist, creating..."
         FileUtils.mkdir_p("#{bootstrap_directory}")
       end
+
+      load_settings
     
       # Write validation key
+      File.open("#{bootstrap_directory}/validation.pem", "w") do |f|
+        f.write(@validation_key)
+      end
 
       # Write client.rb
+      File.open("#{bootstrap_directory}/client.rb", "w") do |f|
+        f.write(@client_rb)
+      end
 
       # write the first_boot.json
+      File.open("#{bootstrap_directory}/first-boot.json", "w") do |f|
+        f.write(<<-RUNLIST
+{
+"run_list": [#{@run_list}]
+}
+RUNLIST
+)
+      end
 
       # run chef-client for first time with no runlist to register the node
       puts "Running chef client for first time with no runlist..."
 
       begin
-        params = " -c #{bootstrap_directory}/client.rb -E _default -L #{@azure_plugin_log_location}/chef-client.log "
+        params = " -c #{bootstrap_directory}/client.rb -E _default -L #{@azure_plugin_log_location}/chef-client.log --once "
         result = shell_out("chef-client #{params}")
         result.error!
       rescue Mixlib::ShellOut::ShellCommandFailed => e
@@ -130,7 +146,7 @@ class EnableChef
 
       # Now the run chef-client with runlist in background, as we done want enable command to wait, else long running chef-client with runlist will timeout azure.
       puts "Launching chef-client again to set the runlist"
-      params = "-c #{bootstrap_directory}/client.rb -j #{bootstrap_directory}/first-boot.json -E _default -L #{@azure_plugin_log_location}/chef-client.log "
+      params = "-c #{bootstrap_directory}/client.rb -j #{bootstrap_directory}/first-boot.json -E _default -L #{@azure_plugin_log_location}/chef-client.log --once "
       child_pid = Process.spawn "chef-client #{params}"
       Process.detach child_pid
       puts "Successfully launched chef-client process with PID [#{child_pid}]"
@@ -138,4 +154,89 @@ class EnableChef
     end
   end
 
+  def load_settings
+    # TODO - For some reason below code dervied from Powershell counter part does not work, revist if 'kd/linux-extn' branch needs to rebase with windows released branch.
+    # @protected_settings = value_from_json_file_rb(handler_settings_file,'runtimeSettings','0','handlerSettings', 'protectedSettings')
+    # # TODO - decode protectedSettings
+    # @protected_settings_cert_thumbprint = value_from_json_file_rb(handler_settings_file, 'runtimeSettings', '0',  'handlerSettings' ,'protectedSettingsCertThumbprint')
+
+    # @client_rb = value_from_json_file_rb(handler_settings_file, 'runtimeSettings', '0', 'handlerSettings', 'publicSettings', 'client_rb')
+
+    # @run_list = value_from_json_file_rb(handler_settings_file, 'runtimeSettings', '0', 'handlerSettings', 'publicSettings', 'runList')
+
+    settings_content = File.read(handler_settings_file)
+
+    # we do this since ruby json parsing dislikes newlines in json values
+    # azure sends them as is for client_rb
+    settings_content = literalize_client_rb_newlines(settings_content)
+
+    settings_hash = JSON.parse(settings_content)
+    @protected_settings = settings_hash["runtimeSettings"][0]["handlerSettings"]["protectedSettings"]
+    # TODO - decrypt using cert, for testing we have unencrypted hash within
+    @validation_key = settings_hash["runtimeSettings"][0]["handlerSettings"]["protectedSettings"]["validation_key"]
+    @protected_settings_thumbprint = settings_hash["runtimeSettings"][0]["handlerSettings"]["protectedSettingsCertThumbprint"]
+    @client_rb = settings_hash["runtimeSettings"][0]["handlerSettings"]["publicSettings"]["client_rb"]
+    @run_list = settings_hash["runtimeSettings"][0]["handlerSettings"]["publicSettings"]["runlist"]
+
+  end
+
+  def handler_settings_file
+    @handler_settings_file ||=
+    begin
+      files = Dir.glob("#{@chef_extension_root}/RuntimeSettings/*.settings").sort
+      if files and not files.empty?
+        files.last
+      else
+        error_message = "Configuration error. Azure chef extension Settings file missing."
+        Chef::Log.error error_message
+        report_status_to_azure error_message, "error"
+        @exit_code = 1
+        raise error_message
+      end
+    end
+  end
+
+  # Note - this assumes ascii char-set. TODO - other langs?
+  def literalize_client_rb_newlines(content)
+    client_rb_key_start_idx = content.index("\"client_rb\"")
+    client_rb_val_start_idx = client_rb_key_start_idx + "\"client_rb\"".length + 1
+ 
+    # move ahead till the quoted value starts
+    while true
+      (content[client_rb_val_start_idx] != "\"") ? client_rb_val_start_idx += 1 : break
+    end
+    client_rb_val_start_idx += 1
+    result = content[0, client_rb_val_start_idx] 
+    literalized_content = []
+    literalize = true # when client_rb value ends, we turn it off and simply copy rest of content
+    # Now find the end of client_rb value, literalizing till unescaped double quote "
+    for i in (client_rb_val_start_idx)..(content.length - 1)
+      if literalize
+        if content[i] == '"'
+          if content[i-1] == "\\"
+            # its an escaped quote, so copy as is
+          else
+            # its unescaped quote, so client_rb value ends here.
+            literalize = false
+          end
+          literalized_content.push(content[i])
+        else
+          # just part of client_rb value
+          if content[i] == "\n"
+            # literalize
+            literalized_content.push('\\n')
+          elsif content[i] == "\r"
+            # literalize
+            literalized_content.push('\\r')              
+          else
+            literalized_content.push(content[i])
+          end
+        end
+      else
+        literalized_content.push(content[i])
+      end
+    end
+    result + literalized_content.join("")
+  end
 end
+
