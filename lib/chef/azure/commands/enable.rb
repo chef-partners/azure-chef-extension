@@ -289,7 +289,10 @@ CONFIG
     require 'tempfile'
     temp_file = Tempfile.new("decrypted")
     temp_file.write(decrypted_text)
-    value_from_json_file(file.path, "validation_key")
+    temp_file.close
+    validation_key = value_from_json_file(file.path, "validation_key")
+    temp_file.unlink
+    return validation_key
   end
 end
 
