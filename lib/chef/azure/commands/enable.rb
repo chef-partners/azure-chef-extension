@@ -269,7 +269,7 @@ CONFIG
     require 'openssl'
     require 'base64'
 
-    # TODO - remove hardcode the path of the certificate
+    # TODO - remove hardcode of the path of the certificate
     certificate_path = "/var/lib/waagent/Certificates.pem"
 
     # TODO - validate if the certificate thumbprint and the thumbprint on the protectedSettings is same.
@@ -287,7 +287,7 @@ CONFIG
     #extract validation_key from decrypted hash
     require 'lib/helpers/parse_json'
     require 'tempfile'
-    temp_file = Tempfile.new("dcerypted")
+    temp_file = Tempfile.new("decrypted")
     temp_file.write(decrypted_text)
     value_from_json_file(file.path, "validation_key")
   end
