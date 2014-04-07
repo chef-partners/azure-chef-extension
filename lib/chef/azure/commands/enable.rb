@@ -169,12 +169,11 @@ RUNLIST
     # we do this since ruby json parsing dislikes newlines in json values
     # azure sends them as is for client_rb
     settings_content = literalize_client_rb_newlines(settings_content)
-
     settings_hash = JSON.parse(settings_content)
-    @protected_settings = settings_hash["runtimeSettings"][0]["handlerSettings"]["protectedSettings"]
-    # TODO - decrypt using cert, for testing we have unencrypted hash within
-    @validation_key = settings_hash["runtimeSettings"][0]["handlerSettings"]["protectedSettings"]["validation_key"]
-    @protected_settings_thumbprint = settings_hash["runtimeSettings"][0]["handlerSettings"]["protectedSettingsCertThumbprint"]
+
+    protected_settings = settings_hash["runtimeSettings"][0]["handlerSettings"]["protectedSettings"]
+    @validation_key = get_validation_key(protected_settings)
+
     @client_rb = settings_hash["runtimeSettings"][0]["handlerSettings"]["publicSettings"]["client_rb"]
     @run_list = settings_hash["runtimeSettings"][0]["handlerSettings"]["publicSettings"]["runlist"]
 
@@ -264,6 +263,33 @@ CONFIG
       end
     end
     parsedRunlist.join(",")
+  end
+
+  def get_validation_key(encrypted_text)
+    require 'openssl'
+    require 'base64'
+
+    # TODO - remove hardcode the path of the certificate
+    certificate_path = "/var/lib/waagent/Certificates.pem"
+
+    # TODO - validate if the certificate thumbprint and the thumbprint on the protectedSettings is same.
+    # this step may be optional.
+
+    # read cert & get key from the certificate
+    certificate = OpenSSL::X509::Certificate.new File.read(certificate_path)
+    private_key = OpenSSL::PKey::RSA.new File.read(certificate_path)
+
+    # decrypt text
+    encrypted_text = Base64.decode64(encrypted_text)
+    encrypted_text = OpenSSL::PKCS7.new(encrypted_text)
+    decrypted_text = encrypted_text.decrypt(private_key, certificate)
+
+    #extract validation_key from decrypted hash
+    require 'lib/helpers/parse_json'
+    require 'tempfile'
+    temp_file = Tempfile.new("dcerypted")
+    temp_file.write(decrypted_text)
+    value_from_json_file(file.path, "validation_key")
   end
 end
 
