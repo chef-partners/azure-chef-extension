@@ -89,7 +89,7 @@ def escape_unescaped_content(file_content)
          (line_index < (lines.length - 1) && lines[line_index + 1][0] == ',')
        escaped_line += "\n"
      else
-       escaped_line += "\\\\n"
+       escaped_line += "\\n"
      end
 
      escaped_content += escaped_line

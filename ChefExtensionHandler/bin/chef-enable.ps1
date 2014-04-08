@@ -16,7 +16,7 @@ function Chef-Get-ScriptDirectory
   Split-Path $Invocation.MyCommand.Path
 }
 
-function validate-client-rb-file ([string] $user_client_rb)
+function validate-client-rb-file ($user_client_rb)
 {
   $client_rb =  @"
     client_key    "$bootstrapDirectory/client.pem"
@@ -111,7 +111,6 @@ if (! (Test-Path $bootstrapDirectory\\node-registered) ) {
   # Write client.rb
   $client_rb_file = $json_client_rb
   $client_rb_file = validate-client-rb-file $client_rb_file
-  $client_rb_file = $client_rb_file -Replace "\\n", "`r`n"
   $client_rb_file | Out-File -filePath $bootstrapDirectory\\client.rb -encoding "Default"
   echo "Created client.rb"
 
