@@ -285,12 +285,12 @@ CONFIG
     decrypted_text = encrypted_text.decrypt(private_key, certificate)
 
     #extract validation_key from decrypted hash
-    require 'lib/helpers/parse_json'
+    require 'helpers/parse_json'
     require 'tempfile'
     temp_file = Tempfile.new("decrypted")
     temp_file.write(decrypted_text)
     temp_file.close
-    validation_key = value_from_json_file(file.path, "validation_key")
+    validation_key = value_from_json_file(temp_file.path, "validation_key")
     temp_file.unlink
     return validation_key
   end
