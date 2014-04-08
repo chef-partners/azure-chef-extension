@@ -52,7 +52,7 @@ module ChefAzure
 
       # Get name of status file by finding the latest sequence number from runtime settings file
       sequence = 0
-      settingsFiles = Dir.entries(chef_extension_root + "/RuntimeSettings").sort
+      settingsFiles = Dir.entries(azure_config_folder).sort
       if(settingsFiles.size) > 2
         sequence = settingsFiles[settingsFiles.size-1].split(".")[0]
       end
