@@ -16,6 +16,7 @@ $env:Path += ";C:\opscode\chef\bin;C:\opscode\chef\embedded\bin"
 if ($PSVersionTable.PSVersion.Major -ge 3)
 {
   $logStatus = $True
+  $json_handlerSettingsFileName, $json_handlerSettings, $json_protectedSettings,  $json_protectedSettingsCertThumbprint, $json_client_rb , $json_runlist, $json_chefLogFolder, $json_statusFolder, $json_heartbeatFile = readJsonFile
 }
 else
 {

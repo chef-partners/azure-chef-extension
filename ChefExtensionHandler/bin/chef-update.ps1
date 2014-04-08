@@ -40,22 +40,31 @@ else
 
 Try
 {
+  echo "Running update process"
+
   # Save chef configuration.
   $backupLocation = $env:temp + "\\chef_backup"
   Copy-Item $bootstrapDirectory $backupLocation -recurse
+  echo "Configuration saved to $backupLocation"
 
   # uninstall chef. this will work since the uninstall script is idempotent.
+  echo "Calling $scriptDir\uninstall.ps1"
   Invoke-Expression $scriptDir"\\chef-uninstall.ps1"
+  echo "Uninstall completed"
 
   # Restore Chef Configuration
   Copy-Item $backupLocation $bootstrapDirectory -recurse
 
   # install new version of chef extension
+  echo "Calling $scriptDir\install.ps1 on new version"
   Invoke-Expression $scriptDir"\\chef-install.ps1"
+  echo "Install completed"
 
   # we dont want GA to run uninstall again, after this update.ps1 completes.
   # we pass this message to uninstall script through windows registry
+  echo "Updating chef registry to 'updated'"
   Update-ChefExtensionRegistry "updated"
+  echo "Updated chef registry"
 }
 Catch
 {

@@ -165,7 +165,7 @@ function Write-ChefStatus ($operation, $statusType, $message)
   }
   else
   {
-    ruby.exe -e "require 'helpers/parse_json'; write_json_file '$statusFile', '$hash'"
+    # TODO, code change available in another branch
   }
 }
 
@@ -205,7 +205,7 @@ function decryptProtectedSettings($content, $thumbPrint)
 function Update-ChefExtensionRegistry
  {
    param (
-    $Path = "HKCU:\Software\chef_extn",
+    $Path = "HKLM:\Software\Chef\AzureExtension",
     $Name = "Status",
     [Parameter(Mandatory=$True,Position=1)]
     [string]$Value
@@ -214,16 +214,22 @@ function Update-ChefExtensionRegistry
   # Create registry entry, with Status=updated
   if (Test-Path -Path $Path -PathType Container) {
     New-ItemProperty -Path $Path -Force -Name $Name -Value $Value
+    echo "Registry entry exists, so just updated the value"
   }
   else {
     New-Item -Path $Path -Force -Name $Name -Value $Value
+    # New-ItemProperty additionally needed below, to work for PS v 2.0
+    New-ItemProperty -Path $Path -Force -Name $Name -Value $Value
+    echo "Added new registry entry and updated $Name with $Value"
   }
+  $temp = (Get-ItemProperty -Path $Path).$Name
+  echo "Registry entry $Path after updating: $temp"
  }
 
  function Test-ChefExtensionRegistry
  {
    param (
-      $Path = "HKCU:\Software\chef_extn",
+      $Path = "HKLM:\Software\Chef\AzureExtension",
       $Name = "Status",
       $Value = "updated"
    )
@@ -270,7 +276,7 @@ function readJsonFileUsingRuby
 
   $json_handlerPublicSettingsClient_rb = ruby.exe -e "require 'helpers/parse_json'; value_from_json_file '$json_handlerSettingsFileName', 'runtimeSettings', '0', 'handlerSettings', 'publicSettings', 'client_rb'"
 
-  $json_handlerPublicSettingsRunlist = ruby.exe -e "require 'helpers/parse_json'; value_from_json_file '$json_handlerSettingsFileName', 'runtimeSettings', '0', 'handlerSettings', 'publicSettings', 'runList'"
+  $json_handlerPublicSettingsRunlist = ruby.exe -e "require 'helpers/parse_json'; value_from_json_file '$json_handlerSettingsFileName', 'runtimeSettings', '0', 'handlerSettings', 'publicSettings', 'runlist'"
 
   $json_handlerEnvironmentFileName = Get-HandlerEnvironmentFilePath
 
