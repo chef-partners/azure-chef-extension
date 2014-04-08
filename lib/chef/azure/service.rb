@@ -1,4 +1,3 @@
-
 require 'chef/azure/helpers/shared'
 
 class ChefService
