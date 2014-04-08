@@ -183,7 +183,7 @@ RUNLIST
   def handler_settings_file
     @handler_settings_file ||=
     begin
-      files = Dir.glob("#{@chef_extension_root}/RuntimeSettings/*.settings").sort
+      files = Dir.glob("#{@azure_config_folder}/*.settings").sort
       if files and not files.empty?
         files.last
       else
