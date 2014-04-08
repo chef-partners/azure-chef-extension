@@ -13,9 +13,6 @@ class JSONFileReader
     json_key_path = "self"
 
     @keys.each do |key|
-      if key == "client_rb"
-        return @client_rb
-      end
       path_component = key
 
       if path_component.length > 1024
@@ -53,27 +50,7 @@ class JSONFileReader
 
   def deserialize_json(file)
     normalized_content = File.read(file)
-    # This is a bad hack to handle multiple lines in client_rb field of JSON file
-    unless (normalized_content.match("\\\"client_rb\\\":") .nil?)
-      part1 = normalized_content.split("\"client_rb\":")
-      unless (part1[1].match("\\\"runlist\\\":").nil?)
-        part2 = part1[1].split("\"runlist\":")
-        normalized_content = part1[0] + "\"runlist\":" + part2[1]
-        @client_rb = part2[0]
-        @client_rb = part2[0].gsub(",\n", "").gsub("\\", "").gsub("\"", "'").gsub(" \"", "")
-        @client_rb = @client_rb.strip
-        @client_rb[0] = ""
-      else
-        normalized_content = part1[0]
-        @client_rb = part1[1]
-        @client_rb = part1[1].gsub(",\n", "").gsub("\\", "").gsub("\"", "'").gsub(" \"", "")
-        @client_rb = @client_rb.strip
-        @client_rb[0] = @client_rb[@client_rb.length-1] = ""
-      end
-    else
-      @client_rb = ""
-    end
-    @client_rb = escape_unescaped_content(@client_rb)
+    normalized_content = escape_unescaped_content(normalized_content)
     JSON.parse(normalized_content)
   end
 
@@ -142,7 +119,7 @@ def value_from_json_file(file_name, *keys)
     raise ArgumentError, "Specified keys #{keys.to_s} retrieved an object of type #{json_value.class} instead of a String. Retrieved value was a(n) #{json_value.class.to_s}"
   end
 
-  print json_value
+  json_value
 end
 
 def parse_json_file(file_name)
@@ -157,19 +134,4 @@ def parse_json_contents (contents)
      deserialized_contents = deserialized_contents[0]
   end
   deserialized_contents
-end
-
-# TODO: Writes JSON file.
-def write_json_file (file, contents)
-  begin
-    #f = File.open(file, "w")
-    #f.write(contents.to_json)
-    return 0
-  rescue IOError => e
-    #some error occur, dir not writable etc.
-    print e
-    return 1
-  ensure
-    #f.close unless f == nil
-  end
 end
