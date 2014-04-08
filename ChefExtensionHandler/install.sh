@@ -1,15 +1,10 @@
 #!/bin/sh
 
-# returns script dir
-get_script_dir(){
-  SCRIPT=$(readlink -f "$0")
-  script_dir=`dirname $SCRIPT`
-  echo "${script_dir}"
-}
+SCRIPT=$(readlink -f "$0")
 
-chef_extension_root=$(get_script_dir)
+CHEF_EXT_DIR=$(dirname "$SCRIPT")
 
-echo $chef_extension_root
+echo $CHEF_EXT_DIR
 
-sudo sh $chef_extension_root/bin/chef-install.sh
+sudo sh $CHEF_EXT_DIR/bin/chef-install.sh
 
