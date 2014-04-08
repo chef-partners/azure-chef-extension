@@ -276,7 +276,7 @@ function readJsonFileUsingRuby
 
   $json_handlerPublicSettingsClient_rb = ruby.exe -e "require 'helpers/parse_json'; value_from_json_file '$json_handlerSettingsFileName', 'runtimeSettings', '0', 'handlerSettings', 'publicSettings', 'client_rb'"
 
-  $json_handlerPublicSettingsRunlist = ruby.exe -e "require 'helpers/parse_json'; value_from_json_file '$json_handlerSettingsFileName', 'runtimeSettings', '0', 'handlerSettings', 'publicSettings', 'runList'"
+  $json_handlerPublicSettingsRunlist = ruby.exe -e "require 'helpers/parse_json'; value_from_json_file '$json_handlerSettingsFileName', 'runtimeSettings', '0', 'handlerSettings', 'publicSettings', 'runlist'"
 
   $json_handlerEnvironmentFileName = Get-HandlerEnvironmentFilePath
 
