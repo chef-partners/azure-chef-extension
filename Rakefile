@@ -21,7 +21,6 @@ task :build, [:chef_version, :machine_os, :machine_arch] => [:clean] do |t, args
 end
 
 task :clean do
-<<<<<<< HEAD
   puts "Cleaning Chef Package..."
   puts %x{ powershell -Command if (Test-Path "#{CHEF_BUILD_DIR}") { Remove-Item -Recurse -Force "#{CHEF_BUILD_DIR}"}}
   puts %x{powershell -Command if (Test-Path "#{PESTER_SANDBOX}") {Remove-Item -Recurse -Force #{PESTER_SANDBOX}"}}
