@@ -3,6 +3,10 @@
 require 'chef'
 require 'chef/azure/helpers/shared'
 require 'chef/azure/service'
+require 'helpers/parse_json'
+require 'openssl'
+require 'base64'
+require 'tempfile'
 
 class EnableChef
   include Chef::Mixin::ShellOut
@@ -152,28 +156,10 @@ RUNLIST
   end
 
   def load_settings
-    # TODO - For some reason below code dervied from Powershell counter part does not work, revist if 'kd/linux-extn' branch needs to rebase with windows released branch.
-    # @protected_settings = value_from_json_file_rb(handler_settings_file,'runtimeSettings','0','handlerSettings', 'protectedSettings')
-    # # TODO - decode protectedSettings
-    # @protected_settings_cert_thumbprint = value_from_json_file_rb(handler_settings_file, 'runtimeSettings', '0',  'handlerSettings' ,'protectedSettingsCertThumbprint')
-
-    # @client_rb = value_from_json_file_rb(handler_settings_file, 'runtimeSettings', '0', 'handlerSettings', 'publicSettings', 'client_rb')
-
-    # @run_list = value_from_json_file_rb(handler_settings_file, 'runtimeSettings', '0', 'handlerSettings', 'publicSettings', 'runList')
-
-    settings_content = File.read(handler_settings_file)
-
-    # we do this since ruby json parsing dislikes newlines in json values
-    # azure sends them as is for client_rb
-    settings_content = literalize_client_rb_newlines(settings_content)
-    settings_hash = JSON.parse(settings_content)
-
-    protected_settings = settings_hash["runtimeSettings"][0]["handlerSettings"]["protectedSettings"]
+    protected_settings = value_from_json_file(handler_settings_file,'runtimeSettings','0','handlerSettings', 'protectedSettings')
     @validation_key = get_validation_key(protected_settings)
-
-    @client_rb = settings_hash["runtimeSettings"][0]["handlerSettings"]["publicSettings"]["client_rb"]
-    @run_list = settings_hash["runtimeSettings"][0]["handlerSettings"]["publicSettings"]["runlist"]
-
+    @client_rb = value_from_json_file(handler_settings_file, 'runtimeSettings', '0', 'handlerSettings', 'publicSettings', 'client_rb')
+    @run_list = value_from_json_file(handler_settings_file, 'runtimeSettings', '0', 'handlerSettings', 'publicSettings', 'runlist')
   end
 
   def handler_settings_file
@@ -263,8 +249,6 @@ CONFIG
   end
 
   def get_validation_key(encrypted_text)
-    require 'openssl'
-    require 'base64'
 
     # TODO - remove hardcode of the path of the certificate
     certificate_path = "/var/lib/waagent/Certificates.pem"
@@ -282,8 +266,6 @@ CONFIG
     decrypted_text = encrypted_text.decrypt(private_key, certificate)
 
     #extract validation_key from decrypted hash
-    require 'helpers/parse_json'
-    require 'tempfile'
     temp_file = Tempfile.new("decrypted")
     temp_file.write(decrypted_text)
     temp_file.close
