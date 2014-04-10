@@ -2,6 +2,7 @@
 require 'json'
 require 'chef/azure/heartbeat'
 require 'chef/azure/status'
+require 'chef/config'
 
 module ChefAzure
   module Shared
@@ -34,6 +35,14 @@ module ChefAzure
         ENV["PATH"] = "#{path};#{ENV["PATH"]}"
       else
         ENV["PATH"] = "#{path}:#{ENV["PATH"]}"
+      end
+    end
+
+    def chef_config
+      @chef_config ||=
+      begin
+        Chef::Config.from_file("#{bootstrap_directory}/client.rb")
+        Chef::Config
       end
     end
   end
