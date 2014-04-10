@@ -49,7 +49,12 @@ class JSONFileReader
   private
 
   def deserialize_json(file)
-    normalized_content = File.read(file)
+    # User may give file path or file content as input.
+    if File.exists?(file)
+      normalized_content = File.read(file)
+    else
+      normalized_content = file
+    end
     normalized_content = escape_unescaped_content(normalized_content)
     JSON.parse(normalized_content)
   end
