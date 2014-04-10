@@ -165,7 +165,7 @@ function Write-ChefStatus ($operation, $statusType, $message)
   }
   else
   {
-    ruby.exe -e "require 'helpers/parse_json'; write_json_file '$statusFile', '$hash'"
+    ruby.exe -e "require 'chef/azure/helpers/parse_json'; write_json_file '$statusFile', '$hash'"
   }
 }
 
@@ -262,23 +262,23 @@ function readJsonFileUsingRuby
 {
   $json_handlerSettingsFileName = Get-HandlerSettingsFilePath
 
-  $json_handlerSettings = ruby.exe -e "require 'helpers/parse_json'; value_from_json_file '$json_handlerSettingsFileName', 'runtimeSettings', '0', 'handlerSettings'"
+  $json_handlerSettings = ruby.exe -e "require 'chef/azure/helpers/parse_json'; value_from_json_file '$json_handlerSettingsFileName', 'runtimeSettings', '0', 'handlerSettings'"
 
-  $json_handlerProtectedSettings = ruby.exe -e "require 'helpers/parse_json'; value_from_json_file '$json_handlerSettingsFileName','runtimeSettings','0','handlerSettings', 'protectedSettings'"
+  $json_handlerProtectedSettings = ruby.exe -e "require 'chef/azure/helpers/parse_json'; value_from_json_file '$json_handlerSettingsFileName','runtimeSettings','0','handlerSettings', 'protectedSettings'"
 
-  $json_handlerProtectedSettingsCertThumbprint = ruby.exe -e "require 'helpers/parse_json'; value_from_json_file '$json_handlerSettingsFileName', 'runtimeSettings', '0',  'handlerSettings' ,'protectedSettingsCertThumbprint'"
+  $json_handlerProtectedSettingsCertThumbprint = ruby.exe -e "require 'chef/azure/helpers/parse_json'; value_from_json_file '$json_handlerSettingsFileName', 'runtimeSettings', '0',  'handlerSettings' ,'protectedSettingsCertThumbprint'"
 
-  $json_handlerPublicSettingsClient_rb = ruby.exe -e "require 'helpers/parse_json'; value_from_json_file '$json_handlerSettingsFileName', 'runtimeSettings', '0', 'handlerSettings', 'publicSettings', 'client_rb'"
+  $json_handlerPublicSettingsClient_rb = ruby.exe -e "require 'chef/azure/helpers/parse_json'; value_from_json_file '$json_handlerSettingsFileName', 'runtimeSettings', '0', 'handlerSettings', 'publicSettings', 'client_rb'"
 
-  $json_handlerPublicSettingsRunlist = ruby.exe -e "require 'helpers/parse_json'; value_from_json_file '$json_handlerSettingsFileName', 'runtimeSettings', '0', 'handlerSettings', 'publicSettings', 'runList'"
+  $json_handlerPublicSettingsRunlist = ruby.exe -e "require 'chef/azure/helpers/parse_json'; value_from_json_file '$json_handlerSettingsFileName', 'runtimeSettings', '0', 'handlerSettings', 'publicSettings', 'runList'"
 
   $json_handlerEnvironmentFileName = Get-HandlerEnvironmentFilePath
 
-  $json_handlerChefLogFolder = ruby.exe -e "require 'helpers/parse_json'; value_from_json_file '$json_handlerEnvironmentFileName', 'handlerEnvironment', 'logFolder'"
+  $json_handlerChefLogFolder = ruby.exe -e "require 'chef/azure/helpers/parse_json'; value_from_json_file '$json_handlerEnvironmentFileName', 'handlerEnvironment', 'logFolder'"
 
-  $json_handlerStatusFolder = ruby.exe -e "require 'helpers/parse_json'; value_from_json_file '$json_handlerEnvironmentFileName', 'handlerEnvironment', 'statusFolder'"
+  $json_handlerStatusFolder = ruby.exe -e "require 'chef/azure/helpers/parse_json'; value_from_json_file '$json_handlerEnvironmentFileName', 'handlerEnvironment', 'statusFolder'"
 
-  $json_handlerHeartbeatFile = ruby.exe -e "require 'helpers/parse_json'; value_from_json_file '$json_handlerEnvironmentFileName', 'handlerEnvironment', 'heartbeatFile'"
+  $json_handlerHeartbeatFile = ruby.exe -e "require 'chef/azure/helpers/parse_json'; value_from_json_file '$json_handlerEnvironmentFileName', 'handlerEnvironment', 'heartbeatFile'"
 
   return $json_handlerSettingsFileName, $json_handlerSettings, $json_handlerProtectedSettings, $json_handlerProtectedSettingsCertThumbprint, $json_handlerPublicSettingsClient_rb, $json_handlerPublicSettingsRunlist, $json_handlerChefLogFolder, $json_handlerStatusFolder, $json_handlerHeartbeatFile
 
