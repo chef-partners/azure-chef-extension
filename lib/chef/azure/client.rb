@@ -4,8 +4,9 @@ require 'chef/azure/helpers/shared'
 
 class AzureChefClient
   include Chef::Mixin::ShellOut
+  include ChefAzure::Shared
   include ChefAzure::Config
-  include ChefAzure::reporting
+  include ChefAzure::Reporting
 
   def initialize(extension_root, *chef_client_args)
     @chef_extension_root = extension_root
