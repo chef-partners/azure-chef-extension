@@ -47,7 +47,7 @@ class EnableChef
     # Enabling Chef involves following steps:
     # - Configure chef only on first run
     # - Install the Chef service
-    # - Start the Chef service   
+    # - Start the Chef service
     begin
       configure_chef_only_once
 
@@ -92,7 +92,7 @@ class EnableChef
   #   => run the user supplied runlist from first_boot.json in async manner
   def configure_chef_only_once
 
-    # "node-registered" file also indicates that enabled was called once and 
+    # "node-registered" file also indicates that enabled was called once and
     # configs are already generated.
     if not File.exists?("#{bootstrap_directory}/node-registered")
       if File.directory?("#{bootstrap_directory}")
@@ -103,7 +103,7 @@ class EnableChef
       end
 
       load_settings
-    
+
       # Write validation key
       File.open("#{bootstrap_directory}/validation.pem", "w") do |f|
         f.write(@validation_key)
@@ -113,7 +113,7 @@ class EnableChef
       File.open("#{bootstrap_directory}/client.rb", "w") do |f|
         f.write(override_clientrb_file(@client_rb))
       end
-      
+
       # write the first_boot.json
       File.open("#{bootstrap_directory}/first-boot.json", "w") do |f|
         f.write(<<-RUNLIST
@@ -213,9 +213,6 @@ CONFIG
     # TODO - remove hardcode of the path of the certificate
     certificate_path = "/var/lib/waagent/Certificates.pem"
 
-    # TODO - validate if the certificate thumbprint and the thumbprint on the protectedSettings is same.
-    # this step may be optional.
-
     # read cert & get key from the certificate
     certificate = OpenSSL::X509::Certificate.new File.read(certificate_path)
     private_key = OpenSSL::PKey::RSA.new File.read(certificate_path)
@@ -226,11 +223,7 @@ CONFIG
     decrypted_text = encrypted_text.decrypt(private_key, certificate)
 
     #extract validation_key from decrypted hash
-    temp_file = Tempfile.new("decrypted")
-    temp_file.write(decrypted_text)
-    temp_file.close
-    validation_key = value_from_json_file(temp_file.path, "validation_key")
-    temp_file.unlink
+    validation_key = value_from_json_file(decrypted_text, "validation_key")
     return validation_key
   end
 end
