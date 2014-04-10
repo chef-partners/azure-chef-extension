@@ -34,7 +34,7 @@ class ChefService
     [exit_code, message]
   end
 
-  def enable(extension_root, bootstrap_directory, log_location, interval, splay)
+  def enable(extension_root, bootstrap_directory, log_location)
     log_location = log_location || bootstrap_directory
     exit_code = 0
     message = "success"
