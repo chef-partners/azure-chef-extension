@@ -1,0 +1,5 @@
+cron  '<%= name %>' do
+  minute '<%= "*/#{interval}" %>'
+  command '/bin/sleep <%= sleep_time %>; ruby <%= extension_root %>/bin/chef-client.rb -c <%= bootstrap_directory %>/client.rb -L <%= log_location %>/chef-client.log --pid <%= chef_pid_file %>'
+  action :create
+end

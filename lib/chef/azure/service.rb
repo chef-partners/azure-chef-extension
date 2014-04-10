@@ -1,10 +1,12 @@
 
 require 'chef/azure/helpers/shared'
+require 'chef/azure/helpers/erb'
 
 class ChefService
   include Chef::Mixin::ShellOut
   include ChefAzure::Shared
   AZURE_CHEF_SERVICE_PID_FILE = "azure-chef-daemon.pid"
+  AZURE_CHEF_CRON_NAME = 'azure_chef_extension'
 
   # TODO - make these methods idempotent
   def install(log_location)
@@ -33,7 +35,7 @@ class ChefService
     [exit_code, message]
   end
 
-  def enable(log_location)
+  def enable(extension_root, bootstrap_directory, log_location, interval, splay)
     log_location = log_location || bootstrap_directory
     exit_code = 0
     message = "success"
@@ -51,9 +53,17 @@ class ChefService
       else
         # Unix like platform
         chef_pid_file = "#{bootstrap_directory}/#{AZURE_CHEF_SERVICE_PID_FILE}"
-        
-        params = "-c #{bootstrap_directory}/client.rb -L #{log_location}/chef-client.log --daemonize --pid #{chef_pid_file} "
-        result = shell_out("chef-client #{params}")
+        templates_dir = File.join(File.dirname(__FILE__), "/templates")
+
+        chef_cron = ERBHelpers::ERBCompiler.run(
+          File.read(File.join(templates_dir, "chef-client-cron-create.erb")),
+           {:name => AZURE_CHEF_CRON_NAME, :extension_root => extension_root, 
+            :bootstrap_directory => bootstrap_directory, :log_location =>  log_location,
+            :interval => interval/60, :sleep_time => splay, :chef_pid_file => chef_pid_file
+          })
+
+        puts "Adding chef cron = \"#{chef_cron}\""
+        result = shell_out("chef-apply -e \"#{chef_cron}\"")
         result.error!
       end
     rescue Mixlib::ShellOut::ShellCommandFailed => e
@@ -85,8 +95,12 @@ class ChefService
         result = shell_out("chef-service-manager -a stop")
         result.error!
       else
-        # Unix like platform, send TERM signal
-        Process::kill(15, get_chef_pid!)
+        templates_dir = File.join(File.dirname(__FILE__), "/templates")
+
+        chef_cron = ERBHelpers::ERBCompiler.run(File.read(File.join(templates_dir, "chef-client-cron-delete.erb")), {:name => AZURE_CHEF_CRON_NAME})
+
+        puts "Removing chef-cron = \"#{chef_cron}\""
+        result = shell_out("chef-apply -e \"#{chef_cron}\"")
       end
     rescue Mixlib::ShellOut::ShellCommandFailed => e
       Chef::Log.error "#{error_message} (#{e})"
@@ -127,18 +141,14 @@ class ChefService
         # TODO grep output for status
         result.error!
       else
-        begin
-          # send signal 0 to check process
-          chef_pid = get_chef_pid
-          if chef_pid > 0
-            Process::kill(0, get_chef_pid)
-          else
-            return false
+        result = shell_out("crontab -l")
+        result.stdout.each_line do | line |
+          case line
+          when /#{AZURE_CHEF_CRON_NAME}/
+            return true
           end
-        rescue Errno::ESRCH
-          return false
         end
-        return true
+        return false
       end
     rescue Mixlib::ShellOut::ShellCommandFailed => e
       Chef::Log.warn "Error checking chef-client service status (#{e})"
