@@ -47,7 +47,7 @@ class EnableChef
     # Enabling Chef involves following steps:
     # - Configure chef only on first run
     # - Install the Chef service
-    # - Start the Chef service   
+    # - Start the Chef service
     begin
       configure_chef_only_once
 
@@ -92,7 +92,7 @@ class EnableChef
   #   => run the user supplied runlist from first_boot.json in async manner
   def configure_chef_only_once
 
-    # "node-registered" file also indicates that enabled was called once and 
+    # "node-registered" file also indicates that enabled was called once and
     # configs are already generated.
     if not File.exists?("#{bootstrap_directory}/node-registered")
       if File.directory?("#{bootstrap_directory}")
@@ -103,7 +103,7 @@ class EnableChef
       end
 
       load_settings
-    
+
       # Write validation key
       File.open("#{bootstrap_directory}/validation.pem", "w") do |f|
         f.write(@validation_key)
@@ -185,13 +185,13 @@ RUNLIST
   def literalize_client_rb_newlines(content)
     client_rb_key_start_idx = content.index("\"client_rb\"")
     client_rb_val_start_idx = client_rb_key_start_idx + "\"client_rb\"".length + 1
- 
+
     # move ahead till the quoted value starts
     while true
       (content[client_rb_val_start_idx] != "\"") ? client_rb_val_start_idx += 1 : break
     end
     client_rb_val_start_idx += 1
-    result = content[0, client_rb_val_start_idx] 
+    result = content[0, client_rb_val_start_idx]
     literalized_content = []
     literalize = true # when client_rb value ends, we turn it off and simply copy rest of content
     # Now find the end of client_rb value, literalizing till unescaped double quote "
@@ -212,7 +212,7 @@ RUNLIST
             literalized_content.push('\\n')
           elsif content[i] == "\r"
             # literalize
-            literalized_content.push('\\r')              
+            literalized_content.push('\\r')
           else
             literalized_content.push(content[i])
           end
@@ -256,9 +256,6 @@ CONFIG
     # TODO - remove hardcode of the path of the certificate
     certificate_path = "/var/lib/waagent/Certificates.pem"
 
-    # TODO - validate if the certificate thumbprint and the thumbprint on the protectedSettings is same.
-    # this step may be optional.
-
     # read cert & get key from the certificate
     certificate = OpenSSL::X509::Certificate.new File.read(certificate_path)
     private_key = OpenSSL::PKey::RSA.new File.read(certificate_path)
@@ -269,11 +266,7 @@ CONFIG
     decrypted_text = encrypted_text.decrypt(private_key, certificate)
 
     #extract validation_key from decrypted hash
-    temp_file = Tempfile.new("decrypted")
-    temp_file.write(decrypted_text)
-    temp_file.close
-    validation_key = value_from_json_file(temp_file.path, "validation_key")
-    temp_file.unlink
+    validation_key = value_from_json_file(decrypted_text, "validation_key")
     return validation_key
   end
 end
