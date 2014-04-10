@@ -59,7 +59,7 @@ class ChefService
           File.read(File.join(templates_dir, "chef-client-cron-create.erb")),
            {:name => AZURE_CHEF_CRON_NAME, :extension_root => extension_root, 
             :bootstrap_directory => bootstrap_directory, :log_location =>  log_location,
-            :interval => interval/60, :sleep_time => splay, :chef_pid_file => chef_pid_file
+            :interval => (chef_config[:interval] || 1800)/60, :sleep_time => (chef_config[:splay] || 0), :chef_pid_file => chef_pid_file
           })
 
         puts "Adding chef cron = \"#{chef_cron}\""
