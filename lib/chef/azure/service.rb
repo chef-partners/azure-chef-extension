@@ -4,7 +4,7 @@ require 'chef/azure/helpers/erb'
 class ChefService
   include Chef::Mixin::ShellOut
   include ChefAzure::Shared
-  AZURE_CHEF_SERVICE_PID_FILE = "azure-chef-daemon.pid"
+  AZURE_CHEF_SERVICE_PID_FILE = "azure-chef-client.pid"
   AZURE_CHEF_CRON_NAME = 'azure_chef_extension'
 
   # TODO - make these methods idempotent
