@@ -112,12 +112,11 @@ class EnableChef
         f.write(override_clientrb_file(@client_rb))
       end
       
-      runlist = @run_list.empty? ? [] : ["#{escape_runlist(@run_list)}"]
       # write the first_boot.json
       File.open("#{bootstrap_directory}/first-boot.json", "w") do |f|
         f.write(<<-RUNLIST
 {
-"run_list": #{runlist}
+"run_list": [#{ @run_list.empty? ? "" : escape_runlist(@run_list)}]
 }
 RUNLIST
 )
