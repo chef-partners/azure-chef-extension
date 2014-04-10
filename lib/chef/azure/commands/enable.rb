@@ -4,7 +4,7 @@
 require 'chef'
 require 'chef/azure/helpers/shared'
 require 'chef/azure/service'
-require 'helpers/parse_json'
+require 'chef/azure/helpers/parse_json'
 require 'openssl'
 require 'base64'
 require 'tempfile'
@@ -113,12 +113,13 @@ class EnableChef
       File.open("#{bootstrap_directory}/client.rb", "w") do |f|
         f.write(override_clientrb_file(@client_rb))
       end
-
+      
+      runlist = @run_list.empty? ? [] : ["#{escape_runlist(@run_list)}"]
       # write the first_boot.json
       File.open("#{bootstrap_directory}/first-boot.json", "w") do |f|
         f.write(<<-RUNLIST
 {
-"run_list": [#{escape_runlist(@run_list)}]
+"run_list": #{runlist}
 }
 RUNLIST
 )
@@ -179,49 +180,6 @@ RUNLIST
         raise error_message
       end
     end
-  end
-
-  # Note - this assumes ascii char-set. TODO - other langs?
-  def literalize_client_rb_newlines(content)
-    client_rb_key_start_idx = content.index("\"client_rb\"")
-    client_rb_val_start_idx = client_rb_key_start_idx + "\"client_rb\"".length + 1
- 
-    # move ahead till the quoted value starts
-    while true
-      (content[client_rb_val_start_idx] != "\"") ? client_rb_val_start_idx += 1 : break
-    end
-    client_rb_val_start_idx += 1
-    result = content[0, client_rb_val_start_idx] 
-    literalized_content = []
-    literalize = true # when client_rb value ends, we turn it off and simply copy rest of content
-    # Now find the end of client_rb value, literalizing till unescaped double quote "
-    for i in (client_rb_val_start_idx)..(content.length - 1)
-      if literalize
-        if content[i] == '"'
-          if content[i-1] == "\\"
-            # its an escaped quote, so copy as is
-          else
-            # its unescaped quote, so client_rb value ends here.
-            literalize = false
-          end
-          literalized_content.push(content[i])
-        else
-          # just part of client_rb value
-          if content[i] == "\n"
-            # literalize
-            literalized_content.push('\\n')
-          elsif content[i] == "\r"
-            # literalize
-            literalized_content.push('\\r')              
-          else
-            literalized_content.push(content[i])
-          end
-        end
-      else
-        literalized_content.push(content[i])
-      end
-    end
-    result + literalized_content.join("")
   end
 
   def override_clientrb_file(user_client_rb)
