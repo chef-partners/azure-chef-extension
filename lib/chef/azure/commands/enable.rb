@@ -75,7 +75,8 @@ class EnableChef
   end
 
   def enable_chef_service
-    @exit_code, error_message = ChefService.new.enable(@azure_plugin_log_location)
+    # TODO - read interval and splay from client.rb
+    @exit_code, error_message = ChefService.new.enable(@chef_extension_root, bootstrap_directory, @azure_plugin_log_location, 1800, 30)
     if @exit_code == 0
       report_status_to_azure "chef-service enabled", "success"
     else
