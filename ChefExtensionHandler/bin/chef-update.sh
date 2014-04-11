@@ -17,16 +17,16 @@ get_script_dir(){
 commands_script_path=$(get_script_dir)
 
 # Save chef configuration.
-mv /etc/chef /tmp
+mv /etc/chef /tmp/chef_backup
 
 # uninstall chef.
 sh $commands_script_path/chef-uninstall.sh
 
 # Restore Chef Configuration
-mv /tmp/chef /etc
+mv /tmp/chef_backup /etc/chef
 
 # install new version of chef extension
 sh $commands_script_path/chef-install.sh
 
 # touch the update_process_descriptor
-touch /etc/chef/.update_process_descriptor
+touch /etc/chef/.updating_chef_extension

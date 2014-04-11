@@ -6,4 +6,4 @@ CHEF_EXT_DIR=$(dirname "$SCRIPT")
 
 echo $CHEF_EXT_DIR
 
-sudo sh $CHEF_EXT_DIR/bin/chef-update.sh
+sh $CHEF_EXT_DIR/bin/chef-update.sh
