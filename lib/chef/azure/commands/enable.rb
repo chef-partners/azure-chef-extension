@@ -14,6 +14,8 @@ class EnableChef
   include ChefAzure::Config
   include ChefAzure::Reporting
 
+  LINUX_CERT_PATH = "/var/lib/waagent/Certificates.pem"
+
   def initialize(extension_root, *enable_args)
     @chef_extension_root = extension_root
     @enable_args = enable_args
