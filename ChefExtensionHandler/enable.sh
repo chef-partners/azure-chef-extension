@@ -1,4 +1,3 @@
-
 #!/bin/sh
 
 export PATH=$PATH:/opt/chef/bin:/opt/chef/embedded/bin

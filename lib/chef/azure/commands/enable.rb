@@ -1,4 +1,3 @@
-
 # This implements the azure extension 'enable' command.
 
 require 'chef'
@@ -35,7 +34,6 @@ class EnableChef
     end
 
     return @exit_code
-
   end
 
   private
@@ -91,7 +89,6 @@ class EnableChef
   #   => Perform node registration executing first chef run
   #   => run the user supplied runlist from first_boot.json in async manner
   def configure_chef_only_once
-
     # "node-registered" file also indicates that enabled was called once and
     # configs are already generated.
     if not File.exists?("#{bootstrap_directory}/node-registered")
@@ -113,7 +110,6 @@ class EnableChef
       File.open("#{bootstrap_directory}/client.rb", "w") do |f|
         f.write(override_clientrb_file(@client_rb))
       end
-
       # write the first_boot.json
       File.open("#{bootstrap_directory}/first-boot.json", "w") do |f|
         f.write(<<-RUNLIST
@@ -227,4 +223,3 @@ CONFIG
     return validation_key
   end
 end
-

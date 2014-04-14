@@ -1,4 +1,3 @@
-
 require 'chef/azure/helpers/shared'
 require 'chef/azure/helpers/erb'
 
