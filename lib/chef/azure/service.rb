@@ -16,9 +16,14 @@ class ChefService
     begin
       puts "Installing chef-client service..."
       if windows?
-        params = " -a install -c #{bootstrap_directory}\\client.rb -L #{log_location}\\chef-client.log "
-        result = shell_out("chef-service-manager #{params}")
-        result.error!
+        status = shell_out("chef-service-manager -a status")
+        if status.exitstatus == 0 and status.stdout.include?("Service chef-client doesn't exist on the system")
+          params = " -a install -c #{bootstrap_directory}\\client.rb -L #{log_location}\\chef-client.log "
+          result = shell_out("chef-service-manager #{params}")
+          result.error!
+        else
+          status.error!
+        end
       end
       # Unix - only start chef-client in daemonize mode using self.enable
     rescue Mixlib::ShellOut::ShellCommandFailed => e
@@ -137,8 +142,11 @@ class ChefService
     begin
       if windows?
         result = shell_out("chef-service-manager -a status")
-        # TODO grep output for status
-        result.error!
+        if result.exitstatus == 0 and result.stdout.include?("State of chef-client service is: running")
+          return true
+        else
+          return false
+        end
       else
         result = shell_out("crontab -l")
         result.stdout.each_line do | line |
