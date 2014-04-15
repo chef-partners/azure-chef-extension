@@ -164,7 +164,7 @@ RUNLIST
   def handler_settings_file
     @handler_settings_file ||=
     begin
-      files = Dir.glob("#{@azure_config_folder}/*.settings").sort
+      files = Dir.glob("#{File.expand_path(@azure_config_folder)}/*.settings").sort
       if files and not files.empty?
         files.last
       else
@@ -205,18 +205,26 @@ CONFIG
   end
 
   def get_validation_key(encrypted_text)
+    if windows?
+      decrypt_content_file_path = File.expand_path(File.dirname(File.dirname(__FILE__)))
+      decrypt_content_file_path += "\\helpers\\powershell\\decrypt_content_on_windows.ps1"
+      thumb_print = value_from_json_file(handler_settings_file,'runtimeSettings','0','handlerSettings', 'protectedSettingsCertThumbprint') 
+      result= shell_out("powershell.exe -nologo -noprofile -executionpolicy \"unrestricted\" -file #{decrypt_content_file_path} #{thumb_print} #{encrypted_text}")
+      decrypted_text = result.stdout
+      result.error!
+    else
+      # TODO - remove hardcode of the path of the certificate
+      certificate_path = "/var/lib/waagent/Certificates.pem"
 
-    # TODO - remove hardcode of the path of the certificate
-    certificate_path = "/var/lib/waagent/Certificates.pem"
+      # read cert & get key from the certificate
+      certificate = OpenSSL::X509::Certificate.new File.read(certificate_path)
+      private_key = OpenSSL::PKey::RSA.new File.read(certificate_path)
 
-    # read cert & get key from the certificate
-    certificate = OpenSSL::X509::Certificate.new File.read(certificate_path)
-    private_key = OpenSSL::PKey::RSA.new File.read(certificate_path)
-
-    # decrypt text
-    encrypted_text = Base64.decode64(encrypted_text)
-    encrypted_text = OpenSSL::PKCS7.new(encrypted_text)
-    decrypted_text = encrypted_text.decrypt(private_key, certificate)
+      # decrypt text
+      encrypted_text = Base64.decode64(encrypted_text)
+      encrypted_text = OpenSSL::PKCS7.new(encrypted_text)
+      decrypted_text = encrypted_text.decrypt(private_key, certificate)
+    end
 
     #extract validation_key from decrypted hash
     validation_key = value_from_json_file(decrypted_text, "validation_key")
