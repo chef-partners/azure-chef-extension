@@ -65,11 +65,13 @@ def download_chef(download_url, target)
   end
 end
 
+desc "Builds a azure chef extension gem."
 task :gem => [:clean] do
   puts "Building gem file..."
   puts %x{gem build *.gemspec}
 end
 
+desc "Builds the azure chef extension package."
 task :build, [:chef_version, :target_type, :download_url, :machine_os, :machine_arch] => [:gem] do |t, args|
   args.with_defaults(:chef_version => nil, :target_type => "windows", :download_url => nil, :machine_os => "2008r2", :machine_arch => "x86_64")
 
@@ -119,6 +121,7 @@ task :build, [:chef_version, :target_type, :download_url, :machine_os, :machine_
 
 end
 
+desc "Cleans up the pacakge sandbox"
 task :clean do
   puts "Cleaning Chef Package..."
   puts "Deleting #{CHEF_BUILD_DIR} and #{PESTER_SANDBOX}"
@@ -136,6 +139,7 @@ end
 
 # Its runs pester unit tests
 # have a winspec task that can be used to trigger tests in jenkins
+desc "Runs pester unit tests ex: rake spec[\"spec\\ps_specs\\sample.Tests.ps1\"]"
 task :winspec, [:spec_path] => [:init_pester] do |t, args|
   puts "\nRunning unit tests for powershell scripts..."
   # Default: runs all tests under spec dir,
