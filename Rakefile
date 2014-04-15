@@ -9,6 +9,7 @@ require 'rake/packagetask'
 require 'uri'
 require 'net/http'
 require 'json'
+require 'zip'
 
 PACKAGE_NAME = "ChefExtensionHandler"
 EXTENSION_VERSION = "1.0"
@@ -130,11 +131,11 @@ task :build, [:target_type] => [:gem] do |t, args|
   end
   download_chef(download_url, target_chef_pkg)
 
-  if windows?
-    puts "Creating a zip package..."
-    puts %x{powershell -executionpolicy unrestricted "scripts\\createzip.ps1 . #{PACKAGE_NAME}_#{EXTENSION_VERSION}.zip #{CHEF_BUILD_DIR}"}
-  else
-    puts "Please create a zip package from #{CHEF_BUILD_DIR}"
+  puts "Creating a zip package..."
+  Zip::File.open("#{PACKAGE_NAME}_#{EXTENSION_VERSION}.zip", Zip::File::CREATE) do |zipfile|
+    Dir[File.join("#{CHEF_BUILD_DIR}/", '**', '**')].each do |file|
+      zipfile.add(file.sub("#{CHEF_BUILD_DIR}/", ''), file)
+    end
   end
 end
 
