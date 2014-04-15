@@ -45,12 +45,22 @@ def download_chef(download_url, target)
     begin
         file = open(target, 'wb')
         http.request_get(uri.request_uri) do |response|
-          response.read_body do |segment|
-            file.write(segment)
+          case response
+          when Net::HTTPSuccess then
+            file = open(target, 'wb')
+            response.read_body do |segment|
+              file.write(segment)
+            end
+          when Net::HTTPRedirection then
+            location = response['location']
+            puts "WARNING: Redirected to #{location}"
+            download_chef(location, target)
+          else
+            puts "ERROR: Download failed. Http response code: #{response.code}"
           end
         end
     ensure
-      file.close
+      file.close if file
     end
   end
 end
@@ -90,7 +100,7 @@ task :build, [:chef_version, :target_type, :download_url, :machine_os, :machine_
   package_list.each do |rule|
     src = rule.keys.first
     dest = rule[src]
-    puts "src [#{Dir.glob(src).join(', ')}] => dest [#{dest}]"
+    puts "Copy: src [#{src}] => dest [#{dest}]"
     if File.directory?(dest)
       FileUtils.cp_r Dir.glob(src), dest
     else
