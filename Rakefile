@@ -8,6 +8,7 @@
 require 'rake/packagetask'
 require 'uri'
 require 'net/http'
+require 'json'
 
 PACKAGE_NAME = "ChefExtensionHandler"
 VERSION = "1.0"
@@ -65,24 +66,26 @@ def download_chef(download_url, target)
   end
 end
 
+def load_build_environment(platform)
+  build_options = JSON.parse(File.read("Build.json"))[platform]
+  # TODO - we can extend this to form the download url using
+  # additional params like machine_os, arch etc.
+  download_url = build_options["download_url"]
+  download_url
+end
+
 desc "Builds a azure chef extension gem."
 task :gem => [:clean] do
   puts "Building gem file..."
   puts %x{gem build *.gemspec}
 end
 
-desc "Builds the azure chef extension package."
-task :build, [:chef_version, :target_type, :download_url, :machine_os, :machine_arch] => [:gem] do |t, args|
-  args.with_defaults(:chef_version => nil, :target_type => "windows", :download_url => nil, :machine_os => "2008r2", :machine_arch => "x86_64")
+desc "Builds the azure chef extension package Ex: build[platform], default is build[windows]."
+task :build, [:target_type] => [:gem] do |t, args|
+  args.with_defaults(:target_type => "windows")
 
-  download_url = nil
-  if args.download_url.nil?
-    if args.target_type == "windows"
-      download_url = "https://www.opscode.com/chef/download?p=windows&pv=#{args.machine_os}&m=#{args.machine_arch}"
-    elsif args.target_type == "linux"
-      download_url = "https://opscode-omnibus-packages.s3.amazonaws.com/ubuntu/13.04/x86_64/chef_11.10.4-1.ubuntu.13.04_amd64.deb"
-    end
-  end
+  download_url = load_build_environment(args.target_type)
+
   puts "Building #{args.target_type} package..."
   # setup the sandbox
   FileUtils.mkdir_p CHEF_BUILD_DIR
