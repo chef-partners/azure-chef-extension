@@ -141,6 +141,7 @@ end
 desc "Cleans up the package sandbox"
 task :clean do
   puts "Cleaning Chef Package..."
+  FileUtils.rm_f(Dir.glob("*.zip"))
   puts "Deleting #{CHEF_BUILD_DIR} and #{PESTER_SANDBOX}"
   FileUtils.rm_rf(Dir.glob("#{CHEF_BUILD_DIR}"))
   FileUtils.rm_rf(Dir.glob("#{PESTER_SANDBOX}"))
