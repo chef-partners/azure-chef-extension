@@ -105,11 +105,10 @@ task :build, [:target_type] => [:gem] do |t, args|
   
   # Copy platform specific files to package dir
   puts "Copying #{args.target_type} scripts to package directory..."
-  package_list = nil
-  if args.target_type == "windows"
-    package_list = WINDOWS_PACKAGE_LIST
+  package_list = if args.target_type == "windows"
+    WINDOWS_PACKAGE_LIST
   else
-    package_list = LINUX_PACKAGE_LIST
+    LINUX_PACKAGE_LIST
   end
 
   package_list.each do |rule|
@@ -124,11 +123,10 @@ task :build, [:target_type] => [:gem] do |t, args|
   end
 
   puts "Downloading chef installer..."
-  target_chef_pkg = ""
-  if args.target_type == "windows"
-    target_chef_pkg = "#{CHEF_BUILD_DIR}/installer/chef-client-latest.msi"
+  target_chef_pkg = if args.target_type == "windows"
+    "#{CHEF_BUILD_DIR}/installer/chef-client-latest.msi"
   else
-    target_chef_pkg = "#{CHEF_BUILD_DIR}/installer/chef-client-latest.deb"
+    "#{CHEF_BUILD_DIR}/installer/chef-client-latest.deb"
   end
   download_chef(download_url, target_chef_pkg)
 
