@@ -11,7 +11,7 @@ require 'net/http'
 require 'json'
 
 PACKAGE_NAME = "ChefExtensionHandler"
-VERSION = "1.0"
+EXTENSION_VERSION = "1.0"
 CHEF_BUILD_DIR = "pkg"
 PESTER_VER_TAG = "2.0.4" # we lock down to specific tag version
 PESTER_GIT_URL = 'https://github.com/pester/Pester.git'
@@ -38,10 +38,17 @@ WINDOWS_PACKAGE_LIST = [
 ]
 
 # Helpers
+def windows?
+  if RUBY_PLATFORM =~ /mswin|mingw|windows/
+    true
+  else
+    false
+  end
+end
+
 def download_chef(download_url, target)
   puts "Downloading from url [#{download_url}]"
   uri = URI(download_url)
-  # TODO - handle redirects?
   Net::HTTP.start(uri.host) do |http|
     begin
         file = open(target, 'wb')
@@ -67,6 +74,9 @@ def download_chef(download_url, target)
 end
 
 def load_build_environment(platform)
+  puts "\n*************************************"
+  puts "Reading build options from Build.json"
+  puts "*************************************\n\n"
   build_options = JSON.parse(File.read("Build.json"))[platform]
   # TODO - we can extend this to form the download url using
   # additional params like machine_os, arch etc.
@@ -122,9 +132,15 @@ task :build, [:target_type] => [:gem] do |t, args|
   end
   download_chef(download_url, target_chef_pkg)
 
+  if windows?
+    puts "Creating a zip package..."
+    puts %x{powershell -executionpolicy unrestricted "scripts\\createzip.ps1 . #{PACKAGE_NAME}_#{EXTENSION_VERSION}.zip #{CHEF_BUILD_DIR}"}
+  else
+    puts "Please create a zip package from #{CHEF_BUILD_DIR}"
+  end
 end
 
-desc "Cleans up the pacakge sandbox"
+desc "Cleans up the package sandbox"
 task :clean do
   puts "Cleaning Chef Package..."
   puts "Deleting #{CHEF_BUILD_DIR} and #{PESTER_SANDBOX}"
