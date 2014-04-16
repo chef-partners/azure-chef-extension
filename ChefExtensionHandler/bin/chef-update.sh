@@ -1,3 +1,4 @@
+#!/bin/sh
 # Reinstall with new version
 #
 # GA will do this:
@@ -14,16 +15,18 @@ get_script_dir(){
   echo "${script_dir}"
 }
 
+BACKUP_FOLDER="etc_chef_extn_update_`date +%s`"
+
 commands_script_path=$(get_script_dir)
 
 # Save chef configuration.
-mv /etc/chef /tmp/chef_backup
+mv /etc/chef /tmp/$BACKUP_FOLDER
 
 # uninstall chef.
 sh $commands_script_path/chef-uninstall.sh
 
 # Restore Chef Configuration
-mv /tmp/chef_backup /etc/chef
+mv /tmp/$BACKUP_FOLDER /etc/chef
 
 # install new version of chef extension
 sh $commands_script_path/chef-install.sh
