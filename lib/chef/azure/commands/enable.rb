@@ -215,8 +215,8 @@ CONFIG
       decrypted_text = result.stdout
       result.error!
     else
-      # TODO - remove hardcode of the path of the certificate
-      certificate_path = "/var/lib/waagent/Certificates.pem"
+
+      certificate_path = LINUX_CERT_PATH
 
       # read cert & get key from the certificate
       certificate = OpenSSL::X509::Certificate.new File.read(certificate_path)
