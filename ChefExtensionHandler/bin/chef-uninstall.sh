@@ -1,6 +1,6 @@
 #!/bin/sh
 
-update_process_descriptor=/etc/chef/.update_process_descriptor
+update_process_descriptor=/etc/chef/.updating_chef_extension
 
 if [ -f $update_process_descriptor ]; then
   echo "Not tried to uninstall, as the update process is running"
@@ -17,7 +17,7 @@ else
       echo "Unable to uninstall gem azure-chef-extension."
     fi
   else
-    echo "Gem azure-chef-extension is not installed !!!" 
+    echo "Gem azure-chef-extension is not installed !!!"
   fi
 
   # Uninstall chef_pkg

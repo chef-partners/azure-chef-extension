@@ -14,6 +14,8 @@ class EnableChef
   include ChefAzure::Config
   include ChefAzure::Reporting
 
+  LINUX_CERT_PATH = "/var/lib/waagent/Certificates.pem"
+
   def initialize(extension_root, *enable_args)
     @chef_extension_root = extension_root
     @enable_args = enable_args
@@ -213,8 +215,8 @@ CONFIG
       decrypted_text = result.stdout
       result.error!
     else
-      # TODO - remove hardcode of the path of the certificate
-      certificate_path = "/var/lib/waagent/Certificates.pem"
+
+      certificate_path = LINUX_CERT_PATH
 
       # read cert & get key from the certificate
       certificate = OpenSSL::X509::Certificate.new File.read(certificate_path)
