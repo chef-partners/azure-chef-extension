@@ -26,7 +26,7 @@ mv /etc/chef /tmp/$BACKUP_FOLDER
 sh $commands_script_path/chef-uninstall.sh
 
 # Restore Chef Configuration
-mv /tmp/$BACKUP_FOLDER/chef /etc
+mv /tmp/$BACKUP_FOLDER /etc/chef
 
 # install new version of chef extension
 sh $commands_script_path/chef-install.sh
