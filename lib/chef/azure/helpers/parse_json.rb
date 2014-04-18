@@ -9,7 +9,7 @@ class JSONFileReader
     @keys = *keys
   end
 
-  def read_value()
+  def read_value
     json_key_path = "self"
 
     @keys.each do |key|
@@ -60,15 +60,11 @@ class JSONFileReader
   end
 
   def is_alphanumeric(sequence)
-    if sequence.match(/[\dA-Za-z\_]+/)
-      $~[0] == sequence
-    end
+    sequence.match(/[\dA-Za-z\_]+/) ? ($~[0] == sequence) : false
   end
 
   def is_numeric(sequence)
-    if sequence.match(/[\d]+/)
-      $~[0] == sequence
-    end
+    sequence.match(/[\d]+/) ? ($~[0] == sequence) : false
   end
 end
 
@@ -102,7 +98,6 @@ def escape_unescaped_content(file_content)
    end
 
    escaped_content
-
  end
 
 def get_jsonreader_object(file_name, *keys)
@@ -125,18 +120,4 @@ def value_from_json_file(file_name, *keys)
   end
 
   json_value
-end
-
-def parse_json_file(file_name)
-   json_reader = get_jsonreader_object(file_name, [])
-   json = json_reader.get_deserialized_objects
-   print json
-end
-
-def parse_json_contents (contents)
-  deserialized_contents = JSON.parse(contents)
-  if deserialized_contents.kind_of?(Array)
-     deserialized_contents = deserialized_contents[0]
-  end
-  deserialized_contents
 end
