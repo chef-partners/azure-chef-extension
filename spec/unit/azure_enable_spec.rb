@@ -66,7 +66,7 @@ describe EnableChef do
       instance.stub(:puts)
       instance.stub(:shell_out).and_return(OpenStruct.new(:exitstatus => 0, :stdout => ""))
       File.stub_chain(:open, :write).and_return(true)
-      instance.should_receive(:load_settings).once
+      instance.stub(:load_settings)
       Process.stub(:spawn)
       Process.stub(:detach)
       instance.send(:configure_chef_only_once)
