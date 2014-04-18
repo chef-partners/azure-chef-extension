@@ -21,14 +21,17 @@ $sharedHelper = $here.Replace("\spec\ps_specs", "\ChefExtensionHandler\bin\share
 
 describe "#Install-ChefClient" {
   it "install chef and azure chef extension gem successfully" {
-    mock Get-SharedHelper {return "C:"}
-    $extensionRoot = "C:Packages/Plugin/ChefExtensionHandler"
+    # create temp powershell file for mock Get-SharedHelper
+    $tempPS = ([System.IO.Path]::GetTempFileName() | Rename-Item -NewName { $_ -replace 'tmp$', 'ps1' } -PassThru)
+    mock Get-SharedHelper {return $tempPS}
+
+    $extensionRoot = "C:\Packages\Plugin\ChefExtensionHandler"
     mock Chef-GetExtensionRoot {return $extensionRoot}
 
-    $localMsiPath = "C:Packages/Plugin/ChefExtensionHandler/installer\chef-client-latest.msi"
+    $localMsiPath = "C:\Packages\Plugin\ChefExtensionHandler\installer\chef-client-latest.msi"
     mock Get-LocalDestinationMsiPath {return $localMsiPath}
 
-    $chefMsiLogPath = "C:"
+    $chefMsiLogPath = $env:tmp
     mock Get-ChefClientMsiLogPath {return $chefMsiLogPath}
 
     mock Archive-ChefClientLog
@@ -40,6 +43,9 @@ describe "#Install-ChefClient" {
     mock Chef-Add-To-Path -Verifiable
 
     Install-ChefClient
+
+    # Delete temp file created for Get-SharedHelper
+    Remove-Item $tempPS
 
     # Archive-ChefClientLog should called with $chefMsiLogPath params atleast 1 time
     Assert-MockCalled Archive-ChefClientLog -Times 1 -ParameterFilter{$chefClientMsiLogPath -eq $chefMsiLogPath}
@@ -58,7 +64,7 @@ describe "#Install-ChefClient" {
       mock Get-SharedHelper {return "C:"}
       mock Chef-GetExtensionRoot -Verifiable
       mock Get-LocalDestinationMsiPath -Verifiable
-      $chefMsiLogPath = "C:invalid"
+      $chefMsiLogPath = "C:\invalid"
       mock Get-ChefClientMsiLogPath {return $chefMsiLogPath} -Verifiable
       mock Run-ChefInstaller -Verifiable
       mock Install-AzureChefExtensionGem -Verifiable
@@ -76,7 +82,7 @@ describe "#Install-ChefClient" {
 
 describe "#Get-SharedHelper" {
   it "returns shared helper" {
-    $extensionRoot = "C:/Users/azure/azure-chef-extension/ChefExtensionHandler"
+    $extensionRoot = "C:\Users\azure\azure-chef-extension\ChefExtensionHandler"
     mock Chef-GetExtensionRoot {return $extensionRoot} -Verifiable
     $result = Get-SharedHelper
 
@@ -87,7 +93,7 @@ describe "#Get-SharedHelper" {
 
 describe "#Get-LocalDestinationMsiPath" {
   it "contains chef-client-latest.msi path" {
-    $extensionRoot = "C:/Users/azure/azure-chef-extension/ChefExtensionHandler"
+    $extensionRoot = "C:\Users\azure\azure-chef-extension\ChefExtensionHandler"
     $result = Get-LocalDestinationMsiPath($extensionRoot)
 
     $result | should Match("\\installer\\chef-client-latest.msi")
