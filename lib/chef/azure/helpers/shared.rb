@@ -16,7 +16,7 @@ module ChefAzure
 
     def bootstrap_directory
       if windows?
-        "#{ENV['SYSTEMDRIVE']}\\chef\\"
+        "#{ENV['SYSTEMDRIVE']}/chef/"
       else
         "/etc/chef/"
       end
