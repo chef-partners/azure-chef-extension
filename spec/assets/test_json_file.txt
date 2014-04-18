@@ -1,4 +1,6 @@
-[{ "name": "Test", "version": "1.0", "data": "first line
+[{ "name": "Test",
+   "version": "1.0",
+   "data": "first line
     second line
     third line
     " }]

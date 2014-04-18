@@ -69,7 +69,7 @@ end
 
 describe "value_from_json_file" do
   it "returns json multi-lined value from the supplied json file." do
-    file =  File.read(File.expand_path(File.dirname("spec/assets/*"))+"/test_json_file.txt")
+    file =  File.expand_path(File.dirname("spec/assets/*"))+"/test_json_file.txt"
     value_from_json_file(file, "data").should eq "first line\nsecond line\nthird line\n"
   end
 end
