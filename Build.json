@@ -1,0 +1,14 @@
+{
+  "windows" : {
+    "chef_version"  : "latest",
+    "download_url"  : "https://www.opscode.com/chef/download?p=windows&pv=2008r2&m=x86_64",
+    "machine_os"    : "2008r2",
+    "machine_arch"  : "x86_64"
+  },
+  "linux" : {
+    "chef_version"  : "latest",
+    "download_url"  : "https://opscode-omnibus-packages.s3.amazonaws.com/ubuntu/13.04/x86_64/chef_11.10.4-1.ubuntu.13.04_amd64.deb",
+    "machine_os"    : "ubuntu",
+    "machine_arch"  : "x86_64"
+  }
+}
