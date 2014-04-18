@@ -55,9 +55,7 @@ describe "value_from_json_file" do
     file_content = '[{ "name": "Test", "version": "1.0" }]'
     value_from_json_file(file_content, "name").should eq "Test"
   end
-end
 
-describe "value_from_json_file" do
   it "returns json multi-lined value from the supplied json file_content." do
     file_content = '[{ "name": "Test", "version": "1.0", "data": "first line
     second line
@@ -65,11 +63,9 @@ describe "value_from_json_file" do
     " }]'
     value_from_json_file(file_content, "data").should eq "first line\nsecond line\nthird line\n"
   end
-end
 
-describe "value_from_json_file" do
   it "returns json multi-lined value from the supplied json file." do
-    file =  File.expand_path(File.dirname("spec/assets/*"))+"/test_json_file.txt"
+    file =  File.expand_path(File.dirname("spec/assets/*"))+"/test_json_file.json"
     value_from_json_file(file, "data").should eq "first line\nsecond line\nthird line\n"
   end
 end
