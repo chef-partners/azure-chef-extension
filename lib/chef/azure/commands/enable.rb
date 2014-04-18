@@ -179,9 +179,9 @@ RUNLIST
 
   def override_clientrb_file(user_client_rb)
     client_rb = <<-CONFIG
-client_key        "#{bootstrap_directory}/client.pem"
-validation_key    "#{bootstrap_directory}/validation.pem"
-log_location  "#{@azure_plugin_log_location}/chef-client.log"
+client_key        '#{bootstrap_directory}/client.pem'
+validation_key    '#{bootstrap_directory}/validation.pem'
+log_location  '#{@azure_plugin_log_location}/chef-client.log'
 CONFIG
 
     "#{user_client_rb}\r\n#{client_rb}"
