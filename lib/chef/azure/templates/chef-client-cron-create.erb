@@ -1,5 +1,5 @@
 cron  '<%= name %>' do
   minute '<%= "*/#{interval}" %>'
-  command '/bin/sleep <%= sleep_time %>; ruby <%= extension_root %>/bin/chef-client -c <%= bootstrap_directory %>/client.rb -L <%= log_location %>/chef-client.log --pid <%= chef_pid_file %> --once'
+  command '/bin/sleep <%= sleep_time %>; /opt/chef/embedded/bin/ruby <%= extension_root %>/bin/chef-client -c <%= bootstrap_directory %>/client.rb -L <%= log_location %>/chef-client.log --pid <%= chef_pid_file %> --once'
   action :create
 end
