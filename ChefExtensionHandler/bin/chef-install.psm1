@@ -1,4 +1,3 @@
-trap [Exception] {echo $_.Exception.Message;exit 1}
 
 <#
 // install chef-client with /i switch
@@ -53,7 +52,7 @@ function Get-LocalDestinationMsiPath($chefExtensionRoot) {
 }
 
 function Install-ChefClient {
-
+  trap [Exception] {echo $_.Exception.Message;exit 1}
   # Source the shared PS
   . $(Get-SharedHelper)
 
