@@ -40,7 +40,7 @@ describe "#Install-ChefClient" {
 
     mock Install-AzureChefExtensionGem
 
-    mock Chef-Add-To-Path -Verifiable
+    mock Chef-AddToPath -Verifiable
 
     Install-ChefClient
 
@@ -68,7 +68,7 @@ describe "#Install-ChefClient" {
       mock Get-ChefClientMsiLogPath {return $chefMsiLogPath} -Verifiable
       mock Run-ChefInstaller -Verifiable
       mock Install-AzureChefExtensionGem -Verifiable
-      mock Chef-Add-To-Path -Verifiable
+      mock Chef-AddToPath -Verifiable
 
       mock Archive-ChefClientLog
 

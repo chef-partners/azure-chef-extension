@@ -36,8 +36,8 @@ describe "#Update-ChefClient" {
       $tempPS = ([System.IO.Path]::GetTempFileName() | Rename-Item -NewName { $_ -replace 'tmp$', 'ps1' } -PassThru)
       mock Get-SharedHelper {return $tempPS}
       mock Get-PowershellVersion { return 3 }
-      mock readJsonFile
-      mock readJsonFileUsingRuby
+      mock Read-JsonFile
+      mock Read-JsonFileUsingRuby
       mock Copy-Item
 
       mock Uninstall-ChefClient
@@ -48,10 +48,10 @@ describe "#Update-ChefClient" {
       # Delete temp file created for Get-SharedHelper
       Remove-Item $tempPS
 
-      # readJsonFile call when PS version >=3
-      Assert-MockCalled readJsonFile -Times 1
-      # readJsonFileUsingRuby call when PS version <=3
-      Assert-MockCalled readJsonFileUsingRuby -Times 0
+      # Read-JsonFile call when PS version >=3
+      Assert-MockCalled Read-JsonFile -Times 1
+      # Read-JsonFileUsingRuby call when PS version <=3
+      Assert-MockCalled Read-JsonFileUsingRuby -Times 0
       Assert-MockCalled Get-BootstrapDirectory -Times 1
       Assert-MockCalled Get-TempBackupDir -Times 1
       Assert-MockCalled Copy-Item -Times 2
@@ -71,8 +71,8 @@ describe "#Update-ChefClient" {
       $tempPS = ([System.IO.Path]::GetTempFileName() | Rename-Item -NewName { $_ -replace 'tmp$', 'ps1' } -PassThru)
       mock Get-SharedHelper {return $tempPS}
       mock Get-PowershellVersion { return 2 }
-      mock readJsonFile
-      mock readJsonFileUsingRuby
+      mock Read-JsonFile
+      mock Read-JsonFileUsingRuby
       mock Copy-Item
 
       mock Uninstall-ChefClient
@@ -83,10 +83,10 @@ describe "#Update-ChefClient" {
       # Delete temp file created for Get-SharedHelper
       Remove-Item $tempPS
 
-      # readJsonFile call when PS version >=3
-      Assert-MockCalled readJsonFile -Times 0
-      # readJsonFileUsingRuby call when PS version <=3
-      Assert-MockCalled readJsonFileUsingRuby -Times 1
+      # Read-JsonFile call when PS version >=3
+      Assert-MockCalled Read-JsonFile -Times 0
+      # Read-JsonFileUsingRuby call when PS version <=3
+      Assert-MockCalled Read-JsonFileUsingRuby -Times 1
       Assert-MockCalled Get-BootstrapDirectory -Times 1
       Assert-MockCalled Get-TempBackupDir -Times 1
       Assert-MockCalled Copy-Item -Times 2

@@ -62,7 +62,7 @@ describe "#Uninstall-ChefClient" {
       # create temp powershell file for mock Get-SharedHelper
       $tempPS = ([System.IO.Path]::GetTempFileName() | Rename-Item -NewName { $_ -replace 'tmp$', 'ps1' } -PassThru)
       mock Get-SharedHelper {return $tempPS}
-      mock readJsonFile
+      mock Read-JsonFile
       mock Write-ChefStatus
       mock Uninstall-ChefService
       mock Uninstall-AzureChefExtensionGem
@@ -74,7 +74,7 @@ describe "#Uninstall-ChefClient" {
       # Delete temp file created for Get-SharedHelper
       Remove-Item $tempPS
       Assert-MockCalled Write-ChefStatus -Times 2
-      Assert-MockCalled readJsonFile -Times 1
+      Assert-MockCalled Read-JsonFile -Times 1
       Assert-MockCalled Uninstall-ChefService -Times 1
       Assert-MockCalled Uninstall-AzureChefExtensionGem -Times 1
       Assert-MockCalled Uninstall-ChefClientPackage -Times 1
@@ -86,7 +86,7 @@ describe "#Uninstall-ChefClient" {
       # create temp powershell file for mock Get-SharedHelper
       $tempPS = ([System.IO.Path]::GetTempFileName() | Rename-Item -NewName { $_ -replace 'tmp$', 'ps1' } -PassThru)
       mock Get-SharedHelper {return $tempPS}
-      mock readJsonFile
+      mock Read-JsonFile
       mock Write-ChefStatus
       mock Uninstall-ChefService
       mock Uninstall-AzureChefExtensionGem
@@ -98,7 +98,7 @@ describe "#Uninstall-ChefClient" {
       # Delete temp file created for Get-SharedHelper
       Remove-Item $tempPS
       Assert-MockCalled Write-ChefStatus -Times 0
-      Assert-MockCalled readJsonFile -Times 0
+      Assert-MockCalled Read-JsonFile -Times 0
 
       Assert-MockCalled Uninstall-ChefService -Times 1
       Assert-MockCalled Uninstall-AzureChefExtensionGem -Times 1
@@ -112,7 +112,7 @@ describe "#Uninstall-ChefClient" {
       # # create temp powershell file for mock Get-SharedHelper
       $tempPS = ([System.IO.Path]::GetTempFileName() | Rename-Item -NewName { $_ -replace 'tmp$', 'ps1' } -PassThru)
       mock Get-SharedHelper {return $tempPS}
-      mock readJsonFile
+      mock Read-JsonFile
       mock Write-ChefStatus
       mock Uninstall-ChefService
       mock Uninstall-AzureChefExtensionGem
@@ -126,7 +126,7 @@ describe "#Uninstall-ChefClient" {
       Remove-Item $tempPS
       Assert-MockCalled Update-ChefExtensionRegistry -Times 1
       Assert-MockCalled Write-ChefStatus -Times 1
-      Assert-MockCalled readJsonFile -Times 1
+      Assert-MockCalled Read-JsonFile -Times 1
       Assert-MockCalled Uninstall-ChefService -Times 0
       Assert-MockCalled Uninstall-AzureChefExtensionGem -Times 0
       Assert-MockCalled Uninstall-ChefClientPackage -Times 0
