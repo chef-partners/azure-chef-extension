@@ -9,13 +9,13 @@
 
 #>
 
-function Chef-Get-ScriptDirectory
+function Chef-GetScriptDirectory
 {
   $Invocation = (Get-Variable MyInvocation -Scope 1).Value
   Split-Path $Invocation.MyCommand.Path
 }
 
-$scriptDir = Chef-Get-ScriptDirectory
+$scriptDir = Chef-GetScriptDirectory
 
 function Get-ChefClientMsiLogPath {
   # In current version we pick up the latest msi from within zip package.
@@ -73,7 +73,7 @@ function Install-ChefClient {
   Install-AzureChefExtensionGem $chefExtensionRoot
 
   # Add scriptDir to path so azure chef-client is picked up henceforth
-  Chef-Add-To-Path $scriptDir
+  Chef-AddToPath $scriptDir
 }
 
 Export-ModuleMember -Function Install-ChefClient

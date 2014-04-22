@@ -3,13 +3,13 @@
 #    - disable chef service and remove service
 #    - uninstall chef
 
-function Chef-Get-ScriptDirectory
+function Chef-GetScriptDirectory
 {
   $Invocation = (Get-Variable MyInvocation -Scope 1).Value
   Split-Path $Invocation.MyCommand.Path
 }
 
-$scriptDir = Chef-Get-ScriptDirectory
+$scriptDir = Chef-GetScriptDirectory
 
 function Chef-GetExtensionRoot {
   $chefExtensionRoot = [System.IO.Path]::GetFullPath("$scriptDir\\..")
@@ -83,7 +83,7 @@ function Uninstall-ChefClient {
   # so the hack - use ruby json parsing for versions lower than 3.0
   if ( $(Get-PowershellVersion) -ge 3 ) {
     $logStatus = $True
-    $json_handlerSettingsFileName, $json_handlerSettings, $json_protectedSettings,  $json_protectedSettingsCertThumbprint, $json_client_rb , $json_runlist, $json_chefLogFolder, $json_statusFolder, $json_heartbeatFile = readJsonFile
+    $json_handlerSettingsFileName, $json_handlerSettings, $json_protectedSettings,  $json_protectedSettingsCertThumbprint, $json_client_rb , $json_runlist, $json_chefLogFolder, $json_statusFolder, $json_heartbeatFile = Read-JsonFile
   } else {
     $logStatus = $False
   }
