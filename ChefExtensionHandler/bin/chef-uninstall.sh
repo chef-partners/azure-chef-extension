@@ -19,7 +19,7 @@ uninstall_centos_chef_package(){
   pkg_name=`rpm -qi chef | grep Name | awk '{print $3}'`
 
   if test "$pkg_name" = "chef" ; then
-    rpm -e $pkg_name
+    rpm -ev $pkg_name
     check_uninstallation_status
   else
     echo "No Package found to uninstall!!!"
@@ -77,17 +77,18 @@ else
   # remove /opt/chef if it doesn't get deleted by the uninstallation process
   if [ -d /opt/chef ]; then
     rm -rf /opt/chef
-
-    PREFIX="/usr"
-    # ensure symlinks are gone, so that failures to recreate them get caught
-    rm -f $PREFIX/bin/chef-client || true
-    rm -f $PREFIX/bin/chef-solo || true
-    rm -f $PREFIX/bin/chef-apply || true
-    rm -f $PREFIX/bin/chef-shell || true
-    rm -f $PREFIX/bin/knife || true
-    rm -f $PREFIX/bin/shef || true
-    rm -f $PREFIX/bin/ohai || true
-
-    echo "Forcibly deleted /opt/chef directory and related symlinks."
+    echo "Forcibly deleted /opt/chef directory."
   fi
+
+  PREFIX="/usr"
+  # ensure symlinks are gone, so that failures to recreate them get caught
+  rm -f $PREFIX/bin/chef-client || true
+  rm -f $PREFIX/bin/chef-solo || true
+  rm -f $PREFIX/bin/chef-apply || true
+  rm -f $PREFIX/bin/chef-shell || true
+  rm -f $PREFIX/bin/knife || true
+  rm -f $PREFIX/bin/shef || true
+  rm -f $PREFIX/bin/ohai || true
+
+  echo "Deleted related symlinks."
 fi
