@@ -125,10 +125,12 @@ task :build, [:target_type] => [:gem] do |t, args|
 
   puts "Downloading chef installer..."
   target_chef_pkg = if args.target_type == "windows"
-    "#{CHEF_BUILD_DIR}/installer/chef-client-latest.msi"
-  else
-    "#{CHEF_BUILD_DIR}/installer/chef-client-latest.deb"
-  end
+                      "#{CHEF_BUILD_DIR}/installer/chef-client-latest.msi"
+                    elsif args.target_type == "centos"
+                      "#{CHEF_BUILD_DIR}/installer/chef-client-latest.rpm"
+                    else
+                      "#{CHEF_BUILD_DIR}/installer/chef-client-latest.deb"
+                    end
   download_chef(download_url, target_chef_pkg)
 
   puts "Creating a zip package..."
