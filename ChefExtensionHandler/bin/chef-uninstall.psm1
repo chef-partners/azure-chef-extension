@@ -1,8 +1,3 @@
-# uninstall chef
-# Actions:
-#    - disable chef service and remove service
-#    - uninstall chef
-
 function Chef-GetScriptDirectory
 {
   $Invocation = (Get-Variable MyInvocation -Scope 1).Value
@@ -22,19 +17,17 @@ function Get-SharedHelper {
 }
 
 function Uninstall-ChefService {
+  echo "Uninstalling chef service"
   # uninstall does both disable and remove the service
   $result = chef-service-manager -a uninstall
   echo $result
 }
 
 function Uninstall-AzureChefExtensionGem {
+  echo "Uninstalling Azure-Chef-Extension gem"
   # Uninstall the custom gem
   $result = gem uninstall -Ix azure-chef-extension
   echo $result
-}
-
-function Get-BootstrapDirectory {
-  "C:\\chef"
 }
 
 function Get-ChefInstallDirectory {
@@ -53,6 +46,7 @@ function Uninstall-ChefClientPackage {
   # Get chef_pkg by matching "chef client " string with $_.Name
   $chef_pkg = Get-ChefPackage
 
+  echo "removing chef client and configuration files"
   # Uninstall chef_pkg
   $result = $chef_pkg.Uninstall()
   echo $result

@@ -39,6 +39,10 @@ function Get-HandlerSettings
   $runtimeSettingsJson.runtimeSettings[0].handlerSettings
 }
 
+function Get-BootstrapDirectory {
+  "C:\\chef"
+}
+
 function Chef-AddToPath($folderPath)
 {
   $currentPath = [Environment]::GetEnvironmentVariable("Path", "Machine")

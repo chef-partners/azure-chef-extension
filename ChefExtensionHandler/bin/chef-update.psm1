@@ -31,10 +31,6 @@ function Get-SharedHelper {
   "$chefExtensionRoot\\bin\\shared.ps1"
 }
 
-function Get-BootstrapDirectory {
-  "C:\\chef"
-}
-
 function Get-TempBackupDir {
   $env:temp + "\\chef_backup"
 }

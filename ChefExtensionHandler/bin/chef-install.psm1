@@ -3,9 +3,6 @@
 // install chef-client with /i switch
 // Actions: (do what windows bootstrap template)
 //    - install chef-client
-//    - create client.rb, validation.pem
-//    - run chef-client
-//      (run will need to pick up runlist from handlerSettings)
 
 #>
 
@@ -34,6 +31,7 @@ function Run-ChefInstaller($localDestinationMsiPath, $chefClientMsiLogPath) {
 
 function Install-AzureChefExtensionGem($chefExtensionRoot) {
   # Install the custom gem
+  echo "Installing Azure-Chef-Extension gem"
   gem install "$chefExtensionRoot\\gems\\*.gem" --no-ri --no-rdoc
 }
 
