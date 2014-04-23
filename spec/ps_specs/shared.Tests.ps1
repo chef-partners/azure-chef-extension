@@ -82,3 +82,116 @@ describe "#Get-HandlerSettings" {
     Assert-MockCalled  Get-HandlerSettingsFileName -Times 1
   }
 }
+
+describe "#Write-ChefStatus" {
+  it "write status to file" {
+    # PS 2.0 not supports ConvertTo-Json. Added this empty function for PS 2.0, So test can run on PS 2.0 as well.
+    function ConvertTo-Json {}
+
+    $json_handlerSettingsFileName = "0.settings"
+    $json_statusFolder = $env:tmp
+    $testStatusFile = "$json_statusFolder\\0.status"
+    mock Get-PowershellVersion {return 3}
+    mock ConvertTo-Json {return @{ "version"="1.0";"timestampUTC"="2014-04-23T04:03:54Z"; "status" = "teststatus"}}
+    mock Get-Date {return "2014-04-23T09:41:13Z"}
+    mock Out-File
+    $operation = "installing-chef"
+    $statusType = "transitioning"
+    $message = "installing Chef"
+    Write-ChefStatus ($operation, $statusType, $message)
+    Assert-MockCalled ConvertTo-Json -Times 1
+    Assert-MockCalled Get-Date -Times 1
+    Assert-MockCalled Out-File -Times 1 -ParameterFilter { $filePath -eq $testStatusFile }
+  }
+}
+
+describe "#Update-ChefExtensionRegistry" {
+  context "when registry entry exists" {
+    it "Update the value" {
+      $testPath = "HKLM:\Software\Chef\AzureExtension"
+      $testvalue = "X"
+      mock Test-Path {return $true }
+      mock New-Item
+      mock New-ItemProperty
+      mock Get-ItemProperty {return @{"Status" = "Update"}}
+
+      Update-ChefExtensionRegistry $testvalue
+
+      Assert-MockCalled New-Item -Times 0
+      Assert-MockCalled Test-Path -Times 1 -ParameterFilter {$Path -eq $testPath -and $PathType -eq "Container"}
+      Assert-MockCalled New-ItemProperty -Times 1 -ParameterFilter {$Path -eq $testPath -and $Name -eq "Status" -and $Value -eq $testvalue}
+      Assert-MockCalled Get-ItemProperty -Times 1 -ParameterFilter {$Path -eq $testPath}
+    }
+  }
+
+  context "when registry entry not exists" {
+    it "Add new registry entry" {
+      $testPath = "HKLM:\Software\Chef\AzureExtension"
+      $testvalue = "X"
+      mock Test-Path {return $false }
+      mock New-Item
+      mock New-ItemProperty
+      mock Get-ItemProperty {return @{"Status" = "Update"}}
+
+      Update-ChefExtensionRegistry $testvalue
+
+      Assert-MockCalled New-Item -Times 1 -ParameterFilter {$Path -eq $testPath -and $Name -eq "Status" -and $Value -eq $testvalue}
+      Assert-MockCalled Test-Path -Times 1 -ParameterFilter {$Path -eq $testPath -and $PathType -eq "Container"}
+      Assert-MockCalled New-ItemProperty -Times 1 -ParameterFilter {$Path -eq $testPath -and $Name -eq "Status" -and $Value -eq $testvalue}
+      Assert-MockCalled Get-ItemProperty -Times 1 -ParameterFilter {$Path -eq $testPath}
+    }
+  }
+}
+
+describe "#Test-ChefExtensionRegistry" {
+  context "when registry entry exists" {
+    it "return true" {
+      $testPath = "HKLM:\Software\Chef\AzureExtension"
+      $testvalue = "updated"
+      $testName = "Status"
+
+      mock Test-Path {return $true }
+      mock Get-ItemProperty {return @{"Status" = "updated"}}
+
+      $result = Test-ChefExtensionRegistry
+
+      $result | Should Be $true
+      Assert-MockCalled Test-Path -Times 1 -ParameterFilter {$Path -eq $testPath -and $PathType -eq "Container"}
+      Assert-MockCalled Get-ItemProperty -Times 1 -ParameterFilter {$Path -eq $testPath}
+    }
+  }
+
+  context "when registry entry not exists" {
+    it "return false" {
+      $testPath = "HKLM:\Software\Chef\AzureExtension"
+      $testvalue = "updated"
+      $testName = "Status"
+
+      mock Test-Path {return $false }
+      mock Get-ItemProperty {return @{"Status" = "updated"}}
+
+      $result = Test-ChefExtensionRegistry
+
+      $result | Should Be $false
+      Assert-MockCalled Test-Path -Times 1 -ParameterFilter {$Path -eq $testPath -and $PathType -eq "Container"}
+      Assert-MockCalled Get-ItemProperty -Times 0
+    }
+  }
+
+  context "when registry entry exists and its status value not updated" {
+    it "return false" {
+      $testPath = "HKLM:\Software\Chef\AzureExtension"
+      $testvalue = "updated"
+      $testName = "Status"
+
+      mock Test-Path {return $true }
+      mock Get-ItemProperty {return @{"Status" = ""}}
+
+      $result = Test-ChefExtensionRegistry
+
+      $result | Should Be $false
+      Assert-MockCalled Test-Path -Times 1 -ParameterFilter {$Path -eq $testPath -and $PathType -eq "Container"}
+      Assert-MockCalled Get-ItemProperty -Times 1 -ParameterFilter {$Path -eq $testPath}
+    }
+  }
+}
