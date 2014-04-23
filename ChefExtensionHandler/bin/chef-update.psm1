@@ -31,10 +31,6 @@ function Get-SharedHelper {
   "$chefExtensionRoot\\bin\\shared.ps1"
 }
 
-function Get-PowershellVersion {
-  $PSVersionTable.PSVersion.Major
-}
-
 function Get-BootstrapDirectory {
   "C:\\chef"
 }

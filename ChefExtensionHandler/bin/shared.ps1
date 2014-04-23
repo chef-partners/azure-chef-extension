@@ -49,6 +49,10 @@ function Chef-AddToPath($folderPath)
   [Environment]::SetEnvironmentVariable("Path", "$folderPath;$currentPath", "Process")
 }
 
+function Get-PowershellVersion {
+  $PSVersionTable.PSVersion.Major
+}
+
 # write status to file N.status
 function Write-ChefStatus ($operation, $statusType, $message)
 {
@@ -64,10 +68,8 @@ function Write-ChefStatus ($operation, $statusType, $message)
 
   $hash = @(@{version = "1"; timestampUTC = "$timestampUTC"; status = $statusHash})
 
-  if ($PSVersionTable.PSVersion.Major -ge 3) {
+  if ( $(Get-PowershellVersion) -ge 3) {
     ConvertTo-Json -Compress $hash -Depth 4 | Out-File -filePath $statusFile
-  } else {
-    ruby.exe -e "require 'chef/azure/helpers/parse_json'; write_json_file '$statusFile', '$hash'"
   }
 }
 

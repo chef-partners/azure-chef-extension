@@ -67,10 +67,6 @@ function Uninstall-ChefClientPackage {
   }
 }
 
-function Get-PowershellVersion {
-  $PSVersionTable.PSVersion.Major
-}
-
 function Uninstall-ChefClient {
   trap [Exception] {echo $_.Exception.Message;exit 1}
 
