@@ -14,88 +14,71 @@ $sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace(".Tests.", ".")
 
 . $here.Replace("\spec\ps_specs", "\ChefExtensionHandler\bin\$sut")
 
-describe "#getMachineArch" {
+describe "#Read-JsonFile" {
+  it "returns correct values " {
+    $handlerSettingsFileName = "testhandlerSettingsFileName"
+    mock Get-HandlerSettingsFileName {return $handlerSettingsFileName}
+    $handlerSettings = @{"protectedSettings" = "testprotectedSettings"; "protectedSettingsCertThumbprint" = "testprotectedSettingsCertThumbprint"; "publicSettings" = @{"client_rb"= "testclientrb"; "runList" = "testrunlist"}}
+    $handlerEnvironment = @{"logFolder" = "testlogFolder"; "statusFolder" = "teststatusFolder"; "heartbeatFile" = "testheartbeatFile" }
+    mock Get-HandlerSettings {return $handlerSettings}
+    mock Get-HandlerEnvironment {return $handlerEnvironment}
 
-  it "returns i686 when PROCESSOR_ARCHITECTURE is x86" {
-    $env:PROCESSOR_ARCHITECTURE = "x86"
-    $result = getMachineArch
+    $json_handlerSettingsFileName, $json_handlerSettings, $json_protectedSettings,  $json_protectedSettingsCertThumbprint, $json_client_rb , $json_runlist, $json_chefLogFolder, $json_statusFolder, $json_heartbeatFile = Read-JsonFile
 
-    $result | should Be("i686")
-  }
-
-  it "returns x86_64 when PROCESSOR_ARCHITECTURE is AMD64" {
-    $env:PROCESSOR_ARCHITECTURE = "AMD64"
-    $result = getMachineArch
-
-    $result | should Be("x86_64")
+    $json_handlerSettingsFileName | Should Be $handlerSettingsFileName
+    $json_handlerSettings | Should Be $handlerSettings
+    $json_protectedSettings | Should Be $handlerSettings.protectedSettings
+    $json_protectedSettingsCertThumbprint | Should Be $handlerSettings.protectedSettingsCertThumbprint
+    $json_client_rb | Should Be $handlerSettings.publicSettings.client_rb
+    $json_runlist | Should Be $handlerSettings.publicSettings.runList
+    $json_chefLogFolder | Should Be $handlerEnvironment.logFolder
+    $json_statusFolder | Should Be $handlerEnvironment.statusFolder
+    $json_heartbeatFile | Should Be $handlerEnvironment.heartbeatFile
   }
 }
 
-describe "#getMachineOS" {
+describe "#Read-JsonFileUsingRuby" {
+  it "returns correct values" {
+    $handlerSettingsFilePath = "testhandlerSettingsFilePath"
+    mock Get-HandlerSettingsFilePath { return $handlerSettingsFilePath }
 
-  context "when OSVersion is 6.0" {
-    it "returns 2008 machine os" {
-      mock getMajorOSVersion {return "6"}
-      mock getMinorOSVersion {return "0"}
+    $handlerEnvironmentFilePath = "testhandlerEnvironmentFilePath"
+    mock Get-HandlerEnvironmentFilePath { return $handlerEnvironmentFilePath }
 
-      $result = getMachineOS
+    $handlerSettings = @{"protectedSettings" = "testprotectedSettings"; "protectedSettingsCertThumbprint" = "testprotectedSettingsCertThumbprint"; "publicSettings" = @{"client_rb"= "testclientrb"; "runList" = "testrunlist"}}
+    $handlerEnvironment = @{"logFolder" = "testlogFolder"; "statusFolder" = "teststatusFolder"; "heartbeatFile" = "testheartbeatFile" }
 
-      $result | should Be("2008")
-    }
+    mock Get-JsonValueUsingRuby {return $handlerSettings } -ParameterFilter { $json_handlerSettingsFileName -eq $handlerSettingsFilePath -and $args[0] -eq "runtimeSettings" -and $args[1] -eq "0" -and $args[2] -eq "handlerSettings" }
+    mock Get-JsonValueUsingRuby {return $handlerSettings.protectedSettings } -ParameterFilter { $json_handlerSettingsFileName -eq $handlerSettingsFilePath -and $args[0] -eq "runtimeSettings" -and $args[1] -eq "0" -and $args[2] -eq "handlerSettings" -and $args[3] -eq "protectedSettings" }
+    mock Get-JsonValueUsingRuby {return $handlerSettings.protectedSettingsCertThumbprint } -ParameterFilter { $json_handlerSettingsFileName -eq $handlerSettingsFilePath -and $args[0] -eq "runtimeSettings" -and $args[1] -eq "0" -and $args[2] -eq "handlerSettings" -and $args[3] -eq "protectedSettingsCertThumbprint" }
+    mock Get-JsonValueUsingRuby {return $handlerSettings.publicSettings.client_rb } -ParameterFilter { $json_handlerSettingsFileName -eq $handlerSettingsFilePath -and $args[0] -eq "runtimeSettings" -and $args[1] -eq "0" -and $args[2] -eq "handlerSettings" -and $args[3] -eq "publicSettings" -and $args[4] -eq "client_rb"}
+    mock Get-JsonValueUsingRuby {return $handlerSettings.publicSettings.runList } -ParameterFilter { $json_handlerSettingsFileName -eq $handlerSettingsFilePath -and $args[0] -eq "runtimeSettings" -and $args[1] -eq "0" -and $args[2] -eq "handlerSettings" -and $args[3] -eq "publicSettings" -and $args[4] -eq "runList" }
+    mock Get-JsonValueUsingRuby {return $handlerEnvironment.logFolder } -ParameterFilter { $json_handlerEnvironmentFileName -eq $handlerEnvironmentFilePath -and $args[0] -eq "handlerEnvironment" -and $args[1] -eq "logFolder" }
+    mock Get-JsonValueUsingRuby {return $handlerEnvironment.statusFolder } -ParameterFilter { $json_handlerEnvironmentFileName -eq $handlerEnvironmentFilePath -and $args[0] -eq "handlerEnvironment" -and $args[1] -eq "statusFolder" }
+    mock Get-JsonValueUsingRuby {return $handlerEnvironment.heartbeatFile } -ParameterFilter { $json_handlerEnvironmentFileName -eq $handlerEnvironmentFilePath -and $args[0] -eq "handlerEnvironment" -and $args[1] -eq "heartbeatFile" }
+
+    $json_handlerSettingsFileName, $json_handlerSettings, $json_protectedSettings,  $json_protectedSettingsCertThumbprint, $json_client_rb , $json_runlist, $json_chefLogFolder, $json_statusFolder, $json_heartbeatFile = Read-JsonFileUsingRuby
+
+    $json_handlerSettingsFileName | Should Be $handlerSettingsFilePath
+    $json_handlerSettings | Should Be $handlerSettings
+    $json_protectedSettings | Should Be $handlerSettings.protectedSettings
+    $json_protectedSettingsCertThumbprint | Should Be $handlerSettings.protectedSettingsCertThumbprint
+    $json_client_rb | Should Be $handlerSettings.publicSettings.client_rb
+    $json_runlist | Should Be $handlerSettings.publicSettings.runList
+    $json_chefLogFolder | Should Be $handlerEnvironment.logFolder
+    $json_statusFolder | Should Be $handlerEnvironment.statusFolder
+    $json_heartbeatFile | Should Be $handlerEnvironment.heartbeatFile
   }
+}
 
-  context "when OSVersion is 6.1" {
-    it "returns 2008r2 machine os " {
-      mock getMajorOSVersion {return "6"}
-      mock getMinorOSVersion {return "1"}
+describe "#Get-HandlerSettings" {
+  it "returns handlerSettings" {
+    mock Get-HandlerSettingsFileName
+    $runtimeSettingsJson = @{"runtimeSettings" = @(@{"handlerSettings" = "testhandlerSettings"})}
+    mock Read-JsonFromFile { return $runtimeSettingsJson}
 
-      $result = getMachineOS
-
-      $result | should Be("2008r2")
-    }
-  }
-
-  context "when OSVersion is 6.2" {
-    it "returns 2012 machine os " {
-      mock getMajorOSVersion {return "6"}
-      mock getMinorOSVersion {return "2"}
-
-      $result = getMachineOS
-
-      $result | should Be("2012")
-    }
-  }
-
-  context "when OSVersion is 6.3" {
-    it "returns 2012 machine os " {
-      mock getMajorOSVersion {return "6"}
-      mock getMinorOSVersion {return "3"}
-
-      $result = getMachineOS
-
-      $result | should Be("2012")
-    }
-  }
-
-  context "when OSVersion is 5.2" {
-    it "returns 2003r2 machine os" {
-      mock getMajorOSVersion {return "5"}
-      mock getMinorOSVersion {return "2"}
-
-      $result = getMachineOS
-
-      $result | should Be("2003r2")
-    }
-  }
-
-  context "when OSVersion is unknown" {
-    it "returns default 2008r2 machine os" {
-      mock getMajorOSVersion {return "6"}
-      mock getMinorOSVersion {return "5"}
-
-      $result = getMachineOS
-
-      $result | should Be("2008r2")
-    }
+    $handlerSettings = Get-HandlerSettings
+    $handlerSettings | Should Be $runtimeSettingsJson.runtimeSettings[0].handlerSettings
+    Assert-MockCalled  Get-HandlerSettingsFileName -Times 1
   }
 }
