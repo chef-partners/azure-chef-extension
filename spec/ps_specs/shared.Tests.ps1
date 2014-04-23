@@ -10,9 +10,9 @@
 # For more info: http://johanleino.wordpress.com/2013/09/13/pester-unit-testing-for-powershell/
 
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
-$sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace(".Tests.", ".")
+$suit = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace(".Tests.", ".")
 
-. $here.Replace("\spec\ps_specs", "\ChefExtensionHandler\bin\$sut")
+. $here.Replace("\spec\ps_specs", "\ChefExtensionHandler\bin\$suit")
 
 describe "#Read-JsonFile" {
   it "returns correct values " {

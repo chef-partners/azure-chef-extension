@@ -10,9 +10,9 @@
 # For more info: http://johanleino.wordpress.com/2013/09/13/pester-unit-testing-for-powershell/
 
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
-$sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace(".Tests.ps1", ".psm1")
+$suit = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace(".Tests.ps1", ".psm1")
 
-$module= $here.Replace("\spec\ps_specs", "\ChefExtensionHandler\bin\$sut")
+$module= $here.Replace("\spec\ps_specs", "\ChefExtensionHandler\bin\$suit")
 $code = Get-Content $module | Out-String
 Invoke-Expression $code
 
