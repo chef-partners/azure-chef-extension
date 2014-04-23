@@ -118,6 +118,6 @@ def value_from_json_file(file_name, *keys)
   if ! json_value.is_a?(String)
     raise ArgumentError, "Specified keys #{keys.to_s} retrieved an object of type #{json_value.class} instead of a String. Retrieved value was a(n) #{json_value.class.to_s}"
   end
-
+  print json_value
   json_value
 end
