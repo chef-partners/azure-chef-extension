@@ -126,18 +126,10 @@ function Get-HandlerEnvironment {
 function Read-JsonFile
 {
   $json_handlerSettingsFileName = Get-HandlerSettingsFileName
-  $json_handlerSettings = Get-HandlerSettings
-  $json_protectedSettings = $json_handlerSettings.protectedSettings
-  $json_protectedSettingsCertThumbprint = $json_handlerSettings.protectedSettingsCertThumbprint
-  $json_client_rb = $json_handlerSettings.publicSettings.client_rb
-  $json_runlist = $json_handlerSettings.publicSettings.runList
-
   $json_handlerEnvironment = Get-HandlerEnvironment
-  $json_chefLogFolder = $json_handlerEnvironment.logFolder
   $json_statusFolder = $json_handlerEnvironment.statusFolder
-  $json_heartbeatFile = $json_handlerEnvironment.heartbeatFile
 
-  return  $json_handlerSettingsFileName, $json_handlerSettings, $json_protectedSettings,  $json_protectedSettingsCertThumbprint, $json_client_rb , $json_runlist, $json_chefLogFolder, $json_statusFolder, $json_heartbeatFile
+  return  $json_handlerSettingsFileName, $json_statusFolder
 }
 
 function Get-JsonValueUsingRuby($file) {
@@ -149,24 +141,8 @@ function Get-JsonValueUsingRuby($file) {
 function Read-JsonFileUsingRuby
 {
   $json_handlerSettingsFileName = Get-HandlerSettingsFilePath
-
-  $json_handlerSettings = Get-JsonValueUsingRuby $json_handlerSettingsFileName "runtimeSettings" "0" "handlerSettings"
-
-  $json_handlerProtectedSettings = Get-JsonValueUsingRuby $json_handlerSettingsFileName "runtimeSettings" "0" "handlerSettings" "protectedSettings"
-
-  $json_handlerProtectedSettingsCertThumbprint = Get-JsonValueUsingRuby $json_handlerSettingsFileName "runtimeSettings" "0" "handlerSettings" "protectedSettingsCertThumbprint"
-
-  $json_handlerPublicSettingsClient_rb = Get-JsonValueUsingRuby $json_handlerSettingsFileName "runtimeSettings" "0" "handlerSettings" "publicSettings" "client_rb"
-
-  $json_handlerPublicSettingsRunlist = Get-JsonValueUsingRuby $json_handlerSettingsFileName "runtimeSettings" "0" "handlerSettings" "publicSettings" "runList"
-
   $json_handlerEnvironmentFileName = Get-HandlerEnvironmentFilePath
-
-  $json_handlerChefLogFolder = Get-JsonValueUsingRuby $json_handlerEnvironmentFileName "handlerEnvironment" "logFolder"
-
   $json_handlerStatusFolder = Get-JsonValueUsingRuby $json_handlerEnvironmentFileName "handlerEnvironment" "statusFolder"
 
-  $json_handlerHeartbeatFile = Get-JsonValueUsingRuby $json_handlerEnvironmentFileName "handlerEnvironment" "heartbeatFile"
-
-  return $json_handlerSettingsFileName, $json_handlerSettings, $json_handlerProtectedSettings, $json_handlerProtectedSettingsCertThumbprint, $json_handlerPublicSettingsClient_rb, $json_handlerPublicSettingsRunlist, $json_handlerChefLogFolder, $json_handlerStatusFolder, $json_handlerHeartbeatFile
+  return $json_handlerSettingsFileName, $json_handlerStatusFolder
 }
