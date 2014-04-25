@@ -134,7 +134,7 @@ function Read-JsonFile
 
 function Get-JsonValueUsingRuby($file) {
   $keys = $args -join "','"
-  ruby.exe -e "require 'chef/azure/helpers/parse_json'; value_from_json_file '$file', '$keys'"
+  ruby.exe -e "require 'chef/azure/helpers/parse_json'; value_from_json_file_for_ps '$file', '$keys'"
 }
 
 # Reads all the json files and sets vars using ruby code
