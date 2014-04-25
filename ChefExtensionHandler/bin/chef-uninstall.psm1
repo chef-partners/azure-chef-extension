@@ -73,7 +73,7 @@ function Uninstall-ChefClient {
   # so the hack - use ruby json parsing for versions lower than 3.0
   if ( $(Get-PowershellVersion) -ge 3 ) {
     $logStatus = $True
-    $json_handlerSettingsFileName, $json_handlerSettings, $json_protectedSettings,  $json_protectedSettingsCertThumbprint, $json_client_rb , $json_runlist, $json_chefLogFolder, $json_statusFolder, $json_heartbeatFile = Read-JsonFile
+    $json_handlerSettingsFileName, $json_statusFolder = Read-JsonFile
   } else {
     $logStatus = $False
   }

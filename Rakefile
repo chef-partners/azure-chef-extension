@@ -32,6 +32,7 @@ WINDOWS_PACKAGE_LIST = [
   {"ChefExtensionHandler/*.cmd" => "#{CHEF_BUILD_DIR}/"},
   {"ChefExtensionHandler/bin/*.bat" => "#{CHEF_BUILD_DIR}/bin"},
   {"ChefExtensionHandler/bin/*.ps1" => "#{CHEF_BUILD_DIR}/bin"},
+  {"ChefExtensionHandler/bin/*.psm1" => "#{CHEF_BUILD_DIR}/bin"},
   {"ChefExtensionHandler/bin/*.rb" => "#{CHEF_BUILD_DIR}/bin"},
   {"ChefExtensionHandler/bin/chef-client" => "#{CHEF_BUILD_DIR}/bin"},
   {"*.gem" => "#{CHEF_BUILD_DIR}/gems"},
