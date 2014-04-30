@@ -11,6 +11,7 @@ require 'net/http'
 require 'json'
 require 'zip'
 require 'date'
+require './lib/chef/azure/helpers/erb.rb'
 
 PACKAGE_NAME = "ChefExtensionHandler"
 EXTENSION_VERSION = "1.0"
@@ -135,13 +136,13 @@ task :build, [:target_type, :extension_version] => [:gem] do |t, args|
                     else
                       "#{CHEF_BUILD_DIR}/installer/chef-client-latest.msi"
                     end
-                    
+
   download_chef(download_url, target_chef_pkg)
 
   puts "Creating a zip package..."
-  extension_version = args.extension_version || EXTENSION_VERSION
+  puts "#{PACKAGE_NAME}_#{args.extension_version}_#{Date.today.strftime("%Y%m%d")}_#{args.target_type}.zip"
 
-  Zip::File.open("#{PACKAGE_NAME}_#{extension_version}_#{Date.today.strftime("%Y%m%d")}_#{args.target_type}.zip", Zip::File::CREATE) do |zipfile|
+  Zip::File.open("#{PACKAGE_NAME}_#{args.extension_version}_#{Date.today.strftime("%Y%m%d")}_#{args.target_type}.zip", Zip::File::CREATE) do |zipfile|
     Dir[File.join("#{CHEF_BUILD_DIR}/", '**', '**')].each do |file|
       zipfile.add(file.sub("#{CHEF_BUILD_DIR}/", ''), file)
     end
@@ -166,22 +167,43 @@ task :publish, [:deploy_type, :target_type, :extension_version] => [:build] do |
 
   publish_options = JSON.parse(File.read("Publish.json"))
 
-  definitionXmlFile = "build/templates/definition.xml.erb"
-  #TODO - process erb
-
   publishSettingsFile = publish_options[args.deploy_type]["publishSettingsFile"]
+  subscriptionName = publish_options[args.deploy_type]["subscriptionName"]
   publishUri = publish_options[args.deploy_type]["publishUri"]
 
   definitionParams = publish_options[args.target_type]["definitionParams"]
   storageAccount = definitionParams["storageAccount"]
   storageContainer = definitionParams["storageContainer"]
+  extensionName = definitionParams["extensionName"]
+  isInternal = definitionParams["isInternal"]
+  definitionXmlFile = "build/templates/definition.xml.erb"
+
+  extensionZipPackage = "#{PACKAGE_NAME}_#{args.extension_version}_#{Date.today.strftime("%Y%m%d")}_#{args.target_type}.zip"
+
+  # Process the erb
+  definitionXml = ERBHelpers::ERBCompiler.run(
+      File.read("build/templates/definition.xml.erb"),
+      {:extension_name => extensionName,
+      :extension_version => args.extension_version,
+      :package_storage_account => storageAccount,
+      :package_container =>  storageContainer,
+      :package_name => extensionZipPackage,
+      :is_internal => isInternal
+    })
+
+  tempFile = Tempfile.new("publishDefinitionXml")
+  definitionXmlFile = tempFile.path
+  puts "Writing publishDefinitionXml to #{definitionXmlFile}..."
+  tempFile.write(definitionXml)
+  tempFile.close
 
   # Upload the generated package to Azure storage as a blob.
-  puts %x{powershell -nologo -noprofile -executionpolicy unrestricted Import-Module .\\scripts\\uploadpkg.psm1;Upload-ChefPkgToAzure #{publishSettingsFile} #{storageAccount} #{storageContainer}}
+  puts %x{powershell -nologo -noprofile -executionpolicy unrestricted Import-Module .\\scripts\\uploadpkg.psm1;Upload-ChefPkgToAzure #{publishSettingsFile} #{storageAccount} #{storageContainer} #{extensionZipPackage}}
 
   # Publish the uploaded package to PIR using azure cmdlets.
-  puts %x{powershell -nologo -noprofile -executionpolicy unrestricted Import-Module .\\scripts\\publishpkg.psm1;Publish-ChefPkg #{publishSettingsFile} #{publishUri} #{definitionXmlFile}"}
+  puts %x{powershell -nologo -noprofile -executionpolicy unrestricted Import-Module .\\scripts\\publishpkg.psm1;Publish-ChefPkg #{publishSettingsFile} '#{subscriptionName}' #{publishUri} #{definitionXmlFile}"}
 
+  tempFile.unlink
 end
 
 task :init_pester do
