@@ -1,11 +1,13 @@
 {
   "prod": {
     "publishSettingsFile": "yourazureaccount.publishsettings",
+    "subscriptionName": "subsusedforpublishingextensionpackage",
     "publishUri": "https://management.core.windows.net/subscription_id_placeholder/services/extensions"
   },
 
   "preview": {
     "publishSettingsFile": "yourazureaccount.publishsettings",
+    "subscriptionName": "subsusedforpublishingextensionpackage",
     "publishUri": "https://management-preview.core.windows-int.net/<subscription_id_placeholder/services/extensions"
   },
 
