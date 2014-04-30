@@ -159,7 +159,7 @@ task :clean do
   FileUtils.rm_f(Dir.glob("*.gem"))
 end
 
-desc "Publishes the azure chef extension package using publish.json Ex: publish[platform, extension_version], default is build[windows]."
+desc "Publishes the azure chef extension package using publish.json Ex: publish[deploy_type, platform, extension_version], default is build[preview,windows]."
 task :publish, [:deploy_type, :target_type, :extension_version] => [:build] do |t, args|
   args.with_defaults(:deploy_type => "preview", :target_type => "windows", :extension_version => EXTENSION_VERSION)
   puts "publish called with args(#{args.deploy_type}, #{args.target_type}, #{args.extension_version})"
