@@ -10,6 +10,7 @@ require 'uri'
 require 'net/http'
 require 'json'
 require 'zip'
+require 'date'
 
 PACKAGE_NAME = "ChefExtensionHandler"
 EXTENSION_VERSION = "1.0"
@@ -92,9 +93,10 @@ task :gem => [:clean] do
   puts %x{gem build *.gemspec}
 end
 
-desc "Builds the azure chef extension package Ex: build[platform], default is build[windows]."
-task :build, [:target_type] => [:gem] do |t, args|
-  args.with_defaults(:target_type => "windows")
+desc "Builds the azure chef extension package Ex: build[platform, extension_version], default is build[windows]."
+task :build, [:target_type, :extension_version] => [:gem] do |t, args|
+  args.with_defaults(:target_type => "windows", :extension_version => EXTENSION_VERSION)
+  puts "Build called with args(#{args.target_type}, #{args.extension_version})"
 
   download_url = load_build_environment(args.target_type)
 
@@ -137,7 +139,9 @@ task :build, [:target_type] => [:gem] do |t, args|
   download_chef(download_url, target_chef_pkg)
 
   puts "Creating a zip package..."
-  Zip::File.open("#{PACKAGE_NAME}_#{EXTENSION_VERSION}.zip", Zip::File::CREATE) do |zipfile|
+  extension_version = args.extension_version || EXTENSION_VERSION
+
+  Zip::File.open("#{PACKAGE_NAME}_#{extension_version}_#{Date.today.strftime("%Y%m%d")}_#{args.target_type}.zip", Zip::File::CREATE) do |zipfile|
     Dir[File.join("#{CHEF_BUILD_DIR}/", '**', '**')].each do |file|
       zipfile.add(file.sub("#{CHEF_BUILD_DIR}/", ''), file)
     end
@@ -153,6 +157,31 @@ task :clean do
   FileUtils.rm_rf(Dir.glob("#{PESTER_SANDBOX}"))
   puts "Deleting gem file..."
   FileUtils.rm_f(Dir.glob("*.gem"))
+end
+
+desc "Publishes the azure chef extension package using publish.json Ex: publish[platform, extension_version], default is build[windows]."
+task :publish, [:deploy_type, :target_type, :extension_version] => [:build] do |t, args|
+  args.with_defaults(:deploy_type => "preview", :target_type => "windows", :extension_version => EXTENSION_VERSION)
+  puts "publish called with args(#{args.deploy_type}, #{args.target_type}, #{args.extension_version})"
+
+  publish_options = JSON.parse(File.read("Publish.json"))
+
+  definitionXmlFile = "build/templates/definition.xml.erb"
+  #TODO - process erb
+
+  publishSettingsFile = publish_options[args.deploy_type]["publishSettingsFile"]
+  publishUri = publish_options[args.deploy_type]["publishUri"]
+
+  definitionParams = publish_options[args.target_type]["definitionParams"]
+  storageAccount = definitionParams["storageAccount"]
+  storageContainer = definitionParams["storageContainer"]
+
+  # Upload the generated package to Azure storage as a blob.
+  puts %x{powershell -nologo -noprofile -executionpolicy unrestricted Import-Module .\\scripts\\uploadpkg.psm1;Upload-ChefPkgToAzure #{publishSettingsFile} #{storageAccount} #{storageContainer}}
+
+  # Publish the uploaded package to PIR using azure cmdlets.
+  puts %x{powershell -nologo -noprofile -executionpolicy unrestricted Import-Module .\\scripts\\publishpkg.psm1;Publish-ChefPkg #{publishSettingsFile} #{publishUri} #{definitionXmlFile}"}
+
 end
 
 task :init_pester do
