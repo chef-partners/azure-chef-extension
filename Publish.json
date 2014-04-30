@@ -1,0 +1,38 @@
+{
+  "prod": {
+    "publishSettingsFile": "yourazureaccount.publishsettings",
+    "publishUri": "https://management.core.windows.net/subscription_id_placeholder/services/extensions"
+  },
+
+  "preview": {
+    "publishSettingsFile": "yourazureaccount.publishsettings",
+    "publishUri": "https://management-preview.core.windows-int.net/<subscription_id_placeholder/services/extensions"
+  },
+
+  "definitionXmlFile": "build/templates/definition.xml.erb",
+
+  "windows": {
+    "definitionParams": {
+      "isInternal": "true",
+      "extensionName": "WindowsChefExtension",
+      "storageAccount": "chefextensions",
+      "storageContainer": "windows"
+    }
+  },
+  "ubuntu": {
+    "definitionParams": {
+      "isInternal": "true",
+      "extensionName": "UbuntuChefExtension",
+      "storageAccount": "chefextensions",
+      "storageContainer": "ubuntu"
+    }
+  },
+  "centos": {
+    "definitionParams": {
+      "isInternal": "true",
+      "extensionName": "CentosChefExtension",
+      "storageAccount": "chefextensions",
+      "storageContainer": "centos"
+    }
+  }
+}
