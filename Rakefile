@@ -205,9 +205,10 @@ task :publish, [:deploy_type, :target_type, :extension_version, :confirmation_re
 This task creates a chef extension package and publishes to Azure #{args.deploy_type}.
   Details:
   -------
-    subscription name:  #{subscriptionName}
-    extension package:  #{extensionZipPackage}
-    publish uri:  #{publishUri}
+    Publish To:  ** #{args.deploy_type} **
+    Subscription Name:  #{subscriptionName}
+    Extension Package:  #{extensionZipPackage}
+    Publish Uri:  #{publishUri}
     Build branch:  #{%x{git rev-parse --abbrev-ref HEAD}}
     Type:  #{isInternal ? "Internal build" : "Public release"}
 ****************************************
