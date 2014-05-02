@@ -139,7 +139,8 @@ task :build, [:target_type, :extension_version] => [:gem] do |t, args|
 
   date_tag = Date.today.strftime("%Y%m%d")
 
-  # Write a release tag file to zip.
+  # Write a release tag file to zip. This will help during testing
+  # to check if package was synced in PIR.
   FileUtils.touch "#{CHEF_BUILD_DIR}/version_#{args.extension_version}_#{date_tag}_#{args.target_type}"
 
   download_chef(download_url, target_chef_pkg)
