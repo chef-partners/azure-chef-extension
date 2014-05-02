@@ -1,5 +1,5 @@
 <ExtensionImage xmlns="http://schemas.microsoft.com/2009/05/WindowsAzure/ServiceManagement"  xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
-  <ProviderNameSpace>Chef.AzureExtension</ProviderNameSpace>
+  <ProviderNameSpace>Chef.Bootstrap.WindowsAzure</ProviderNameSpace>
   <Type><%= extension_name %></Type>
   <!--Update this version for each new release-->
   <Version><%= extension_version %></Version>
@@ -7,10 +7,6 @@
   <HostingResources>VmRole</HostingResources>
   <!--Update this field with correct link where the extension is published.-->
   <MediaLink>https://<%= package_storage_account %>.blob.core.windows.net/<%= package_container %>/<%= package_name %></MediaLink>
-  <Certificate />
-  <Endpoints/>
-  <PublicConfigurationSchema/>
-  <PrivateConfigurationSchema/>
   <Description>Chef Extension that sets up chef-client on VM</Description>
   <PublisherName>Chef Software, Inc.</PublisherName>
   <LocalResources />
