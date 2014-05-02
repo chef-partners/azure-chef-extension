@@ -232,11 +232,11 @@ CONFIRMATION
 
   # Upload the generated package to Azure storage as a blob.
   puts "Uploading zip package..."
-  puts %x{powershell -nologo -noprofile -executionpolicy unrestricted Import-Module .\\scripts\\uploadpkg.psm1;Upload-ChefPkgToAzure #{publishSettingsFile} #{storageAccount} #{storageContainer} #{extensionZipPackage}}
+  system("powershell -nologo -noprofile -executionpolicy unrestricted Import-Module .\\scripts\\uploadpkg.psm1;Upload-ChefPkgToAzure #{publishSettingsFile} #{storageAccount} #{storageContainer} #{extensionZipPackage}")
 
   # Publish the uploaded package to PIR using azure cmdlets.
   puts "Publishing the package..."
-  puts %x{powershell -nologo -noprofile -executionpolicy unrestricted Import-Module .\\scripts\\publishpkg.psm1;Publish-ChefPkg #{publishSettingsFile} "'#{subscriptionName}'" #{publishUri} #{definitionXmlFile}}
+  system("powershell -nologo -noprofile -executionpolicy unrestricted Import-Module .\\scripts\\publishpkg.psm1;Publish-ChefPkg #{publishSettingsFile} \"\'#{subscriptionName}\'\" #{publishUri} #{definitionXmlFile}")
 
   tempFile.unlink
 end
