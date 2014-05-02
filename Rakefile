@@ -167,8 +167,8 @@ task :clean do
 end
 
 desc "Publishes the azure chef extension package using publish.json Ex: publish[deploy_type, platform, extension_version], default is build[preview,windows]."
-task :publish, [:deploy_type, :target_type, :extension_version] => [:build] do |t, args|
-  args.with_defaults(:deploy_type => "preview", :target_type => "windows", :extension_version => EXTENSION_VERSION)
+task :publish, [:deploy_type, :target_type, :extension_version, :confirmation_required] => [:build] do |t, args|
+  args.with_defaults(:deploy_type => "preview", :target_type => "windows", :extension_version => EXTENSION_VERSION, :confirmation_required => "true")
   puts "publish called with args(#{args.deploy_type}, #{args.target_type}, #{args.extension_version})"
 
   publish_options = JSON.parse(File.read("Publish.json"))
@@ -196,6 +196,31 @@ task :publish, [:deploy_type, :target_type, :extension_version] => [:build] do |
       :package_name => extensionZipPackage,
       :is_internal => isInternal
     })
+
+  # Get user confirmation, since we are publishing a new build to Azure.
+  if args.confirmation_required == "true"
+    puts <<-CONFIRMATION
+
+*****************************************
+This task creates a chef extension package and publishes to Azure #{args.deploy_type}.
+  Details:
+  -------
+    subscription name:  #{subscriptionName}
+    extension package:  #{extensionZipPackage}
+    publish uri:  #{publishUri}
+    Build branch:  #{%x{git rev-parse --abbrev-ref HEAD}}
+    Type:  #{isInternal ? "Internal build" : "Public release"}
+****************************************
+CONFIRMATION
+    print "Do you wish to proceed? (y/n)"
+    proceed = STDIN.gets.chomp() == 'y'
+    if not proceed
+      puts "Exitting publish request."
+      exit
+    end
+  end
+
+  puts "Continuing with publish request..."
 
   tempFile = Tempfile.new("publishDefinitionXml")
   definitionXmlFile = tempFile.path
