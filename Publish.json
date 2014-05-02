@@ -16,7 +16,7 @@
   "windows": {
     "definitionParams": {
       "isInternal": "true",
-      "extensionName": "WindowsChefExtension",
+      "extensionName": "ChefClient",
       "storageAccount": "chefextensions",
       "storageContainer": "windows"
     }
@@ -24,7 +24,7 @@
   "ubuntu": {
     "definitionParams": {
       "isInternal": "true",
-      "extensionName": "UbuntuChefExtension",
+      "extensionName": "LinuxChefClient",
       "storageAccount": "chefextensions",
       "storageContainer": "ubuntu"
     }
@@ -32,7 +32,7 @@
   "centos": {
     "definitionParams": {
       "isInternal": "true",
-      "extensionName": "CentosChefExtension",
+      "extensionName": "CentosChefClient",
       "storageAccount": "chefextensions",
       "storageContainer": "centos"
     }
