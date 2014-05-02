@@ -137,12 +137,17 @@ task :build, [:target_type, :extension_version] => [:gem] do |t, args|
                       "#{CHEF_BUILD_DIR}/installer/chef-client-latest.msi"
                     end
 
+  date_tag = Date.today.strftime("%Y%m%d")
+
+  # Write a release tag file to zip.
+  FileUtils.touch "#{CHEF_BUILD_DIR}/version_#{args.extension_version}_#{date_tag}_#{args.target_type}"
+
   download_chef(download_url, target_chef_pkg)
 
   puts "Creating a zip package..."
-  puts "#{PACKAGE_NAME}_#{args.extension_version}_#{Date.today.strftime("%Y%m%d")}_#{args.target_type}.zip"
+  puts "#{PACKAGE_NAME}_#{args.extension_version}_#{date_tag}_#{args.target_type}.zip"
 
-  Zip::File.open("#{PACKAGE_NAME}_#{args.extension_version}_#{Date.today.strftime("%Y%m%d")}_#{args.target_type}.zip", Zip::File::CREATE) do |zipfile|
+  Zip::File.open("#{PACKAGE_NAME}_#{args.extension_version}_#{date_tag}_#{args.target_type}.zip", Zip::File::CREATE) do |zipfile|
     Dir[File.join("#{CHEF_BUILD_DIR}/", '**', '**')].each do |file|
       zipfile.add(file.sub("#{CHEF_BUILD_DIR}/", ''), file)
     end
@@ -194,6 +199,7 @@ task :publish, [:deploy_type, :target_type, :extension_version] => [:build] do |
   tempFile = Tempfile.new("publishDefinitionXml")
   definitionXmlFile = tempFile.path
   puts "Writing publishDefinitionXml to #{definitionXmlFile}..."
+  puts "[[\n#{definitionXml}\n]]"
   tempFile.write(definitionXml)
   tempFile.close
 
@@ -201,7 +207,7 @@ task :publish, [:deploy_type, :target_type, :extension_version] => [:build] do |
   puts %x{powershell -nologo -noprofile -executionpolicy unrestricted Import-Module .\\scripts\\uploadpkg.psm1;Upload-ChefPkgToAzure #{publishSettingsFile} #{storageAccount} #{storageContainer} #{extensionZipPackage}}
 
   # Publish the uploaded package to PIR using azure cmdlets.
-  puts %x{powershell -nologo -noprofile -executionpolicy unrestricted Import-Module .\\scripts\\publishpkg.psm1;Publish-ChefPkg #{publishSettingsFile} '#{subscriptionName}' #{publishUri} #{definitionXmlFile}"}
+  puts %x{powershell -nologo -noprofile -executionpolicy unrestricted Import-Module .\\scripts\\publishpkg.psm1;Publish-ChefPkg #{publishSettingsFile} "'#{subscriptionName}'" #{publishUri} #{definitionXmlFile}}
 
   tempFile.unlink
 end
