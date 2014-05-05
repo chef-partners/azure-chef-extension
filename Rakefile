@@ -173,6 +173,7 @@ task :publish, [:deploy_type, :target_type, :extension_version, :confirmation_re
 
   publish_options = JSON.parse(File.read("Publish.json"))
 
+  chef_namespace = publish_options["chef_namespace"]
   publishSettingsFile = publish_options[args.deploy_type]["publishSettingsFile"]
   subscriptionName = publish_options[args.deploy_type]["subscriptionName"]
   publishUri = publish_options[args.deploy_type]["publishUri"]
@@ -189,7 +190,8 @@ task :publish, [:deploy_type, :target_type, :extension_version, :confirmation_re
   # Process the erb
   definitionXml = ERBHelpers::ERBCompiler.run(
       File.read("build/templates/definition.xml.erb"),
-      {:extension_name => extensionName,
+      {:chef_namespace => chef_namespace,
+      :extension_name => extensionName,
       :extension_version => args.extension_version,
       :package_storage_account => storageAccount,
       :package_container =>  storageContainer,
@@ -236,7 +238,8 @@ CONFIRMATION
 
   # Publish the uploaded package to PIR using azure cmdlets.
   puts "Publishing the package..."
-  system("powershell -nologo -noprofile -executionpolicy unrestricted Import-Module .\\scripts\\publishpkg.psm1;Publish-ChefPkg #{publishSettingsFile} \"\'#{subscriptionName}\'\" #{publishUri} #{definitionXmlFile}")
+  postOrPut = (publish_options["isNewExtension"] == "true") ? "POST" : "PUT"
+  system("powershell -nologo -noprofile -executionpolicy unrestricted Import-Module .\\scripts\\publishpkg.psm1;Publish-ChefPkg #{publishSettingsFile} \"\'#{subscriptionName}\'\" #{publishUri} #{definitionXmlFile} #{postOrPut}")
 
   tempFile.unlink
 end
