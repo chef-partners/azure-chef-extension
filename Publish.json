@@ -1,11 +1,8 @@
 {
-  "chef_namespace": "Chef.Bootstrap.WindowsAzure.Test",
-
   "isNewExtension": "true",
 
   "windows": {
     "definitionParams": {
-      "isInternal": "true",
       "extensionName": "ChefClient",
       "storageAccount": "chefextensions",
       "storageContainer": "windows"
@@ -13,7 +10,6 @@
   },
   "ubuntu": {
     "definitionParams": {
-      "isInternal": "true",
       "extensionName": "LinuxChefClient",
       "storageAccount": "chefextensions",
       "storageContainer": "ubuntu"
@@ -21,7 +17,6 @@
   },
   "centos": {
     "definitionParams": {
-      "isInternal": "true",
       "extensionName": "CentosChefClient",
       "storageAccount": "chefextensions",
       "storageContainer": "centos"

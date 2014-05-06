@@ -42,6 +42,13 @@ WINDOWS_PACKAGE_LIST = [
   {"ChefExtensionHandler/HandlerManifest.json" => "#{CHEF_BUILD_DIR}/HandlerManifest.json"}
 ]
 
+PREVIEW = "deploy_to_preview"
+PRODUCTION = "deploy_to_production"
+CONFIRM_PUBLIC = "confirm_public_deployment"
+CONFIRM_INTERNAL = "confirm_internal_deployment"
+DEPLOY_INTERNAL = "deploy_to_internal"
+DEPLOY_PUBLIC = "deploy_to_public"
+
 # Helpers
 def windows?
   if RUBY_PLATFORM =~ /mswin|mingw|windows/
@@ -97,6 +104,14 @@ def assert_publish_env_vars
   end
 end
 
+def assert_publish_params(deploy_type, internal_or_public, operation)
+  puts "deploy_type value should be \"#{PREVIEW}\" or \"#{PRODUCTION}\"" unless (deploy_type == PREVIEW or deploy_type == PRODUCTION)
+
+  puts "internal_or_public value should be \"#{CONFIRM_INTERNAL}\" or \"#{CONFIRM_PUBLIC}\"" unless (internal_or_public == CONFIRM_INTERNAL or internal_or_public == CONFIRM_PUBLIC)
+
+  puts "operation should be \"new\" or \"update\"" unless (operation == "new" or operation == "update")
+end
+
 def load_publish_settings
   doc = Nokogiri::XML(File.open(ENV["publishsettings"]))
   subscription_id =  doc.at_css("Subscription").attribute("Id").value
@@ -106,9 +121,9 @@ end
 
 def get_publish_uri(deploy_type, subscriptionid)
   case deploy_type
-  when "prod"
+  when PRODUCTION
     "https://management.core.windows.net/#{subscriptionid}/services/extensions"
-  when "preview"
+  when PREVIEW
     "https://management-preview.core.windows-int.net/#{subscriptionid}/services/extensions"
   end
 end
@@ -192,25 +207,41 @@ task :clean do
 end
 
 desc "Publishes the azure chef extension package using publish.json Ex: publish[deploy_type, platform, extension_version], default is build[preview,windows]."
-task :publish, [:deploy_type, :target_type, :extension_version, :confirmation_required] => [:build] do |t, args|
-  args.with_defaults(:deploy_type => "preview", :target_type => "windows", :extension_version => EXTENSION_VERSION, :confirmation_required => "true")
-  puts "publish called with args(#{args.deploy_type}, #{args.target_type}, #{args.extension_version})"
+task :publish, [:deploy_type, :target_type, :extension_version, :chef_deploy_namespace, :operation, :internal_or_public, :confirmation_required] => [:build] do |t, args|
+
+  args.with_defaults(
+    :deploy_type => PREVIEW,
+    :target_type => "windows",
+    :extension_version => EXTENSION_VERSION,
+    :chef_deploy_namespace => "Chef.Bootstrap.WindowsAzure.Test",
+    :operation => "new",
+    :internal_or_public => CONFIRM_INTERNAL,
+    :confirmation_required => "true")
+
+  puts "publish called with args(#{args})\n"
+
+  assert_publish_params(args.deploy_type, args.internal_or_public, args.operation)
 
   assert_publish_env_vars
 
   publish_options = JSON.parse(File.read("Publish.json"))
 
-  chef_namespace = publish_options["chef_namespace"]
   publishsettings_file = ENV["publishsettings"]
 
   subscription_id, subscription_name = load_publish_settings
+
   publish_uri = get_publish_uri(args.deploy_type, subscription_id)
 
   definitionParams = publish_options[args.target_type]["definitionParams"]
   storageAccount = definitionParams["storageAccount"]
   storageContainer = definitionParams["storageContainer"]
   extensionName = definitionParams["extensionName"]
-  isInternal = definitionParams["isInternal"]
+  is_internal = if args.internal_or_public == CONFIRM_INTERNAL
+    true
+  elsif args.internal_or_public == CONFIRM_PUBLIC
+    false
+  end
+
   definitionXmlFile = "build/templates/definition.xml.erb"
 
   extensionZipPackage = "#{PACKAGE_NAME}_#{args.extension_version}_#{Date.today.strftime("%Y%m%d")}_#{args.target_type}.zip"
@@ -218,13 +249,13 @@ task :publish, [:deploy_type, :target_type, :extension_version, :confirmation_re
   # Process the erb
   definitionXml = ERBHelpers::ERBCompiler.run(
       File.read("build/templates/definition.xml.erb"),
-      {:chef_namespace => chef_namespace,
+      {:chef_namespace => args.chef_deploy_namespace,
       :extension_name => extensionName,
       :extension_version => args.extension_version,
       :package_storage_account => storageAccount,
       :package_container =>  storageContainer,
       :package_name => extensionZipPackage,
-      :is_internal => isInternal
+      :is_internal => is_internal
     })
 
   # Get user confirmation, since we are publishing a new build to Azure.
@@ -235,12 +266,12 @@ task :publish, [:deploy_type, :target_type, :extension_version, :confirmation_re
 This task creates a chef extension package and publishes to Azure #{args.deploy_type}.
   Details:
   -------
-    Publish To:  ** #{args.deploy_type} **
+    Publish To:  ** #{args.deploy_type.gsub(/deploy_to_/, "")} **
     Subscription Name:  #{subscription_name}
     Extension Package:  #{extensionZipPackage}
     Publish Uri:  #{publish_uri}
     Build branch:  #{%x{git rev-parse --abbrev-ref HEAD}}
-    Type:  #{isInternal ? "Internal build" : "Public release"}
+    Type:  #{is_internal ? "Internal build" : "Public release"}
 ****************************************
 CONFIRMATION
     print "Do you wish to proceed? (y/n)"
@@ -266,7 +297,12 @@ CONFIRMATION
 
   # Publish the uploaded package to PIR using azure cmdlets.
   puts "Publishing the package..."
-  postOrPut = (publish_options["isNewExtension"] == "true") ? "POST" : "PUT"
+  postOrPut = if args.operation == "new"
+      "POST"
+    elsif args.operation == "update"
+      "PUT"
+    end
+
   system("powershell -nologo -noprofile -executionpolicy unrestricted Import-Module .\\scripts\\publishpkg.psm1;Publish-ChefPkg #{publishsettings_file} \"\'#{subscription_name}\'\" #{publish_uri} #{definitionXmlFile} #{postOrPut}")
 
   tempFile.unlink
