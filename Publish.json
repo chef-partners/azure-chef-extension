@@ -3,18 +3,6 @@
 
   "isNewExtension": "true",
 
-  "prod": {
-    "publishSettingsFile": "change_me.publishsettings",
-    "subscriptionName": "change_me_subscription_name",
-    "publishUri": "https://management.core.windows.net/<change_me_subscription_id>/services/extensions"
-  },
-
-  "preview": {
-    "publishSettingsFile": "change_me.publishsettings",
-    "subscriptionName": "change_me_subscription_name",
-    "publishUri": "https://management-preview.core.windows-int.net/<change_me_subscription_id>/services/extensions"
-  },
-
   "windows": {
     "definitionParams": {
       "isInternal": "true",

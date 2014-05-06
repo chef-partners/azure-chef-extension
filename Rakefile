@@ -11,6 +11,7 @@ require 'net/http'
 require 'json'
 require 'zip'
 require 'date'
+require 'nokogiri'
 require './lib/chef/azure/helpers/erb.rb'
 
 PACKAGE_NAME = "ChefExtensionHandler"
@@ -86,6 +87,30 @@ def load_build_environment(platform)
   # additional params like machine_os, arch etc.
   download_url = build_options["download_url"]
   download_url
+end
+
+def assert_publish_env_vars
+  [{"publishsettings" => "Publish settings file for Azure."}].each do |var|
+    if ENV[var.keys.first].nil?
+      puts "Please set the environment variable - \"#{var.keys.first}\" for [#{var.values.first}]"
+    end
+  end
+end
+
+def load_publish_settings
+  doc = Nokogiri::XML(File.open(ENV["publishsettings"]))
+  subscription_id =  doc.at_css("Subscription").attribute("Id").value
+  subscription_name =  doc.at_css("Subscription").attribute("Name").value
+  [subscription_id, subscription_name]
+end
+
+def get_publish_uri(deploy_type, subscriptionid)
+  case deploy_type
+  when "prod"
+    "https://management.core.windows.net/#{subscriptionid}/services/extensions"
+  when "preview"
+    "https://management-preview.core.windows-int.net/#{subscriptionid}/services/extensions"
+  end
 end
 
 desc "Builds a azure chef extension gem."
@@ -171,12 +196,15 @@ task :publish, [:deploy_type, :target_type, :extension_version, :confirmation_re
   args.with_defaults(:deploy_type => "preview", :target_type => "windows", :extension_version => EXTENSION_VERSION, :confirmation_required => "true")
   puts "publish called with args(#{args.deploy_type}, #{args.target_type}, #{args.extension_version})"
 
+  assert_publish_env_vars
+
   publish_options = JSON.parse(File.read("Publish.json"))
 
   chef_namespace = publish_options["chef_namespace"]
-  publishSettingsFile = publish_options[args.deploy_type]["publishSettingsFile"]
-  subscriptionName = publish_options[args.deploy_type]["subscriptionName"]
-  publishUri = publish_options[args.deploy_type]["publishUri"]
+  publishsettings_file = ENV["publishsettings"]
+
+  subscription_id, subscription_name = load_publish_settings
+  publish_uri = get_publish_uri(args.deploy_type, subscription_id)
 
   definitionParams = publish_options[args.target_type]["definitionParams"]
   storageAccount = definitionParams["storageAccount"]
@@ -208,9 +236,9 @@ This task creates a chef extension package and publishes to Azure #{args.deploy_
   Details:
   -------
     Publish To:  ** #{args.deploy_type} **
-    Subscription Name:  #{subscriptionName}
+    Subscription Name:  #{subscription_name}
     Extension Package:  #{extensionZipPackage}
-    Publish Uri:  #{publishUri}
+    Publish Uri:  #{publish_uri}
     Build branch:  #{%x{git rev-parse --abbrev-ref HEAD}}
     Type:  #{isInternal ? "Internal build" : "Public release"}
 ****************************************
@@ -234,12 +262,12 @@ CONFIRMATION
 
   # Upload the generated package to Azure storage as a blob.
   puts "Uploading zip package..."
-  system("powershell -nologo -noprofile -executionpolicy unrestricted Import-Module .\\scripts\\uploadpkg.psm1;Upload-ChefPkgToAzure #{publishSettingsFile} #{storageAccount} #{storageContainer} #{extensionZipPackage}")
+  system("powershell -nologo -noprofile -executionpolicy unrestricted Import-Module .\\scripts\\uploadpkg.psm1;Upload-ChefPkgToAzure #{publishsettings_file} #{storageAccount} #{storageContainer} #{extensionZipPackage}")
 
   # Publish the uploaded package to PIR using azure cmdlets.
   puts "Publishing the package..."
   postOrPut = (publish_options["isNewExtension"] == "true") ? "POST" : "PUT"
-  system("powershell -nologo -noprofile -executionpolicy unrestricted Import-Module .\\scripts\\publishpkg.psm1;Publish-ChefPkg #{publishSettingsFile} \"\'#{subscriptionName}\'\" #{publishUri} #{definitionXmlFile} #{postOrPut}")
+  system("powershell -nologo -noprofile -executionpolicy unrestricted Import-Module .\\scripts\\publishpkg.psm1;Publish-ChefPkg #{publishsettings_file} \"\'#{subscription_name}\'\" #{publish_uri} #{definitionXmlFile} #{postOrPut}")
 
   tempFile.unlink
 end
