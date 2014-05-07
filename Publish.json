@@ -1,0 +1,25 @@
+{
+  "isNewExtension": "true",
+
+  "windows": {
+    "definitionParams": {
+      "extensionName": "ChefClient",
+      "storageAccount": "chefextensions",
+      "storageContainer": "windows"
+    }
+  },
+  "ubuntu": {
+    "definitionParams": {
+      "extensionName": "LinuxChefClient",
+      "storageAccount": "chefextensions",
+      "storageContainer": "ubuntu"
+    }
+  },
+  "centos": {
+    "definitionParams": {
+      "extensionName": "CentosChefClient",
+      "storageAccount": "chefextensions",
+      "storageContainer": "centos"
+    }
+  }
+}

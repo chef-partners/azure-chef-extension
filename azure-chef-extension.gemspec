@@ -20,6 +20,7 @@ Gem::Specification.new do |s|
 
   s.add_dependency "chef", ">= 0.10.10"
   s.add_development_dependency 'rubyzip', '>= 1.0.0'
+  s.add_development_dependency 'nokogiri', '~> 1.6.1'
 
   %w(rspec-core rspec-expectations rspec-mocks rspec_junit_formatter).each { |gem| s.add_development_dependency gem }
 end
