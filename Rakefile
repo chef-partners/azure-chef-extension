@@ -117,6 +117,11 @@ def assert_publish_params(deploy_type, internal_or_public, operation)
   error_and_exit! "operation parameter should be \"new\" or \"update\"" unless (operation == "new" or operation == "update")
 end
 
+def assert_git_state
+  is_crlf = %x{git config --global core.autocrlf}
+  error_and_exit! "Please set the git crlf setting and clone, so git does not auto convert newlines to crlf. [ex: git config --global core.autocrlf false]" if is_crlf.chomp == "true"
+end
+
 def load_publish_settings
   doc = Nokogiri::XML(File.open(ENV["publishsettings"]))
   subscription_id =  doc.at_css("Subscription").attribute("Id").value
@@ -143,6 +148,8 @@ desc "Builds the azure chef extension package Ex: build[platform, extension_vers
 task :build, [:target_type, :extension_version] => [:gem] do |t, args|
   args.with_defaults(:target_type => "windows", :extension_version => EXTENSION_VERSION)
   puts "Build called with args(#{args.target_type}, #{args.extension_version})"
+
+  assert_git_state
 
   download_url = load_build_environment(args.target_type)
 
