@@ -96,20 +96,25 @@ def load_build_environment(platform)
   download_url
 end
 
+def error_and_exit!(message)
+  puts "\nERROR: #{message}\n"
+  exit
+end
+
 def assert_publish_env_vars
   [{"publishsettings" => "Publish settings file for Azure."}].each do |var|
     if ENV[var.keys.first].nil?
-      puts "Please set the environment variable - \"#{var.keys.first}\" for [#{var.values.first}]"
+      error_and_exit! "Please set the environment variable - \"#{var.keys.first}\" for [#{var.values.first}]"
     end
   end
 end
 
 def assert_publish_params(deploy_type, internal_or_public, operation)
-  puts "deploy_type value should be \"#{PREVIEW}\" or \"#{PRODUCTION}\"" unless (deploy_type == PREVIEW or deploy_type == PRODUCTION)
+  error_and_exit! "deploy_type parameter value should be \"#{PREVIEW}\" or \"#{PRODUCTION}\"" unless (deploy_type == PREVIEW or deploy_type == PRODUCTION)
 
-  puts "internal_or_public value should be \"#{CONFIRM_INTERNAL}\" or \"#{CONFIRM_PUBLIC}\"" unless (internal_or_public == CONFIRM_INTERNAL or internal_or_public == CONFIRM_PUBLIC)
+  error_and_exit! "internal_or_public parameter value should be \"#{CONFIRM_INTERNAL}\" or \"#{CONFIRM_PUBLIC}\"" unless (internal_or_public == CONFIRM_INTERNAL or internal_or_public == CONFIRM_PUBLIC)
 
-  puts "operation should be \"new\" or \"update\"" unless (operation == "new" or operation == "update")
+  error_and_exit! "operation parameter should be \"new\" or \"update\"" unless (operation == "new" or operation == "update")
 end
 
 def load_publish_settings
@@ -167,7 +172,7 @@ task :build, [:target_type, :extension_version] => [:gem] do |t, args|
     end
   end
 
-  puts "Downloading chef installer..."
+  puts "\nDownloading chef installer..."
   target_chef_pkg = case args.target_type
                     when "ubuntu"
                       "#{CHEF_BUILD_DIR}/installer/chef-client-latest.deb"
@@ -185,8 +190,8 @@ task :build, [:target_type, :extension_version] => [:gem] do |t, args|
 
   download_chef(download_url, target_chef_pkg)
 
-  puts "Creating a zip package..."
-  puts "#{PACKAGE_NAME}_#{args.extension_version}_#{date_tag}_#{args.target_type}.zip"
+  puts "\nCreating a zip package..."
+  puts "#{PACKAGE_NAME}_#{args.extension_version}_#{date_tag}_#{args.target_type}.zip\n\n"
 
   Zip::File.open("#{PACKAGE_NAME}_#{args.extension_version}_#{date_tag}_#{args.target_type}.zip", Zip::File::CREATE) do |zipfile|
     Dir[File.join("#{CHEF_BUILD_DIR}/", '**', '**')].each do |file|
@@ -218,7 +223,7 @@ task :publish, [:deploy_type, :target_type, :extension_version, :chef_deploy_nam
     :internal_or_public => CONFIRM_INTERNAL,
     :confirmation_required => "true")
 
-  puts "publish called with args(#{args})\n"
+  puts "**Publish called with args:\n#{args}\n\n"
 
   assert_publish_params(args.deploy_type, args.internal_or_public, args.operation)
 
@@ -292,11 +297,13 @@ CONFIRMATION
   tempFile.close
 
   # Upload the generated package to Azure storage as a blob.
-  puts "Uploading zip package..."
+  puts "\n\nUploading zip package..."
+  puts "------------------------"
   system("powershell -nologo -noprofile -executionpolicy unrestricted Import-Module .\\scripts\\uploadpkg.psm1;Upload-ChefPkgToAzure #{publishsettings_file} #{storageAccount} #{storageContainer} #{extensionZipPackage}")
 
   # Publish the uploaded package to PIR using azure cmdlets.
-  puts "Publishing the package..."
+  puts "\n\nPublishing the package..."
+  puts "-------------------------"
   postOrPut = if args.operation == "new"
       "POST"
     elsif args.operation == "update"
