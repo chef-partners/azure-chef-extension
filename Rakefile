@@ -119,7 +119,7 @@ end
 
 def assert_git_state
   is_crlf = %x{git config --global core.autocrlf}
-  error_and_exit! "Please set the git crlf setting and clone, so git does not auto convert newlines to crlf. [ex: git config --global core.autocrlf false]" if is_crlf.chomp == "true"
+  error_and_exit! "Please set the git crlf setting and clone, so git does not auto convert newlines to crlf. [ex: git config --global core.autocrlf false]" if is_crlf.chomp != "false"
 end
 
 def load_publish_settings
