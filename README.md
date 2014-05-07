@@ -14,6 +14,7 @@ Build
     rake build[:target_type, :extension_version]
 
 :target_type = [windows/ubuntu/centos] default is windows
+
 :extension_version = Chef extension version, say 11.6 [pattern major.minor governed by Azure team]
 
     rake 'build[ubuntu,11.6]'
@@ -31,11 +32,18 @@ The task depends on:
 
 
 :deploy_type = [deploy_to_preview/deploy_to_prod] default is preview
+
 :target_type = [windows/ubuntu/centos] default is windows
+
 :extension_version = Chef extension version, say 11.6 [pattern major.minor governed by Azure team]
-:chef_deploy_namespace = "Chef.Bootstrap.WindowsAzure.Test"
+
+:chef_deploy_namespace = "Chef.Bootstrap.WindowsAzure.Test".
+
 :operation = [new/update]
+
 :internal_or_public = [confirm_public_deployment/confirm_internal_deployment]
+
 :confirmation_required = [true/false] defaults to true to generate prompt.
+
 
     rake 'publish[deploy_to_production,ubuntu,11.6,Chef.Bootstrap.WindowsAzure.Test,update,confirm_internal_deployment]'
