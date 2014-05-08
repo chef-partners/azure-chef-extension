@@ -129,13 +129,16 @@ def load_publish_settings
   [subscription_id, subscription_name]
 end
 
-def get_publish_uri(deploy_type, subscriptionid)
+def get_publish_uri(deploy_type, subscriptionid, operation)
+  uri = ""
   case deploy_type
   when PRODUCTION
-    "https://management.core.windows.net/#{subscriptionid}/services/extensions"
+    uri = "https://management.core.windows.net/#{subscriptionid}/services/extensions"
   when PREVIEW
-    "https://management-preview.core.windows-int.net/#{subscriptionid}/services/extensions"
+    uri = "https://management-preview.core.windows-int.net/#{subscriptionid}/services/extensions"
   end
+  uri = uri + "?action=update" if operation == "update"
+  uri
 end
 
 desc "Builds a azure chef extension gem."
@@ -242,7 +245,7 @@ task :publish, [:deploy_type, :target_type, :extension_version, :chef_deploy_nam
 
   subscription_id, subscription_name = load_publish_settings
 
-  publish_uri = get_publish_uri(args.deploy_type, subscription_id)
+  publish_uri = get_publish_uri(args.deploy_type, subscription_id, args.operation)
 
   definitionParams = publish_options[args.target_type]["definitionParams"]
   storageAccount = definitionParams["storageAccount"]
