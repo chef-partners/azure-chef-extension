@@ -57,10 +57,10 @@ module ChefAzure
       azure_status_folder = handler_env[0]["handlerEnvironment"]["statusFolder"]
       azure_plugin_log_location = handler_env[0]["handlerEnvironment"]["logFolder"]
       azure_config_folder = handler_env[0]["handlerEnvironment"]["configFolder"]
-      Chef::Log.info "#{@azure_config_folder} --> #{@azure_status_folder} --> #{@azure_heart_beat_file} --> #{@azure_plugin_log_location}"
+      Chef::Log.info "#{azure_config_folder} --> #{azure_status_folder} --> #{azure_heart_beat_file} --> #{azure_plugin_log_location}"
 
       # Get name of status file by finding the latest sequence number from runtime settings file
-      settings_file_name = Dir.glob("#{azure_config_folder}/*.settings").sort.last
+      settings_file_name = Dir.glob("#{azure_config_folder}/*.settings".gsub(/\\/,'/')).sort.last
       sequence = File.basename(settings_file_name, ".settings")
       azure_status_file = azure_status_folder + "/" + sequence + ".status"
       Chef::Log.info "Status file name: #{azure_status_file}"
