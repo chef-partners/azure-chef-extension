@@ -11,11 +11,13 @@ You can use rake tasks to build and publish the new builds to Azure subscription
 
 Build
 -------
-    rake build[:target_type, :extension_version]
+    rake build[:target_type, :extension_version, :confirmation_required]
 
 :target_type = [windows/ubuntu/centos] default is windows
 
 :extension_version = Chef extension version, say 11.6 [pattern major.minor governed by Azure team]
+
+:confirmation_required = [true/false] defaults to true to generate prompt.
 
     rake 'build[ubuntu,11.6]'
 
