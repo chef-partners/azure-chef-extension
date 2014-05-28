@@ -148,13 +148,32 @@ task :gem => [:clean] do
 end
 
 desc "Builds the azure chef extension package Ex: build[platform, extension_version], default is build[windows]."
-task :build, [:target_type, :extension_version] => [:gem] do |t, args|
-  args.with_defaults(:target_type => "windows", :extension_version => EXTENSION_VERSION)
+task :build, [:target_type, :extension_version, :confirmation_required] => [:gem] do |t, args|
+  args.with_defaults(:target_type => "windows",
+    :extension_version => EXTENSION_VERSION,
+    :confirmation_required => "true")
   puts "Build called with args(#{args.target_type}, #{args.extension_version})"
 
   assert_git_state
 
   download_url = load_build_environment(args.target_type)
+  # Get user confirmation if we are downloading correct version.
+  if args.confirmation_required == "true"
+    puts <<-CONFIRMATION
+
+**********************************************
+Downloading specific chef-client version using
+#{download_url}.
+Please confirm the correct chef-client version in url.
+**********************************************
+CONFIRMATION
+    print "Do you wish to proceed? (y/n)"
+    proceed = STDIN.gets.chomp() == 'y'
+    if not proceed
+      puts "Exitting build request."
+      exit
+    end
+  end
 
   puts "Building #{args.target_type} package..."
   # setup the sandbox
