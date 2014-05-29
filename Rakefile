@@ -44,6 +44,8 @@ WINDOWS_PACKAGE_LIST = [
 
 PREVIEW = "deploy_to_preview"
 PRODUCTION = "deploy_to_production"
+DELETE_FROM_PREVIEW = "delete_from_preview"
+DELETE_FROM_PRODUCTION = "delete_from_production"
 CONFIRM_PUBLIC = "confirm_public_deployment"
 CONFIRM_INTERNAL = "confirm_internal_deployment"
 DEPLOY_INTERNAL = "deploy_to_internal"
@@ -101,6 +103,15 @@ def error_and_exit!(message)
   exit
 end
 
+def confirm!(type)
+  print "Do you wish to proceed? (y/n)"
+  proceed = STDIN.gets.chomp() == 'y'
+  if not proceed
+    puts "Exitting #{type} request."
+    exit
+  end
+end
+
 def assert_publish_env_vars
   [{"publishsettings" => "Publish settings file for Azure."}].each do |var|
     if ENV[var.keys.first].nil?
@@ -110,11 +121,23 @@ def assert_publish_env_vars
 end
 
 def assert_publish_params(deploy_type, internal_or_public, operation)
+  assert_publish_env_vars
+
   error_and_exit! "deploy_type parameter value should be \"#{PREVIEW}\" or \"#{PRODUCTION}\"" unless (deploy_type == PREVIEW or deploy_type == PRODUCTION)
 
   error_and_exit! "internal_or_public parameter value should be \"#{CONFIRM_INTERNAL}\" or \"#{CONFIRM_PUBLIC}\"" unless (internal_or_public == CONFIRM_INTERNAL or internal_or_public == CONFIRM_PUBLIC)
 
   error_and_exit! "operation parameter should be \"new\" or \"update\"" unless (operation == "new" or operation == "update")
+end
+
+def assert_delete_params(type, chef_deploy_namespace, full_extension_version)
+  assert_publish_env_vars
+
+  error_and_exit! "deploy_type parameter value should be \"#{DELETE_FROM_PREVIEW}\" or \"#{DELETE_FROM_PRODUCTION}\"" unless (type == DELETE_FROM_PREVIEW or type == DELETE_FROM_PRODUCTION)
+
+  error_and_exit! "chef_deploy_namespace must be specified." if chef_deploy_namespace.nil?
+
+  error_and_exit! "full_extension_version must be specified." if full_extension_version.nil?
 end
 
 def assert_git_state
@@ -129,14 +152,17 @@ def load_publish_settings
   [subscription_id, subscription_name]
 end
 
-def get_publish_uri(deploy_type, subscriptionid, operation)
-  uri = ""
+def get_mgmt_uri(deploy_type)
   case deploy_type
-  when PRODUCTION
-    uri = "https://management.core.windows.net/#{subscriptionid}/services/extensions"
-  when PREVIEW
-    uri = "https://management-preview.core.windows-int.net/#{subscriptionid}/services/extensions"
+  when /(^#{PRODUCTION}$|^#{DELETE_FROM_PRODUCTION}$)/
+    "https://management.core.windows.net/"
+  when /(^#{PREVIEW}$|^#{DELETE_FROM_PREVIEW}$)/
+    "https://management-preview.core.windows-int.net/"
   end
+end
+
+def get_publish_uri(deploy_type, subscriptionid, operation)
+  uri = get_mgmt_uri(deploy_type) + "#{subscriptionid}/services/extensions"
   uri = uri + "?action=update" if operation == "update"
   uri
 end
@@ -157,9 +183,8 @@ task :build, [:target_type, :extension_version, :confirmation_required] => [:gem
   assert_git_state
 
   download_url = load_build_environment(args.target_type)
-  # Get user confirmation if we are downloading correct version.
-  if args.confirmation_required == "true"
-    puts <<-CONFIRMATION
+
+  puts <<-CONFIRMATION
 
 **********************************************
 Downloading specific chef-client version using
@@ -167,12 +192,10 @@ Downloading specific chef-client version using
 Please confirm the correct chef-client version in url.
 **********************************************
 CONFIRMATION
-    print "Do you wish to proceed? (y/n)"
-    proceed = STDIN.gets.chomp() == 'y'
-    if not proceed
-      puts "Exitting build request."
-      exit
-    end
+
+  # Get user confirmation if we are downloading correct version.
+  if args.confirmation_required == "true"
+    confirm!("build")
   end
 
   puts "Building #{args.target_type} package..."
@@ -256,11 +279,7 @@ task :publish, [:deploy_type, :target_type, :extension_version, :chef_deploy_nam
 
   assert_publish_params(args.deploy_type, args.internal_or_public, args.operation)
 
-  assert_publish_env_vars
-
   publish_options = JSON.parse(File.read("Publish.json"))
-
-  publishsettings_file = ENV["publishsettings"]
 
   subscription_id, subscription_name = load_publish_settings
 
@@ -286,14 +305,13 @@ task :publish, [:deploy_type, :target_type, :extension_version, :chef_deploy_nam
       {:chef_namespace => args.chef_deploy_namespace,
       :extension_name => extensionName,
       :extension_version => args.extension_version,
+      :target_type => args.target_type,
       :package_storage_account => storageAccount,
       :package_container =>  storageContainer,
       :package_name => extensionZipPackage,
       :is_internal => is_internal
     })
 
-  # Get user confirmation, since we are publishing a new build to Azure.
-  if args.confirmation_required == "true"
     puts <<-CONFIRMATION
 
 *****************************************
@@ -308,12 +326,9 @@ This task creates a chef extension package and publishes to Azure #{args.deploy_
     Type:  #{is_internal ? "Internal build" : "Public release"}
 ****************************************
 CONFIRMATION
-    print "Do you wish to proceed? (y/n)"
-    proceed = STDIN.gets.chomp() == 'y'
-    if not proceed
-      puts "Exitting publish request."
-      exit
-    end
+  # Get user confirmation, since we are publishing a new build to Azure.
+  if args.confirmation_required == "true"
+    confirm!("publish")
   end
 
   puts "Continuing with publish request..."
@@ -328,7 +343,7 @@ CONFIRMATION
   # Upload the generated package to Azure storage as a blob.
   puts "\n\nUploading zip package..."
   puts "------------------------"
-  system("powershell -nologo -noprofile -executionpolicy unrestricted Import-Module .\\scripts\\uploadpkg.psm1;Upload-ChefPkgToAzure #{publishsettings_file} #{storageAccount} #{storageContainer} #{extensionZipPackage}")
+  system("powershell -nologo -noprofile -executionpolicy unrestricted Import-Module .\\scripts\\uploadpkg.psm1;Upload-ChefPkgToAzure #{ENV["publishsettings"]} #{storageAccount} #{storageContainer} #{extensionZipPackage}")
 
   # Publish the uploaded package to PIR using azure cmdlets.
   puts "\n\nPublishing the package..."
@@ -339,9 +354,54 @@ CONFIRMATION
       "PUT"
     end
 
-  system("powershell -nologo -noprofile -executionpolicy unrestricted Import-Module .\\scripts\\publishpkg.psm1;Publish-ChefPkg #{publishsettings_file} \"\'#{subscription_name}\'\" #{publish_uri} #{definitionXmlFile} #{postOrPut}")
+  system("powershell -nologo -noprofile -executionpolicy unrestricted Import-Module .\\scripts\\publishpkg.psm1;Publish-ChefPkg #{ENV["publishsettings"]} \"\'#{subscription_name}\'\" #{publish_uri} #{definitionXmlFile} #{postOrPut}")
 
   tempFile.unlink
+end
+
+desc "Deletes the azure chef extension package which was publised as internal Ex: publish[deploy_type, platform, extension_version], default is build[preview,windows]."
+task :delete, [:deploy_type, :target_type, :chef_deploy_namespace, :full_extension_version, :confirmation_required] do |t, args|
+
+  args.with_defaults(
+    :deploy_type => DELETE_FROM_PREVIEW,
+    :target_type => "windows",
+    :chef_deploy_namespace => nil,
+    :full_extension_version => nil,
+    :confirmation_required => "true")
+
+  puts "**Delete called with args:\n#{args}\n\n"
+
+  assert_delete_params(args.deploy_type, args.chef_deploy_namespace, args.full_extension_version)
+
+  subscription_id, subscription_name = load_publish_settings
+
+  publish_options = JSON.parse(File.read("Publish.json"))
+  extensionName = publish_options[args.target_type]["definitionParams"]["extensionName"]
+
+  delete_uri = get_mgmt_uri(args.deploy_type) + "#{subscription_id}/services/extensions/#{args.chef_deploy_namespace}/#{extensionName}/#{args.full_extension_version}"
+
+  # Get user confirmation, since we are deleting from Azure.
+  puts <<-CONFIRMATION
+
+*****************************************
+This task deletes a published chef extension package from Azure #{args.deploy_type}.
+  Details:
+  -------
+    Delete from:  ** #{args.deploy_type.gsub(/delete_from_/, "")} **
+    Subscription Name:  #{subscription_name}
+    Publisher Name:     #{args.chef_deploy_namespace}
+    Extension Name:     #{extensionName}
+    Delete Uri:  #{delete_uri}
+****************************************
+CONFIRMATION
+
+  if args.confirmation_required == "true"
+    confirm!("delete")
+  end
+
+  puts "Continuing with delete request..."
+
+  system("powershell -nologo -noprofile -executionpolicy unrestricted Import-Module .\\scripts\\deletepkg.psm1;Delete-ChefPkg #{ENV["publishsettings"]} \"\'#{subscription_name}\'\" #{delete_uri}")
 end
 
 task :init_pester do
