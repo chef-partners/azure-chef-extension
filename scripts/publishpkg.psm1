@@ -1,3 +1,14 @@
+
+function Get-CurrentScriptDirectory
+{
+  $Invocation = (Get-Variable MyInvocation -Scope 1).Value
+  Split-Path $Invocation.MyCommand.Path
+}
+
+$scriptDir = Get-CurrentScriptDirectory
+
+Import-Module "$scriptDir\shared.psm1"
+
 function Publish-ChefPkg($publishSettingsFile, $subscriptionName, $publishUri, $definitionXmlFile, $postOrPut) {
   trap [Exception] {echo $_.Exception.Message;exit 1}
 
