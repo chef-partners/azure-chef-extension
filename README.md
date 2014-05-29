@@ -31,6 +31,7 @@ The task depends on:
   * cli parameters listed below.
   * entries in Publish.json.
   * environment variable "publishsettings" set pointing to the publish setting file.
+  [Environment]::SetEnvironmentVariable("publishsettings", 'C:\myaccount.publishsettings', "Process")
 
 
 :deploy_type = [deploy_to_preview/deploy_to_prod] default is preview
@@ -49,3 +50,21 @@ The task depends on:
 
 
     rake 'publish[deploy_to_production,ubuntu,11.6,Chef.Bootstrap.WindowsAzure.Test,update,confirm_internal_deployment]'
+
+Delete
+-----------
+Rake task to delete a published package to Azure.
+**Note:**
+Only internal packages can be deleted.
+
+    rake delete[:deploy_type, :target_type, :chef_deploy_namespace, :full_extension_version, :confirmation_required]
+
+The task depends on:
+  * cli parameters listed below.
+  * environment variable "publishsettings" set pointing to the publish setting file.
+
+  :deploy_type = [delete_from_preview/delete_from_prod] default is preview
+
+  :full_extension_version = Chef extension version, say 11.12.4.1 [Version as specified during the publish call]
+
+  :target_type, :chef_deploy_namespace and :confirmation_required = same as for publish task.
