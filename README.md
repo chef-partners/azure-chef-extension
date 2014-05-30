@@ -68,3 +68,19 @@ The task depends on:
   :full_extension_version = Chef extension version, say 11.12.4.1 [Version as specified during the publish call]
 
   :target_type, :chef_deploy_namespace and :confirmation_required = same as for publish task.
+
+    rake 'delete[delete_from_production,ubuntu,Chef.Bootstrap.WindowsAzure.Test,11.12.4.2]'
+
+Update
+-----------
+Rake task to udpate a published package to Azure. Used to switch published versions from "internal" to "public" and vice versa. You need to know the build date.
+
+    rake update[:deploy_type, :target_type, :extension_version, :build_date_yyyymmdd, :chef_deploy_namespace, :internal_or_public, :confirmation_required]
+
+The task depends on:
+  * cli parameters listed below. All params definition as same as publish task except build date.
+  * environment variable "publishsettings" set pointing to the publish setting file.
+
+  :build_date_yyyymmdd = The build date when package was published, in format yyyymmdd
+
+    rake 'update[deploy_to_production,windows,11.12.4.2,20140530,Chef.Bootstrap.WindowsAzure.Test,confirm_internal_deployment]'
