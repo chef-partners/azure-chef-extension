@@ -455,7 +455,7 @@ task :update, [:deploy_type, :target_type, :extension_version, :build_date_yyyym
   # assert build date since we form the build tag
   error_and_exit! "Please specify the :build_date_yyyymmdd param used to identify the published build" if args.build_date_yyyymmdd.nil?
 
-  definitionXml = get_definition_xml(args)
+  definitionXml = get_definition_xml(args, args.build_date_yyyymmdd)
 
   subscription_id, subscription_name = load_publish_settings
   publish_uri = get_publish_uri(args.deploy_type, subscription_id, "update")
