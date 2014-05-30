@@ -120,12 +120,16 @@ def assert_publish_env_vars
   end
 end
 
-def assert_publish_params(deploy_type, internal_or_public, operation)
+def assert_deploy_params(deploy_type, internal_or_public)
   assert_publish_env_vars
 
   error_and_exit! "deploy_type parameter value should be \"#{PREVIEW}\" or \"#{PRODUCTION}\"" unless (deploy_type == PREVIEW or deploy_type == PRODUCTION)
 
   error_and_exit! "internal_or_public parameter value should be \"#{CONFIRM_INTERNAL}\" or \"#{CONFIRM_PUBLIC}\"" unless (internal_or_public == CONFIRM_INTERNAL or internal_or_public == CONFIRM_PUBLIC)
+end
+
+def assert_publish_params(deploy_type, internal_or_public, operation)
+  assert_deploy_params(deploy_type, internal_or_public)
 
   error_and_exit! "operation parameter should be \"new\" or \"update\"" unless (operation == "new" or operation == "update")
 end
@@ -140,6 +144,11 @@ def assert_delete_params(type, chef_deploy_namespace, full_extension_version)
   error_and_exit! "full_extension_version must be specified." if full_extension_version.nil?
 end
 
+def assert_update_params(definition_xml)
+  assert_publish_env_vars
+  error_and_exit! "definition_xml param must point to definitionXml file." if definition_xml.nil?
+end
+
 def assert_git_state
   is_crlf = %x{git config --global core.autocrlf}
   error_and_exit! "Please set the git crlf setting and clone, so git does not auto convert newlines to crlf. [ex: git config --global core.autocrlf false]" if is_crlf.chomp != "false"
@@ -150,6 +159,16 @@ def load_publish_settings
   subscription_id =  doc.at_css("Subscription").attribute("Id").value
   subscription_name =  doc.at_css("Subscription").attribute("Name").value
   [subscription_id, subscription_name]
+end
+
+def load_publish_properties(target_type)
+  publish_options = JSON.parse(File.read("Publish.json"))
+
+  definitionParams = publish_options[target_type]["definitionParams"]
+  storageAccount = definitionParams["storageAccount"]
+  storageContainer = definitionParams["storageContainer"]
+  extensionName = definitionParams["extensionName"]
+  [storageAccount, storageContainer, extensionName]
 end
 
 def get_mgmt_uri(deploy_type)
@@ -165,6 +184,43 @@ def get_publish_uri(deploy_type, subscriptionid, operation)
   uri = get_mgmt_uri(deploy_type) + "#{subscriptionid}/services/extensions"
   uri = uri + "?action=update" if operation == "update"
   uri
+end
+
+def get_extension_pkg_name(args, date_tag = nil)
+  if date_tag.nil?
+    "#{PACKAGE_NAME}_#{args.extension_version}_#{Date.today.strftime("%Y%m%d")}_#{args.target_type}.zip"
+  else
+    "#{PACKAGE_NAME}_#{args.extension_version}_#{date_tag}_#{args.target_type}.zip"
+  end
+end
+
+def get_definition_xml(args, date_tag = nil)
+  storageAccount, storageContainer, extensionName = load_publish_properties(args.target_type)
+
+  extensionZipPackage = get_extension_pkg_name(args, date_tag)
+
+  # Process the erb
+  definitionXml = ERBHelpers::ERBCompiler.run(
+      File.read("build/templates/definition.xml.erb"),
+      {:chef_namespace => args.chef_deploy_namespace,
+      :extension_name => extensionName,
+      :extension_version => args.extension_version,
+      :target_type => args.target_type,
+      :package_storage_account => storageAccount,
+      :package_container =>  storageContainer,
+      :package_name => extensionZipPackage,
+      :is_internal => is_internal?(args)
+    })
+
+  definitionXml
+end
+
+def is_internal?(args)
+  is_internal = if args.internal_or_public == CONFIRM_INTERNAL
+    true
+  elsif args.internal_or_public == CONFIRM_PUBLIC
+    false
+  end
 end
 
 desc "Builds a azure chef extension gem."
@@ -279,38 +335,11 @@ task :publish, [:deploy_type, :target_type, :extension_version, :chef_deploy_nam
 
   assert_publish_params(args.deploy_type, args.internal_or_public, args.operation)
 
-  publish_options = JSON.parse(File.read("Publish.json"))
-
   subscription_id, subscription_name = load_publish_settings
 
   publish_uri = get_publish_uri(args.deploy_type, subscription_id, args.operation)
 
-  definitionParams = publish_options[args.target_type]["definitionParams"]
-  storageAccount = definitionParams["storageAccount"]
-  storageContainer = definitionParams["storageContainer"]
-  extensionName = definitionParams["extensionName"]
-  is_internal = if args.internal_or_public == CONFIRM_INTERNAL
-    true
-  elsif args.internal_or_public == CONFIRM_PUBLIC
-    false
-  end
-
-  definitionXmlFile = "build/templates/definition.xml.erb"
-
-  extensionZipPackage = "#{PACKAGE_NAME}_#{args.extension_version}_#{Date.today.strftime("%Y%m%d")}_#{args.target_type}.zip"
-
-  # Process the erb
-  definitionXml = ERBHelpers::ERBCompiler.run(
-      File.read("build/templates/definition.xml.erb"),
-      {:chef_namespace => args.chef_deploy_namespace,
-      :extension_name => extensionName,
-      :extension_version => args.extension_version,
-      :target_type => args.target_type,
-      :package_storage_account => storageAccount,
-      :package_container =>  storageContainer,
-      :package_name => extensionZipPackage,
-      :is_internal => is_internal
-    })
+  definitionXml = get_definition_xml(args)
 
     puts <<-CONFIRMATION
 
@@ -320,10 +349,10 @@ This task creates a chef extension package and publishes to Azure #{args.deploy_
   -------
     Publish To:  ** #{args.deploy_type.gsub(/deploy_to_/, "")} **
     Subscription Name:  #{subscription_name}
-    Extension Package:  #{extensionZipPackage}
+    Extension Version:  #{args.extension_version}
     Publish Uri:  #{publish_uri}
     Build branch:  #{%x{git rev-parse --abbrev-ref HEAD}}
-    Type:  #{is_internal ? "Internal build" : "Public release"}
+    Type:  #{is_internal?(args) ? "Internal build" : "Public release"}
 ****************************************
 CONFIRMATION
   # Get user confirmation, since we are publishing a new build to Azure.
@@ -343,6 +372,9 @@ CONFIRMATION
   # Upload the generated package to Azure storage as a blob.
   puts "\n\nUploading zip package..."
   puts "------------------------"
+  storageAccount, storageContainer, extensionName = load_publish_properties(args.target_type)
+  extensionZipPackage = get_extension_pkg_name(args)
+
   system("powershell -nologo -noprofile -executionpolicy unrestricted Import-Module .\\scripts\\uploadpkg.psm1;Upload-ChefPkgToAzure #{ENV["publishsettings"]} #{storageAccount} #{storageContainer} #{extensionZipPackage}")
 
   # Publish the uploaded package to PIR using azure cmdlets.
@@ -402,6 +434,63 @@ CONFIRMATION
   puts "Continuing with delete request..."
 
   system("powershell -nologo -noprofile -executionpolicy unrestricted Import-Module .\\scripts\\deletepkg.psm1;Delete-ChefPkg #{ENV["publishsettings"]} \"\'#{subscription_name}\'\" #{delete_uri}")
+end
+
+desc "Updates the azure chef extension package metadata which was publised Ex: update[\"definitionxml.xml\"]."
+task :update, [:deploy_type, :target_type, :extension_version, :build_date_yyyymmdd, :chef_deploy_namespace, :internal_or_public, :confirmation_required] do |t, args|
+
+  args.with_defaults(
+    :deploy_type => PREVIEW,
+    :target_type => "windows",
+    :extension_version => EXTENSION_VERSION,
+    :build_date_yyyymmdd => nil,
+    :chef_deploy_namespace => "Chef.Bootstrap.WindowsAzure.Test",
+    :internal_or_public => CONFIRM_INTERNAL,
+    :confirmation_required => "true")
+
+  puts "**Update called with args:\n#{args}\n\n"
+
+  assert_deploy_params(args.deploy_type, args.internal_or_public)
+
+  # assert build date since we form the build tag
+  error_and_exit! "Please specify the :build_date_yyyymmdd param used to identify the published build" if args.build_date_yyyymmdd.nil?
+
+  definitionXml = get_definition_xml(args)
+
+  subscription_id, subscription_name = load_publish_settings
+  publish_uri = get_publish_uri(args.deploy_type, subscription_id, "update")
+
+  puts <<-CONFIRMATION
+
+*****************************************
+This task updates the chef extension package which is already published to Azure #{args.deploy_type}.
+  Details:
+  -------
+    Publish To:  ** #{args.deploy_type.gsub(/deploy_to_/, "")} **
+    Subscription Name:  #{subscription_name}
+    Extension Version:  #{args.extension_version}
+    Build Date: #{args.build_date_yyyymmdd}
+    Publish Uri:  #{publish_uri}
+    Type:  #{is_internal?(args) ? "Internal build" : "Public release"}
+****************************************
+CONFIRMATION
+  # Get user confirmation, since we are publishing a new build to Azure.
+  if args.confirmation_required == "true"
+    confirm!("update")
+  end
+
+  puts "Continuing with udpate request..."
+
+  tempFile = Tempfile.new("updateDefinitionXml")
+  definitionXmlFile = tempFile.path
+  puts "Writing updateDefinitionXml to #{definitionXmlFile}..."
+  puts "[[\n#{definitionXml}\n]]"
+  tempFile.write(definitionXml)
+  tempFile.close
+
+  system("powershell -nologo -noprofile -executionpolicy unrestricted Import-Module .\\scripts\\publishpkg.psm1;Publish-ChefPkg #{ENV["publishsettings"]} \"\'#{subscription_name}\'\" #{publish_uri} #{definitionXmlFile} PUT")
+
+  tempFile.unlink
 end
 
 task :init_pester do
