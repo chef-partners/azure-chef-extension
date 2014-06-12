@@ -1,0 +1,9 @@
+
+# This file holds the information azure chef extension packages that were published as "public" over public namespace.
+# Public Namespace is "Chef.Bootstrap.WindowsAzure" and extension names per platform are available in Publish.json file.
+
+
+# Format
+# [date-yyyymmdd,platform,chef-client-version,chef-extension-version,git-branch,git-revision]
+
+  [20140526, ubuntu, 11.12.4.1, 11.12.4.2, master, d531315ea42ccda9f7a3d03c34f8ee0499072142]
