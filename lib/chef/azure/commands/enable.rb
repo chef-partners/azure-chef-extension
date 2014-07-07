@@ -184,6 +184,18 @@ RUNLIST
 client_key        '#{bootstrap_directory}/client.pem'
 validation_key    '#{bootstrap_directory}/validation.pem'
 log_location  '#{@azure_plugin_log_location}/chef-client.log'
+
+# Add support to use chef Handlers for heartbeat and
+# status reporting to Azure
+require 'chef/azure/chefhandlers/start_handler'
+require 'chef/azure/chefhandlers/report_handler'
+require 'chef/azure/chefhandlers/exception_handler'
+
+start_handlers << AzureExtension::StartHandler.new
+report_handlers << AzureExtension::ReportHandler.new
+exception_handlers << AzureExtension::ExceptionHandler.new
+
+
 CONFIG
 
     "#{user_client_rb}\r\n#{client_rb}"
