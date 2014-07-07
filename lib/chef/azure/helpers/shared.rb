@@ -74,6 +74,10 @@ module ChefAzure
   end
 
   module Reporting
+    def load_azure_env
+      @azure_heart_beat_file, @azure_status_folder, @azure_plugin_log_location, @azure_config_folder, @azure_status_file = read_config(@chef_extension_root)
+    end
+
     def report_heart_beat_to_azure(status, code, message)
       # update @azure_heart_beat_file
       Chef::Log.info "Reporting heartbeat..."
