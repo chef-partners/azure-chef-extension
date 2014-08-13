@@ -191,9 +191,9 @@ require 'chef/azure/chefhandlers/start_handler'
 require 'chef/azure/chefhandlers/report_handler'
 require 'chef/azure/chefhandlers/exception_handler'
 
-start_handlers << AzureExtension::StartHandler.new
-report_handlers << AzureExtension::ReportHandler.new
-exception_handlers << AzureExtension::ExceptionHandler.new
+start_handlers << AzureExtension::StartHandler.new('#{@chef_extension_root}')
+report_handlers << AzureExtension::ReportHandler.new('#{@chef_extension_root}')
+exception_handlers << AzureExtension::ExceptionHandler.new('#{@chef_extension_root}')
 
 
 CONFIG
