@@ -12,7 +12,7 @@ module AzureExtension
     end
 
     def report
-      load_azure_env(@chef_extension_root)
+      load_azure_env
       report_heart_beat
     end
 

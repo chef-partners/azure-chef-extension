@@ -13,7 +13,7 @@ module AzureExtension
 
     def report
       if run_status.failed?
-        load_azure_env(@chef_extension_root)
+        load_azure_env
         message = "Check log file for details...\nBacktrace:\n"
         message << Array(backtrace).join("\n")
         report_status_to_azure message, "error"

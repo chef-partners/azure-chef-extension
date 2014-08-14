@@ -13,7 +13,7 @@ module AzureExtension
     
     def report
       if run_status.success?
-        load_azure_env(@chef_extension_root)
+        load_azure_env
         report_status_to_azure "chef-client run was completed successfully at #{end_time}", "success"
       end
     end
