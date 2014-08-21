@@ -95,7 +95,7 @@ def load_build_environment(platform, version)
   elsif platform == "centos"
     url = URI.parse('http://opscode.com/chef/metadata?v=' + version + '&prerelease=false&nightlies=false&p=centos&pv=7&m=x86_64')
   end
-  request = Net::HTTP::Get.new(url)
+  request = Net::HTTP::Get.new(url.to_s)
   response = Net::HTTP.start(url.host, url.port) {|http|
     http.request(request)
   }
