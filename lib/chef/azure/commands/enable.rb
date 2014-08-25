@@ -179,14 +179,31 @@ RUNLIST
     end
   end
 
+  def get_cloud_attributes
+    bg_info = Dir.glob("c:/Packages/Plugins/Microsoft.Compute.BGInfo/[^d]*").first
+    instance_data = "#{bootstrap_directory}/instance-data"
+    cmd =  "#{bg_info}/BGInfo.exe #{bg_info}/config.bgi /NOLICPROMPT /timer:0 /rtf:#{instance_data}"
+    shell_out(cmd)
+    #Todo: Parse bginfo data to chef config hash
+  end
+
   def override_clientrb_file(user_client_rb)
     client_rb = <<-CONFIG
 client_key        '#{bootstrap_directory}/client.pem'
 validation_key    '#{bootstrap_directory}/validation.pem'
 log_location  '#{@azure_plugin_log_location}/chef-client.log'
 CONFIG
+    
+    if windows?
+      cloud_attributes = get_cloud_attributes
+      hint_config = <<-CONFIG
+      knife[:hints]["azure"] = #{cloud_attributes}
+CONFIG
 
-    "#{user_client_rb}\r\n#{client_rb}"
+      "#{user_client_rb}\r\n#{client_rb}\r\n#{hint_config}"
+    else
+      "#{user_client_rb}\r\n#{client_rb}"
+    end
   end
 
   def escape_runlist(run_list)
