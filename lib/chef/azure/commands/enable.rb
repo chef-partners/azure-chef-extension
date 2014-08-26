@@ -182,9 +182,29 @@ RUNLIST
   def get_cloud_attributes
     bg_info = Dir.glob("c:/Packages/Plugins/Microsoft.Compute.BGInfo/[^d]*").first
     instance_data = "#{bootstrap_directory}/instance-data"
-    cmd =  "#{bg_info}/BGInfo.exe #{bg_info}/config.bgi /NOLICPROMPT /timer:0 /rtf:#{instance_data}"
-    shell_out(cmd)
-    #Todo: Parse bginfo data to chef config hash
+    cloud_attributes = {}
+    if bg_info
+      cmd =  "#{bg_info}/BGInfo.exe #{bg_info}/config.bgi /NOLICPROMPT /timer:0 /rtf:#{instance_data}"
+      begin
+        shell_out!(cmd)
+        File.read(instance_data).each_line do | line |
+          cloud_attributes["public_ip"] = line.gsub(" ","").split("\\protect")[1] if line.include?("Public IP:")
+          cloud_attributes["vm_name"] = line.gsub(" ","").split("\\protect")[1] if line.include?("Host Name:")
+        end
+      rescue Mixlib::ShellOut::ShellCommandFailed => e
+        Chef::Log.warn "chef-client run - node registration failed (#{e})"
+        report_status_to_azure "#{e} - Check log file for details", "error"
+        @exit_code = 1
+        return
+      rescue => e
+        Chef::Log.error e
+        report_status_to_azure "#{e} - Check log file for details", "error"
+        @exit_code = 1
+        return
+      end
+    end
+    #Todo: Add fqdn,ports details to cloud attributes
+    cloud_attributes
   end
 
   def override_clientrb_file(user_client_rb)
@@ -197,7 +217,7 @@ CONFIG
     if windows?
       cloud_attributes = get_cloud_attributes
       hint_config = <<-CONFIG
-      knife[:hints]["azure"] = #{cloud_attributes}
+knife[:hints]["azure"] = #{cloud_attributes}
 CONFIG
 
       "#{user_client_rb}\r\n#{client_rb}\r\n#{hint_config}"
