@@ -154,6 +154,10 @@ def assert_git_state
   error_and_exit! "Please set the git crlf setting and clone, so git does not auto convert newlines to crlf. [ex: git config --global core.autocrlf false]" if is_crlf.chomp != "false"
 end
 
+def assert_cleanup_blobs_params(storage_account, storage_container, date)
+  error_and_exit! "storage_account, storage_container and date must be specified" if storage_account.nil? or storage_container.nil? or date.nil?
+end
+
 def load_publish_settings
   doc = Nokogiri::XML(File.open(ENV["publishsettings"]))
   subscription_id =  doc.at_css("Subscription").attribute("Id").value
@@ -491,6 +495,27 @@ CONFIRMATION
   system("powershell -nologo -noprofile -executionpolicy unrestricted Import-Module .\\scripts\\publishpkg.psm1;Publish-ChefPkg #{ENV["publishsettings"]} \"\'#{subscription_name}\'\" #{publish_uri} #{definitionXmlFile} PUT")
 
   tempFile.unlink
+end
+
+desc "Removes Chef Extension blobs from given storage container"
+task :cleanup_storage_containers, [:storage_account, :storage_container, :date] do |t, args|
+  assert_cleanup_blobs_params(args.storage_account, args.storage_container, args.date)
+
+  subscription_id, subscription_name = load_publish_settings
+  storageAccount = args.storage_account if args.storage_account
+  storageContainer = args.storage_container if args.storage_container
+
+  puts <<-CONFIRMATION
+    **********************************************
+    Removing '#{storageContainer}' Storage Container's blobs created/modified on or before Date: #{args.date}.
+    
+    Please confirm the correct Date(format:'yy-mm-dd') and Storage Container.
+    **********************************************
+CONFIRMATION
+
+  confirm!("cleanup containers blob")
+
+  system("powershell -nologo -noprofile -executionpolicy unrestricted Import-Module .\\scripts\\cleanup_containers_blob.psm1;Remove-ContainersBlobs #{ENV["publishsettings"]} \"\'#{subscription_name}\'\" #{storageAccount} #{storageContainer} #{args.date}")
 end
 
 task :init_pester do
