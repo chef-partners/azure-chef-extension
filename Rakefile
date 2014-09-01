@@ -87,15 +87,24 @@ def download_chef(download_url, target)
   end
 end
 
-def load_build_environment(platform)
-  puts "\n*************************************"
-  puts "Reading build options from Build.json"
-  puts "*************************************\n\n"
-  build_options = JSON.parse(File.read("Build.json"))[platform]
-  # TODO - we can extend this to form the download url using
-  # additional params like machine_os, arch etc.
-  download_url = build_options["download_url"]
-  download_url
+def load_build_environment(platform, version)
+  if platform == "windows"
+    url = URI.parse('http://opscode.com/chef/metadata?v=' + version + "&prerelease=false&nightlies=false&p=windows&pv=7&m=x86_64")
+  elsif platform == "ubuntu"
+    url = URI.parse('http://opscode.com/chef/metadata?v=' + version + '&prerelease=false&nightlies=false&p=ubuntu&pv=14.04&m=x86_64')
+  elsif platform == "centos"
+    url = URI.parse('http://opscode.com/chef/metadata?v=' + version + '&prerelease=false&nightlies=false&p=centos&pv=7&m=x86_64')
+  end
+  request = Net::HTTP::Get.new(url.to_s)
+  response = Net::HTTP.start(url.host, url.port) {|http|
+    http.request(request)
+  }
+  if response.kind_of? Net::HTTPOK
+    download_url = response.body.split(' ')[1]
+    download_url
+  else
+    error_and_exit! "ERROR: Invalid chef-client version"
+  end
 end
 
 def error_and_exit!(message)
@@ -238,16 +247,16 @@ task :build, [:target_type, :extension_version, :confirmation_required] => [:gem
 
   assert_git_state
 
-  download_url = load_build_environment(args.target_type)
+  download_url = load_build_environment(args.target_type,args.extension_version)
+  unless download_url.nil?
+    puts <<-CONFIRMATION
 
-  puts <<-CONFIRMATION
-
-**********************************************
-Downloading specific chef-client version using
-#{download_url}.
-Please confirm the correct chef-client version in url.
-**********************************************
-CONFIRMATION
+    **********************************************
+    Downloading specific chef-client version using
+    #{download_url}.
+    Please confirm the correct chef-client version in url.
+    **********************************************
+    CONFIRMATION
 
   # Get user confirmation if we are downloading correct version.
   if args.confirmation_required == "true"
@@ -260,7 +269,7 @@ CONFIRMATION
   FileUtils.mkdir_p "#{CHEF_BUILD_DIR}/bin"
   FileUtils.mkdir_p "#{CHEF_BUILD_DIR}/gems"
   FileUtils.mkdir_p "#{CHEF_BUILD_DIR}/installer"
-  
+
   # Copy platform specific files to package dir
   puts "Copying #{args.target_type} scripts to package directory..."
   package_list = if args.target_type == "windows"
@@ -305,6 +314,7 @@ CONFIRMATION
     Dir[File.join("#{CHEF_BUILD_DIR}/", '**', '**')].each do |file|
       zipfile.add(file.sub("#{CHEF_BUILD_DIR}/", ''), file)
     end
+  end
   end
 end
 
