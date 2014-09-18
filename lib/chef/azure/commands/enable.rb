@@ -203,7 +203,24 @@ RUNLIST
         return
       end
     end
-    #Todo: Add fqdn,ports details to cloud attributes
+
+    # get fqdn
+    begin
+      vm_dns =  shell_out!("ipconfig").stdout
+    rescue Mixlib::ShellOut::ShellCommandFailed => e
+      Chef::Log.warn "chef-client run - node registration failed (#{e})"
+      report_status_to_azure "#{e} - Check log file for details", "error"
+      @exit_code = 1
+      return
+    rescue => e
+      Chef::Log.error e
+      report_status_to_azure "#{e} - Check log file for details", "error"
+      @exit_code = 1
+      return
+    end
+
+    cloud_attributes["fqdn"] = vm_dns.gsub(/[a-zA-Z0-9-]*.[a-zA-Z0-9]*.[a-zA-Z0-9]*.cloudapp.net/).first.split('.')[0] + '.cloudapp.net' if vm_dns
+
     cloud_attributes
   end
 
