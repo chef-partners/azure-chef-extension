@@ -1,0 +1,18 @@
+<ExtensionImage xmlns="http://schemas.microsoft.com/windowsazure" xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+  <ProviderNameSpace><%= chef_namespace %></ProviderNameSpace>
+  <Type><%= extension_name %></Type>
+  <!--Update this version for each new release-->
+  <Version><%= extension_version %></Version>
+  <Label>Chef Extension for <%= target_type %></Label>
+  <HostingResources>VmRole</HostingResources>
+  <!--Update this field with correct link where the extension is published.-->
+  <MediaLink>https://<%= package_storage_account %>.blob.core.windows.net/<%= package_container %>/<%= package_name %></MediaLink>
+  <Description>Chef Extension that sets up chef-client on VM</Description>
+  <PublisherName>Chef Software, Inc.</PublisherName>
+  <LocalResources />
+  <IsInternalExtension><%= is_internal %></IsInternalExtension>
+  <Eula>http://www.getchef.com/about/</Eula>
+  <PrivacyUri>http://www.getchef.com/about/</PrivacyUri>
+  <HomepageUri>http://www.getchef.com/</HomepageUri>
+  <IsJsonExtension>true</IsJsonExtension>
+ </ExtensionImage>
