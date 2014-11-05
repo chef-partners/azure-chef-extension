@@ -30,7 +30,7 @@ class EnableChef
     enable_chef
 
     if @exit_code == 0
-      report_heart_beat_to_azure(AzureHeartBeat::READY, 0, "chef-service is enabled")
+      report_heart_beat_to_azure(AzureHeartBeat::READY, 0, "chef-service is enabled. #{@chef_client_error if @chef_client_error}")
     else
       report_heart_beat_to_azure(AzureHeartBeat::NOTREADY, 0, "chef-service enable failed")
     end
@@ -51,7 +51,7 @@ class EnableChef
     begin
       configure_chef_only_once
 
-      install_chef_service if @exit_code == 0
+      install_chef_service
 
       enable_chef_service if @exit_code == 0
 
@@ -132,12 +132,12 @@ RUNLIST
       rescue Mixlib::ShellOut::ShellCommandFailed => e
         Chef::Log.warn "chef-client run - node registration failed (#{e})"
         report_status_to_azure "#{e} - Check log file for details", "error"
-        @exit_code = 1
+        @chef_client_error = "chef-client run - node registration failed (#{e})"
         return
       rescue => e
         Chef::Log.error e
         report_status_to_azure "#{e} - Check log file for details", "error"
-        @exit_code = 1
+        @chef_client_error = "chef-client run - node registration failed (#{e})"
         return
       end
 
