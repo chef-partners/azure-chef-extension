@@ -20,8 +20,11 @@ class AzureChefClient
 
     run_chef_client
 
-    return @exit_code
+    if @exit_code ==1
+      report_heart_beat_to_azure(AzureHeartBeat::READY, 0, "chef-service is running properly. Chef client run failed with error- #{@chef_client_error}") 
+    end
 
+    return @exit_code
   end
 
   private
@@ -54,11 +57,11 @@ class AzureChefClient
 
     rescue Mixlib::ShellOut::ShellCommandFailed => e
       Chef::Log.warn "Error running chef-client (#{e})"
-      report_status_to_azure "#{e} - Check log file for details", "error"
+      @chef_client_error = "#{e} - Check log file for details"
       @exit_code = 1
     rescue => e
       Chef::Log.error e
-      report_status_to_azure "#{e} - Check log file for details", "error"
+      @chef_client_error =  "#{e} - Check log file for details"
       @exit_code = 1
     ensure
       # Once process exits, we log the current process' pid
