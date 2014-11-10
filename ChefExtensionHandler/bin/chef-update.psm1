@@ -36,15 +36,36 @@ function Get-TempBackupDir {
 }
 
 function Update-ChefClient {
-  # Import Chef Install and Chef Uninstall PS modules
-  Import-Module "$(Chef-GetExtensionRoot)\\bin\\chef-install.psm1"
-  Import-Module "$(Chef-GetExtensionRoot)\\bin\\chef-uninstall.psm1"
 
   # Source the shared PS
   . $(Get-SharedHelper)
 
+  $powershellVersion = Get-PowershellVersion
+
+  if ($powershellVersion -ge 3) {
+    $json_handlerSettings = Get-HandlerSettings
+    $autoUpdate = $json_handlerSettings.autoUpdate
+  } else {
+    $autoUpdate = Get-autoUpdateSetting
+  }
+
+  # Auto update flag in Runtime Settings allows the user to opt for automatic chef-client update.
+  # Should auto update be set set to true as deafult?
+
+  if($autoUpdate -eq "false"){
+    echo "Auto update disabled"
+    return
+  }
+
+  # Import Chef Install and Chef Uninstall PS modules
+  Import-Module "$(Chef-GetExtensionRoot)\\bin\\chef-install.psm1"
+  Import-Module "$(Chef-GetExtensionRoot)\\bin\\chef-uninstall.psm1"
+
   # powershell has in built cmdlets: ConvertFrom-Json and ConvertTo-Json which are supported above PS v 3.0
   # so the hack - use ruby json parsing for versions lower than 3.0
+
+  # To do
+  # Are these values required?
   if ( $(Get-PowershellVersion) -ge 3 ) {
     $json_handlerSettingsFileName, $json_statusFolder = Read-JsonFile
   } else {
