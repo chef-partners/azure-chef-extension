@@ -70,8 +70,6 @@ function Install-ChefClient {
 
   Install-AzureChefExtensionGem $chefExtensionRoot
 
-  # Add scriptDir to path so azure chef-client is picked up henceforth
-  Chef-AddToPath $scriptDir
 }
 
 Export-ModuleMember -Function Install-ChefClient
