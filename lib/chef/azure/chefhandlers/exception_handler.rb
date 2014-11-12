@@ -16,7 +16,7 @@ module AzureExtension
         load_azure_env
         message = "Check log file for details...\nBacktrace:\n"
         message << Array(backtrace).join("\n")
-        report_heart_beat_to_azure(AzureHeartBeat::READY, 0, "chef-service is running properly. Chef client run failed with error- #{@chef_client_error}") 
+        report_heart_beat_to_azure(AzureHeartBeat::READY, 0, "chef-service is running properly. Chef client run failed with error- #{message}") 
       end
     end
   end
