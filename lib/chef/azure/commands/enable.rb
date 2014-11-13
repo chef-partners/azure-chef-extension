@@ -36,7 +36,11 @@ class EnableChef
         report_heart_beat_to_azure(AzureHeartBeat::READY, 0, "chef-service is enabled.")
       end
     else
-      report_heart_beat_to_azure(AzureHeartBeat::NOTREADY, 0, "chef-service enable failed")
+      if @chef_client_error
+        report_heart_beat_to_azure(AzureHeartBeat::NOTREADY, 0, "chef-service enable failed. Chef client run failed with error- #{@chef_client_error}")
+      else
+        report_heart_beat_to_azure(AzureHeartBeat::NOTREADY, 0, "chef-service enable failed.")
+      end
     end
 
 

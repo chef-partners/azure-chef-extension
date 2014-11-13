@@ -10,11 +10,52 @@ describe EnableChef do
   it { expect {instance}.to_not raise_error }
 
   context "run" do
-    it "enables chef" do
-      instance.should_receive(:load_env)
-      instance.should_receive(:report_heart_beat_to_azure).twice
-      instance.should_receive(:enable_chef)
-      instance.run
+    context "chef service is enabled" do
+      it "chef-client run was successful" do
+        expect(instance).to receive(:load_env)
+        expect(instance).to receive(:report_heart_beat_to_azure).with(AzureHeartBeat::NOTREADY, 0, "Enabling chef-service...")
+        instance.should_receive(:enable_chef)
+        expect(instance).to receive(:report_heart_beat_to_azure).with(AzureHeartBeat::READY, 0, "chef-service is enabled.")
+
+        instance.run
+      end
+
+      it "chef-client run failed" do
+        instance.instance_variable_set(:@chef_client_error, "Chef client failed")
+
+        expect(instance).to receive(:load_env)
+        expect(instance).to receive(:report_heart_beat_to_azure).with(AzureHeartBeat::NOTREADY, 0, "Enabling chef-service...")
+        instance.should_receive(:enable_chef)
+        expect(instance).to receive(:report_heart_beat_to_azure).with(AzureHeartBeat::READY, 0, "chef-service is enabled. Chef client run failed with error- Chef client failed")
+
+        instance.run
+      end
+    end
+
+    context "Chef service enable failed" do
+      before do
+        instance.instance_variable_set(:@exit_code, 1)
+      end
+
+      it "chef-client run was successful" do
+        expect(instance).to receive(:load_env)
+        expect(instance).to receive(:report_heart_beat_to_azure).with(AzureHeartBeat::NOTREADY, 0, "Enabling chef-service...")
+        instance.should_receive(:enable_chef)
+        expect(instance).to receive(:report_heart_beat_to_azure).with(AzureHeartBeat::NOTREADY, 0, "chef-service enable failed.")
+
+        instance.run
+      end
+
+      it "chef-client run failed" do
+        instance.instance_variable_set(:@chef_client_error, "Chef client failed")
+
+        expect(instance).to receive(:load_env)
+        expect(instance).to receive(:report_heart_beat_to_azure).with(AzureHeartBeat::NOTREADY, 0, "Enabling chef-service...")
+        instance.should_receive(:enable_chef)
+        expect(instance).to receive(:report_heart_beat_to_azure).with(AzureHeartBeat::NOTREADY, 0, "chef-service enable failed. Chef client run failed with error- Chef client failed")
+
+        instance.run
+      end
     end
   end
 
