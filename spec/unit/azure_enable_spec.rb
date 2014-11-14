@@ -10,11 +10,60 @@ describe EnableChef do
   it { expect {instance}.to_not raise_error }
 
   context "run" do
-    it "enables chef" do
-      instance.should_receive(:load_env)
-      instance.should_receive(:report_heart_beat_to_azure).twice
-      instance.should_receive(:enable_chef)
-      instance.run
+    context "chef service is enabled" do
+      context "chef-client run was successful" do
+        it "reports chef service enabled to heartbeat" do
+          expect(instance).to receive(:load_env)
+          expect(instance).to receive(:report_heart_beat_to_azure).with(AzureHeartBeat::NOTREADY, 0, "Enabling chef-service...")
+          expect(instance).to receive(:enable_chef)
+          expect(instance).to receive(:report_heart_beat_to_azure).with(AzureHeartBeat::READY, 0, "chef-service is enabled.")
+
+          expect(instance.run).to eq(0)
+        end
+      end
+
+      context "chef-client run failed" do
+        it "reports chef service enabled and chef run failed to heartbeat" do
+          instance.instance_variable_set(:@chef_client_error, "Chef client failed")
+
+          expect(instance).to receive(:load_env)
+          expect(instance).to receive(:report_heart_beat_to_azure).with(AzureHeartBeat::NOTREADY, 0, "Enabling chef-service...")
+          expect(instance).to receive(:enable_chef)
+          expect(instance).to receive(:report_heart_beat_to_azure).with(AzureHeartBeat::READY, 0, "chef-service is enabled. Chef client run failed with error- Chef client failed")
+
+          expect(instance.run).to eq(0)
+        end
+      end
+    end
+
+    context "Chef service enable failed" do
+      before do
+        instance.instance_variable_set(:@exit_code, 1)
+      end
+
+      context "chef-client run was successful" do
+        it "reports chef service enable failure and chef run success to heartbeat" do
+          expect(instance).to receive(:load_env)
+          expect(instance).to receive(:report_heart_beat_to_azure).with(AzureHeartBeat::NOTREADY, 0, "Enabling chef-service...")
+          expect(instance).to receive(:enable_chef)
+          expect(instance).to receive(:report_heart_beat_to_azure).with(AzureHeartBeat::NOTREADY, 0, "chef-service enable failed.")
+
+          expect(instance.run).to eq(1)
+        end
+      end
+
+      context "chef-client run failed" do
+        it "reports chef service enable failure and chef run failure to heartbeat" do
+          instance.instance_variable_set(:@chef_client_error, "Chef client failed")
+
+          expect(instance).to receive(:load_env)
+          expect(instance).to receive(:report_heart_beat_to_azure).with(AzureHeartBeat::NOTREADY, 0, "Enabling chef-service...")
+          expect(instance).to receive(:enable_chef)
+          expect(instance).to receive(:report_heart_beat_to_azure).with(AzureHeartBeat::NOTREADY, 0, "chef-service enable failed. Chef client run failed with error- Chef client failed")
+
+          expect(instance.run).to eq(1)
+        end
+      end
     end
   end
 
@@ -70,6 +119,7 @@ describe EnableChef do
       instance.stub(:load_settings)
       Process.stub(:spawn)
       Process.stub(:detach)
+      instance.stub(:bootstrap_directory).and_return(Dir.home)
       instance.send(:configure_chef_only_once)
     end
   end
@@ -127,6 +177,22 @@ describe EnableChef do
       instance.should_receive(:handler_settings_file)
       instance.should_receive(:value_from_json_file).twice
       instance.send(:get_validation_key, "encrypted_text")
+    end
+  end
+
+  context "override_clientrb_file" do
+    before { instance.instance_variable_set(:@azure_plugin_log_location,Dir.home) }
+    it "add StartHandler to client rb" do
+      client_rb = instance.send(:override_clientrb_file,"")
+      client_rb.should include("start_handlers << AzureExtension::StartHandler.new")
+    end
+    it "add ReportHandler to client rb" do
+      client_rb = instance.send(:override_clientrb_file,"")
+      client_rb.should include("report_handlers << AzureExtension::ReportHandler.new")
+    end
+    it "add ExceptionHandler to client rb" do
+      client_rb = instance.send(:override_clientrb_file,"")
+      client_rb.should include("exception_handlers << AzureExtension::ExceptionHandler.new")
     end
   end
 end

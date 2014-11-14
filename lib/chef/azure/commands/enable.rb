@@ -30,10 +30,19 @@ class EnableChef
     enable_chef
 
     if @exit_code == 0
-      report_heart_beat_to_azure(AzureHeartBeat::READY, 0, "chef-service is enabled")
+      if @chef_client_error
+        report_heart_beat_to_azure(AzureHeartBeat::READY, 0, "chef-service is enabled. Chef client run failed with error- #{@chef_client_error}")
+      else
+        report_heart_beat_to_azure(AzureHeartBeat::READY, 0, "chef-service is enabled.")
+      end
     else
-      report_heart_beat_to_azure(AzureHeartBeat::NOTREADY, 0, "chef-service enable failed")
+      if @chef_client_error
+        report_heart_beat_to_azure(AzureHeartBeat::NOTREADY, 0, "chef-service enable failed. Chef client run failed with error- #{@chef_client_error}")
+      else
+        report_heart_beat_to_azure(AzureHeartBeat::NOTREADY, 0, "chef-service enable failed.")
+      end
     end
+
 
     return @exit_code
   end
@@ -131,13 +140,11 @@ RUNLIST
         result.error!
       rescue Mixlib::ShellOut::ShellCommandFailed => e
         Chef::Log.warn "chef-client run - node registration failed (#{e})"
-        report_status_to_azure "#{e} - Check log file for details", "error"
-        @exit_code = 1
+        @chef_client_error = "chef-client run - node registration failed (#{e})"
         return
       rescue => e
         Chef::Log.error e
-        report_status_to_azure "#{e} - Check log file for details", "error"
-        @exit_code = 1
+        @chef_client_error = "chef-client run - node registration failed (#{e})"
         return
       end
 
@@ -184,6 +191,18 @@ RUNLIST
 client_key        '#{bootstrap_directory}/client.pem'
 validation_key    '#{bootstrap_directory}/validation.pem'
 log_location  '#{@azure_plugin_log_location}/chef-client.log'
+
+# Add support to use chef Handlers for heartbeat and
+# status reporting to Azure
+require 'chef/azure/chefhandlers/start_handler'
+require 'chef/azure/chefhandlers/report_handler'
+require 'chef/azure/chefhandlers/exception_handler'
+
+start_handlers << AzureExtension::StartHandler.new('#{@chef_extension_root}')
+report_handlers << AzureExtension::ReportHandler.new('#{@chef_extension_root}')
+exception_handlers << AzureExtension::ExceptionHandler.new('#{@chef_extension_root}')
+
+
 CONFIG
 
     "#{user_client_rb}\r\n#{client_rb}"
