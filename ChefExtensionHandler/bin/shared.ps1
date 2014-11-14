@@ -149,5 +149,5 @@ function Read-JsonFileUsingRuby
 # Get the auto update setting for powershell 2
 function Get-autoUpdateSetting{
   $latestSettingFile = Get-HandlerSettingsFileName
-  Get-JsonValueUsingRuby "$chefExtensionRoot\\RuntimeSettings\\$latestSettingFile" "runtimeSettings" 0 "handlerSettings" "autoUpdate"
+  Get-JsonValueUsingRuby "$chefExtensionRoot\\RuntimeSettings\\$latestSettingFile" "runtimeSettings" 0 "handlerSettings" "publicSettings" "autoUpdate"
 }

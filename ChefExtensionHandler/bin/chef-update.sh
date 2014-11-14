@@ -20,9 +20,9 @@ commands_script_path=$(get_script_dir)
 chef_ext_dir=`dirname $commands_script_path`
 handler_settings_file=`ls $chef_ext_dir/config/*.settings -S -r | head -1`
 
-auto_update=`ruby -e "require 'chef/azure/helpers/parse_json';value_from_json_file_for_ps '$handler_settings_file','runtimeSettings','0','handlerSettings','autoUpdate'"`
+auto_update=`ruby -e "require 'chef/azure/helpers/parse_json';value_from_json_file_for_ps '$handler_settings_file','runtimeSettings','0','handlerSettings','publicSettings','autoUpdate'"`
 
-if [ $auto_update = "false" ]
+if [ "$auto_update" = "false" ]
 then
   echo "Auto update disabled"
   return
