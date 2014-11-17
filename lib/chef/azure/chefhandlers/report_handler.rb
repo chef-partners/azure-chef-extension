@@ -14,7 +14,7 @@ module AzureExtension
     def report
       if run_status.success?
         load_azure_env
-        report_status_to_azure "chef-client run was completed successfully at #{end_time}", "success"
+        report_heart_beat_to_azure(AzureHeartBeat::READY, 0, "chef-service enabled. Chef client run was successful.")
       end
     end
   end
