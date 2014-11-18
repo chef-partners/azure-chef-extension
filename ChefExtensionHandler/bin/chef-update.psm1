@@ -44,15 +44,15 @@ function Update-ChefClient {
 
   if ($powershellVersion -ge 3) {
     $json_handlerSettings = Get-HandlerSettings
-    $autoUpdate = $json_handlerSettings.publicSettings.autoUpdate
+    $autoUpdateClient = $json_handlerSettings.publicSettings.autoUpdateClient
   } else {
-    $autoUpdate = Get-autoUpdateSetting
+    $autoUpdateClient = Get-autoUpdateClientSetting
   }
 
   # Auto update flag in Runtime Settings allows the user to opt for automatic chef-client update.
-  # Should auto update be set set to true as deafult?
+  # Default value is false
 
-  if($autoUpdate -eq "false"){
+  if($autoUpdateClient -ne "true"){
     echo "Auto update disabled"
     return
   }
