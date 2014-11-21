@@ -61,17 +61,6 @@ function Update-ChefClient {
   Import-Module "$(Chef-GetExtensionRoot)\\bin\\chef-install.psm1"
   Import-Module "$(Chef-GetExtensionRoot)\\bin\\chef-uninstall.psm1"
 
-  # powershell has in built cmdlets: ConvertFrom-Json and ConvertTo-Json which are supported above PS v 3.0
-  # so the hack - use ruby json parsing for versions lower than 3.0
-
-  # To do
-  # Are these values required?
-  if ( $(Get-PowershellVersion) -ge 3 ) {
-    $json_handlerSettingsFileName, $json_statusFolder = Read-JsonFile
-  } else {
-    $json_handlerSettingsFileName, $json_statusFolder = Read-JsonFileUsingRuby
-  }
-
   Try
   {
     echo "Running update process"
