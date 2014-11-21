@@ -27,7 +27,30 @@ Import-Module $chefInstall
 
 describe "#Update-ChefClient" {
   context "when powershell version 3" {
-    it "update ChefClient" {
+
+    it "does not update ChefClient" {
+      mock Import-Module
+      $tmp = "$($env:tmp)"
+      $tempPS = ([System.IO.Path]::GetTempFileName() | Rename-Item -NewName { $_ -replace 'tmp$', 'ps1' } -PassThru)
+      mock Get-SharedHelper {return $tempPS}
+
+      mock Get-PowershellVersion { return 3 }
+      $autoUpdateClient = "{'publicSettings':{'autoUpdateClient':'false'}}" | ConvertFrom-Json
+      mock Get-HandlerSettings { return $autoUpdateClient}
+      mock Uninstall-ChefClient
+      mock Install-ChefClient
+      mock Update-ChefExtensionRegistry
+
+      Update-ChefClient
+      # Delete temp file created for Get-SharedHelper
+      Remove-Item $tempPS
+
+      Assert-MockCalled Uninstall-ChefClient -Times 0
+      Assert-MockCalled Install-ChefClient -Times 0
+      Assert-MockCalled Update-ChefExtensionRegistry -Times 0
+    }
+
+    it "updates ChefClient" {
       mock Import-Module
       $tmp = "$($env:tmp)"
       mock Get-BootstrapDirectory { return "C:/chef"}
@@ -36,6 +59,8 @@ describe "#Update-ChefClient" {
       $tempPS = ([System.IO.Path]::GetTempFileName() | Rename-Item -NewName { $_ -replace 'tmp$', 'ps1' } -PassThru)
       mock Get-SharedHelper {return $tempPS}
       mock Get-PowershellVersion { return 3 }
+      $autoUpdateClient = "{'publicSettings':{'autoUpdateClient':'true'}}" | ConvertFrom-Json
+      mock Get-HandlerSettings { return $autoUpdateClient}
       mock Read-JsonFile
       mock Read-JsonFileUsingRuby
       mock Copy-Item
@@ -48,10 +73,6 @@ describe "#Update-ChefClient" {
       # Delete temp file created for Get-SharedHelper
       Remove-Item $tempPS
 
-      # Read-JsonFile call when PS version >=3
-      Assert-MockCalled Read-JsonFile -Times 1
-      # Read-JsonFileUsingRuby call when PS version <=3
-      Assert-MockCalled Read-JsonFileUsingRuby -Times 0
       Assert-MockCalled Get-BootstrapDirectory -Times 1
       Assert-MockCalled Get-TempBackupDir -Times 1
       Assert-MockCalled Copy-Item -Times 2
@@ -62,7 +83,30 @@ describe "#Update-ChefClient" {
   }
 
   context "when powershell version 2" {
-    it "update ChefClient" {
+
+    it "does not update ChefClient" {
+      mock Import-Module
+      $tmp = "$($env:tmp)"
+      $tempPS = ([System.IO.Path]::GetTempFileName() | Rename-Item -NewName { $_ -replace 'tmp$', 'ps1' } -PassThru)
+      mock Get-SharedHelper {return $tempPS}
+
+      mock Get-PowershellVersion { return 2}
+      mock Get-autoUpdateClientSetting { return 'false' }
+      mock Uninstall-ChefClient
+      mock Install-ChefClient
+      mock Update-ChefExtensionRegistry
+
+      Update-ChefClient
+      # Delete temp file created for Get-SharedHelper
+      Remove-Item $tempPS
+
+      Assert-MockCalled Uninstall-ChefClient -Times 0
+      Assert-MockCalled Install-ChefClient -Times 0
+      Assert-MockCalled Update-ChefExtensionRegistry -Times 0
+    }
+
+
+    it "updates ChefClient" {
       mock Import-Module
       $tmp = "$($env:tmp)"
       mock Get-BootstrapDirectory { return "C:/chef"}
@@ -71,6 +115,7 @@ describe "#Update-ChefClient" {
       $tempPS = ([System.IO.Path]::GetTempFileName() | Rename-Item -NewName { $_ -replace 'tmp$', 'ps1' } -PassThru)
       mock Get-SharedHelper {return $tempPS}
       mock Get-PowershellVersion { return 2 }
+      mock Get-autoUpdateClientSetting { return 'true' }
       mock Read-JsonFile
       mock Read-JsonFileUsingRuby
       mock Copy-Item
@@ -83,10 +128,6 @@ describe "#Update-ChefClient" {
       # Delete temp file created for Get-SharedHelper
       Remove-Item $tempPS
 
-      # Read-JsonFile call when PS version >=3
-      Assert-MockCalled Read-JsonFile -Times 0
-      # Read-JsonFileUsingRuby call when PS version <=3
-      Assert-MockCalled Read-JsonFileUsingRuby -Times 1
       Assert-MockCalled Get-BootstrapDirectory -Times 1
       Assert-MockCalled Get-TempBackupDir -Times 1
       Assert-MockCalled Copy-Item -Times 2
