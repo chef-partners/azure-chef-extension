@@ -32,8 +32,7 @@ function Get-HandlerEnvironmentFilePath {
 }
 
 # returns the handler settings read from the latest settings file
-function Get-HandlerSettings
-{
+function Get-HandlerSettings {
   $latestSettingFile = Get-HandlerSettingsFileName
   $runtimeSettingsJson = Read-JsonFromFile $chefExtensionRoot"\\RuntimeSettings\\$latestSettingFile"
   $runtimeSettingsJson.runtimeSettings[0].handlerSettings
@@ -145,4 +144,10 @@ function Read-JsonFileUsingRuby
   $json_handlerStatusFolder = Get-JsonValueUsingRuby $json_handlerEnvironmentFileName "handlerEnvironment" "statusFolder"
 
   return $json_handlerSettingsFileName, $json_handlerStatusFolder
+}
+
+# Get the auto update setting for powershell 2
+function Get-autoUpdateClientSetting{
+  $latestSettingFile = Get-HandlerSettingsFileName
+  Get-JsonValueUsingRuby "$chefExtensionRoot\\RuntimeSettings\\$latestSettingFile" "runtimeSettings" 0 "handlerSettings" "publicSettings" "autoUpdateClient"
 }

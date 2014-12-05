@@ -15,9 +15,20 @@ get_script_dir(){
   echo "${script_dir}"
 }
 
-BACKUP_FOLDER="etc_chef_extn_update_`date +%s`"
-
 commands_script_path=$(get_script_dir)
+
+chef_ext_dir=`dirname $commands_script_path`
+handler_settings_file=`ls $chef_ext_dir/config/*.settings -S -r | head -1`
+
+auto_update_client=`ruby -e "require 'chef/azure/helpers/parse_json';value_from_json_file_for_ps '$handler_settings_file','runtimeSettings','0','handlerSettings','publicSettings','autoUpdateClient'"`
+
+if [ "$auto_update_client" != "true" ]
+then
+  echo "Auto update disabled"
+  return
+fi
+
+BACKUP_FOLDER="etc_chef_extn_update_`date +%s`"
 
 # Save chef configuration.
 mv /etc/chef /tmp/$BACKUP_FOLDER
