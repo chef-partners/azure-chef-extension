@@ -3,6 +3,37 @@ azure-chef-extension
 
 Azure resource extension to enable Chef on Azure virtual machine instances.
 
+Azure Chef Extension Version Scheme
+===================================
+**Description:**
+
+Extensions versions are specified in 4 digit format : `<MajorVersion.MinorVersion.BuildNumber.RevisionNumber>`.
+
+Chef Extension package includes released Chef-Client package. Currently Extension version depends on Chef-Client version. So whenever new Chef Client is releases, we have to publish new Extension as well.
+
+Chef-Client versions are specified in 4 digit format: `<MajorVersion.MinorVersion.PatchVersion-RevisionNumber>`. Example: chef-client 12.0.1-1
+
+**Use Following Extension Version Scheme:**
+* We already started to use Extension Major version from `100.*.*.*`
+* Set Extension Minor Version = Chef-Client's Major Version
+* Set Extension BuildNumber = Chef-Client's Minor Version
+* Set Extension RevisionNumber = Chef-Client's PatchVersion
+* Whenever Chef-Client 'Major' Or 'Minor' Versions changes, increase Extension 'Major' Version by one.
+
+**Example**
+
+    Consider:
+
+    Current Chef-Client Version is 11.14.6-1
+
+    Current Extension Version is 100.11.14.6
+
+    # Chef-Client Minor version changed
+    After new Client-Client Version 11.16.0-1 is released
+
+    # Increase Extension Major version by +1
+    New Extension Version will be 101.11.16.0
+
 Build and Packaging
 ===================
 You can use rake tasks to build and publish the new builds to Azure subscription.
