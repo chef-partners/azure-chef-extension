@@ -90,8 +90,9 @@ end
 def load_build_environment(platform, version)
   # Parse the version to form the correct string
   major_minor_version = version.split(/[.-]/)
-  if major_minor_version.length == 4
-    version = major_minor_version[0] + '.' + major_minor_version[1] + '.' + major_minor_version[2] + '-' + major_minor_version[3]
+
+  if major_minor_version.length == 4 && major_minor_version[0].to_i >= 100
+    version = major_minor_version[1] + '.' + major_minor_version[2] + '.' + major_minor_version[3]
   else
     version = major_minor_version.join('.')
   end
