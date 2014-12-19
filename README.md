@@ -11,10 +11,10 @@ Extensions versions are specified in 4 digit format : `<MajorVersion.MinorVersio
 
 Chef Extension package includes released Chef-Client package. Currently Extension version depends on Chef-Client version. So whenever new Chef Client is releases, we have to publish new Extension as well.
 
-Chef-Client versions are specified in 4 digit format: `<MajorVersion.MinorVersion.PatchVersion-RevisionNumber>`. Example: chef-client 12.0.1-1
+Chef-Client versions are specified in 4 digit format: `<MajorVersion.MinorVersion.PatchVersion-RevisionNumber>`. Example: chef-client 11.14.6-1
 
 **Use Following Extension Version Scheme:**
-* We already started to use Extension Major version from `100.*.*.*`
+* We are using Extension Major version from `100.*.*.*`
 * Set Extension Minor Version = Chef-Client's Major Version
 * Set Extension BuildNumber = Chef-Client's Minor Version
 * Set Extension RevisionNumber = Chef-Client's PatchVersion
@@ -54,7 +54,7 @@ Build
 
 Publish
 -----------
-Rake task to generate a build and publish the generated zip package to Azure. 
+Rake task to generate a build and publish the generated zip package to Azure.
 
     rake publish[:deploy_type, :target_type, :extension_version, :chef_deploy_namespace, :operation, :internal_or_public, :confirmation_required]
 
