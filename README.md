@@ -3,6 +3,49 @@ azure-chef-extension
 
 Azure resource extension to enable Chef on Azure virtual machine instances.
 
+Azure Chef Extension Version Scheme
+===================================
+**Description:**
+
+Extensions versions are specified in 4 digit format : `<MajorVersion.MinorVersion.BuildNumber.RevisionNumber>`.
+
+Chef Extension package includes released Chef-Client package. Currently Extension version depends on Chef-Client version. So whenever new Chef Client is releases, we have to publish new Extension as well.
+
+Chef-Client versions are specified in 4 digit format: `<MajorVersion.MinorVersion.PatchVersion-RevisionNumber>`. Example: chef-client 11.14.6-1
+
+**Use Following Extension Version Scheme:**
+* We are using Extension Major version from `1100.*.*.*`
+* Set Extension Minor Version = Chef-Client's Major Version
+* Set Extension BuildNumber = Chef-Client's Minor Version
+* Set Extension RevisionNumber = Chef-Client's PatchVersion
+* Whenever Chef-Client 'Major' Version changes, increase Extension 'Major' Version by '+100'. When 'Minor' Version changes, increase Extension 'Major' Version by '+1'.
+
+**Example**
+
+    1. When Chef-Client Major Version Changes-
+    Consider,
+    Current Chef-Client Version is 11.14.6-1
+
+    Current Extension Version is 1100.11.14.6
+
+    # Chef-Client Major version changed
+    After new Client-Client Version 12.0.0-1 is released
+
+    # Increase Extension Major version by +100
+    New Extension Version will be 1200.12.0.0
+
+    2. When Chef Client Minor Version Changes-
+    Consider,
+    Current Chef-Client Version is 11.14.6-1
+
+    Current Extension Version is 1100.11.14.6
+
+    # Chef-Client Minor version changed
+    After new Client-Client Version 11.16.0-1 is released
+
+    # Increase Extension Major version by +1
+    New Extension Version will be 1101.11.16.0
+
 Build and Packaging
 ===================
 You can use rake tasks to build and publish the new builds to Azure subscription.
@@ -23,7 +66,7 @@ Build
 
 Publish
 -----------
-Rake task to generate a build and publish the generated zip package to Azure. 
+Rake task to generate a build and publish the generated zip package to Azure.
 
     rake publish[:deploy_type, :target_type, :extension_version, :chef_deploy_namespace, :operation, :internal_or_public, :confirmation_required]
 
