@@ -14,25 +14,37 @@ Chef Extension package includes released Chef-Client package. Currently Extensio
 Chef-Client versions are specified in 4 digit format: `<MajorVersion.MinorVersion.PatchVersion-RevisionNumber>`. Example: chef-client 11.14.6-1
 
 **Use Following Extension Version Scheme:**
-* We are using Extension Major version from `100.*.*.*`
+* We are using Extension Major version from `1100.*.*.*`
 * Set Extension Minor Version = Chef-Client's Major Version
 * Set Extension BuildNumber = Chef-Client's Minor Version
 * Set Extension RevisionNumber = Chef-Client's PatchVersion
-* Whenever Chef-Client 'Major' Or 'Minor' Versions changes, increase Extension 'Major' Version by one.
+* Whenever Chef-Client 'Major' Version changes, increase Extension 'Major' Version by '+100'. When 'Minor' Version changes, increase Extension 'Major' Version by '+1'.
 
 **Example**
 
-    Consider:
-
+    1. When Chef-Client Major Version Changes-
+    Consider,
     Current Chef-Client Version is 11.14.6-1
 
-    Current Extension Version is 100.11.14.6
+    Current Extension Version is 1100.11.14.6
+
+    # Chef-Client Major version changed
+    After new Client-Client Version 12.0.0-1 is released
+
+    # Increase Extension Major version by +100
+    New Extension Version will be 1200.12.0.0
+
+    2. When Chef Client Minor Version Changes-
+    Consider,
+    Current Chef-Client Version is 11.14.6-1
+
+    Current Extension Version is 1100.11.14.6
 
     # Chef-Client Minor version changed
     After new Client-Client Version 11.16.0-1 is released
 
     # Increase Extension Major version by +1
-    New Extension Version will be 101.11.16.0
+    New Extension Version will be 1101.11.16.0
 
 Build and Packaging
 ===================
