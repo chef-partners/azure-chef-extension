@@ -20,6 +20,7 @@ commands_script_path=$(get_script_dir)
 chef_ext_dir=`dirname $commands_script_path`
 handler_settings_file=`ls $chef_ext_dir/config/*.settings -S -r | head -1`
 
+export PATH=$PATH:/opt/chef/bin/:/opt/chef/embedded/bin
 auto_update_client=`ruby -e "require 'chef/azure/helpers/parse_json';value_from_json_file_for_ps '$handler_settings_file','runtimeSettings','0','handlerSettings','publicSettings','autoUpdateClient'"`
 
 if [ "$auto_update_client" != "true" ]
