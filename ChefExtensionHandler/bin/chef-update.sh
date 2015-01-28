@@ -9,6 +9,8 @@
 # 5 enable new version
 
 # returns script dir
+export PATH=$PATH:/opt/chef/bin/:/opt/chef/embedded/bin
+
 get_script_dir(){
   SCRIPT=$(readlink -f "$0")
   script_dir=`dirname $SCRIPT`
