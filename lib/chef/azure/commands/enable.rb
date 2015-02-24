@@ -7,6 +7,9 @@ require 'chef/azure/helpers/parse_json'
 require 'openssl'
 require 'base64'
 require 'tempfile'
+require 'erubis'
+require 'chef/knife'
+require 'chef/knife/core/bootstrap_context'
 
 class EnableChef
   include Chef::Mixin::ShellOut
@@ -117,27 +120,44 @@ class EnableChef
         f.write(@validation_key)
       end
 
-      # Write client.rb
-      File.open("#{bootstrap_directory}/client.rb", "w") do |f|
-        f.write(override_clientrb_file(@client_rb))
-      end
-      # write the first_boot.json
-      File.open("#{bootstrap_directory}/first-boot.json", "w") do |f|
-        f.write(<<-RUNLIST
-{
-"run_list": [#{ @run_list.empty? ? "" : escape_runlist(@run_list)}]
-}
-RUNLIST
-)
+      if windows?
+          # Write client.rb
+          File.open("#{bootstrap_directory}/client.rb", "w") do |f|
+            f.write(override_clientrb_file(@client_rb))
+          end
+          # write the first_boot.json
+          File.open("#{bootstrap_directory}/first-boot.json", "w") do |f|
+            f.write(<<-RUNLIST
+    {
+    "run_list": [#{ @run_list.empty? ? "" : escape_runlist(@run_list)}]
+    }
+    RUNLIST
+    )
+          end
       end
 
       # run chef-client for first time with no runlist to register the node
       puts "Running chef client for first time with no runlist..."
 
       begin
-        params = " -c #{bootstrap_directory}/client.rb -E _default -L #{@azure_plugin_log_location}/chef-client.log --once "
-        result = shell_out("chef-client #{params}")
-        result.error!
+        if windows?
+          params = " -c #{bootstrap_directory}/client.rb -E _default -L #{@azure_plugin_log_location}/chef-client.log --once "
+          result = shell_out("chef-client #{params}")
+          result.error!
+        else
+          config = {}
+          config[:environment] = value_from_json_file(handler_settings_file,'runtimeSettings','0','handlerSettings', 'publicSettings', 'bootstrap_options','environment')
+          config[:chef_node_name] = value_from_json_file(handler_settings_file,'runtimeSettings','0','handlerSettings', 'publicSettings', 'bootstrap_options','chef_node_name')
+          config[:encrypted_data_bag_secret ] = value_from_json_file(handler_settings_file,'runtimeSettings','0','handlerSettings', 'publicSettings', 'bootstrap_options','encrypted_data_bag_secret')
+          Chef::Config[:chef_server_url] = value_from_json_file(handler_settings_file,'runtimeSettings','0','handlerSettings', 'publicSettings', 'bootstrap_options','chef_server_url')
+          Chef::Config[:validation_client_name] = value_from_json_file(handler_settings_file,'runtimeSettings','0','handlerSettings', 'publicSettings', 'bootstrap_options','validation_client_name')
+          context = Chef::Knife::Core::BootstrapContext.new(config, {}, Chef::Config)
+          template_file = Gem.find_files(File.join("chef","knife","bootstrap","chef-full.erb")).first
+          template = IO.read(template_file).chomp
+          bash_template = Erubis::Eruby.new(template).evaluate(context)
+          result = shell_out(bash_template)
+          result.error!
+        end
       rescue Mixlib::ShellOut::ShellCommandFailed => e
         Chef::Log.warn "chef-client run - node registration failed (#{e})"
         @chef_client_error = "chef-client run - node registration failed (#{e})"
@@ -229,7 +249,7 @@ CONFIG
     if windows?
       decrypt_content_file_path = File.expand_path(File.dirname(File.dirname(__FILE__)))
       decrypt_content_file_path += "\\helpers\\powershell\\decrypt_content_on_windows.ps1"
-      thumb_print = value_from_json_file(handler_settings_file,'runtimeSettings','0','handlerSettings', 'protectedSettingsCertThumbprint') 
+      thumb_print = value_from_json_file(handler_settings_file,'runtimeSettings','0','handlerSettings', 'protectedSettingsCertThumbprint')
       result= shell_out("powershell.exe -nologo -noprofile -executionpolicy \"unrestricted\" -file #{decrypt_content_file_path} #{thumb_print} #{encrypted_text}")
       decrypted_text = result.stdout
       result.error!
