@@ -140,24 +140,30 @@ class EnableChef
       puts "Running chef client for first time with no runlist..."
 
       begin
+        config = {}
+        config[:environment] = value_from_json_file(handler_settings_file,'runtimeSettings','0','handlerSettings', 'publicSettings', 'bootstrap_options','environment')
+        config[:chef_node_name] = value_from_json_file(handler_settings_file,'runtimeSettings','0','handlerSettings', 'publicSettings', 'bootstrap_options','chef_node_name')
+        config[:encrypted_data_bag_secret ] = value_from_json_file(handler_settings_file,'runtimeSettings','0','handlerSettings', 'publicSettings', 'bootstrap_options','encrypted_data_bag_secret')
+        Chef::Config[:chef_server_url] = value_from_json_file(handler_settings_file,'runtimeSettings','0','handlerSettings', 'publicSettings', 'bootstrap_options','chef_server_url')
+        Chef::Config[:validation_client_name] = value_from_json_file(handler_settings_file,'runtimeSettings','0','handlerSettings', 'publicSettings', 'bootstrap_options','validation_client_name')
+
         if windows?
-          params = " -c #{bootstrap_directory}/client.rb -E _default -L #{@azure_plugin_log_location}/chef-client.log --once "
-          result = shell_out("chef-client #{params}")
-          result.error!
+          context = Chef::Knife::Core::WindowsBootstrapContext.new(config, {}, Chef::Config)
+          template_file = Gem.find_files(File.join("chef","azure","bootstrap","windows-chef-client-msi.erb")).first
         else
-          config = {}
-          config[:environment] = value_from_json_file(handler_settings_file,'runtimeSettings','0','handlerSettings', 'publicSettings', 'bootstrap_options','environment')
-          config[:chef_node_name] = value_from_json_file(handler_settings_file,'runtimeSettings','0','handlerSettings', 'publicSettings', 'bootstrap_options','chef_node_name')
-          config[:encrypted_data_bag_secret ] = value_from_json_file(handler_settings_file,'runtimeSettings','0','handlerSettings', 'publicSettings', 'bootstrap_options','encrypted_data_bag_secret')
-          Chef::Config[:chef_server_url] = value_from_json_file(handler_settings_file,'runtimeSettings','0','handlerSettings', 'publicSettings', 'bootstrap_options','chef_server_url')
-          Chef::Config[:validation_client_name] = value_from_json_file(handler_settings_file,'runtimeSettings','0','handlerSettings', 'publicSettings', 'bootstrap_options','validation_client_name')
           context = Chef::Knife::Core::BootstrapContext.new(config, {}, Chef::Config)
           template_file = Gem.find_files(File.join("chef","knife","bootstrap","chef-full.erb")).first
-          template = IO.read(template_file).chomp
-          bash_template = Erubis::Eruby.new(template).evaluate(context)
-          result = shell_out(bash_template)
-          result.error!
         end
+
+        template = IO.read(template_file).chomp
+        bash_template = Erubis::Eruby.new(template).evaluate(context)
+        result = shell_out(bash_template)
+        result.error!
+
+        # previous code
+#        params = " -c #{bootstrap_directory}/client.rb -E _default -L #{@azure_plugin_log_location}/chef-client.log --once "
+#        result = shell_out("chef-client #{params}")
+#        result.error!
       rescue Mixlib::ShellOut::ShellCommandFailed => e
         Chef::Log.warn "chef-client run - node registration failed (#{e})"
         @chef_client_error = "chef-client run - node registration failed (#{e})"
