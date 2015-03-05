@@ -55,8 +55,13 @@ class JSONFileReader
     else
       normalized_content = file
     end
-    normalized_content = escape_unescaped_content(normalized_content)
-    JSON.parse(normalized_content)
+
+    begin
+      JSON.parse(normalized_content)
+    rescue JSON::ParserError => e
+      normalized_content = escape_unescaped_content(normalized_content)
+      JSON.parse(normalized_content)
+    end
   end
 
   def is_alphanumeric(sequence)
