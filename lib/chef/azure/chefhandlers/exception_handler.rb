@@ -14,7 +14,11 @@ module AzureExtension
 
     def report
       if run_status.failed?
-        load_run_list if not File.exists?("#{bootstrap_directory}/node-registered")
+        query ||= Chef::Search::Query.new
+        result = query.search(:node,"name:#{node.name}")
+        remote_node_obj = result.first.first
+        # load runlist from first_boot.json if runlist on chef server is empty
+        load_run_list if File.exists?("#{bootstrap_directory}/node-registered") && remote_node_obj.run_list.empty?
         load_azure_env
         message = "Check log file for details...\nBacktrace:\n"
         message << Array(backtrace).join("\n")
