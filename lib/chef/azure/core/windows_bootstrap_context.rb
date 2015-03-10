@@ -19,7 +19,7 @@
 require 'chef/knife/core/bootstrap_context'
 
 # Chef::Util::PathHelper in Chef 11 is a bit juvenile still
-#require 'knife-windows/path_helper'
+# require 'knife-windows/path_helper'
 # require 'chef/util/path_helper'
 
 class Chef
@@ -63,7 +63,7 @@ class Chef
         def config_content
           client_rb = <<-CONFIG
 log_level        :info
-log_location     STDOUT
+log_location     "c:/chef/log.txt"
 
 chef_server_url  "#{@chef_config[:chef_server_url]}"
 validation_client_name "#{@chef_config[:validation_client_name]}"
@@ -137,107 +137,11 @@ CONFIG
 
         def start_chef
           start_chef = "SET \"PATH=%PATH%;C:\\ruby\\bin;C:\\opscode\\chef\\bin;C:\\opscode\\chef\\embedded\\bin\"\n"
-          start_chef << "chef-client -c c:/chef/client.rb -j c:/chef/first-boot.json -E #{bootstrap_environment}\n"
-        end
-
-        def latest_current_windows_chef_version_query
-          installer_version_string = nil
-          if @config[:prerelease]
-            installer_version_string = "&prerelease=true"
-          else
-            chef_version_string = if knife_config[:bootstrap_version]
-              knife_config[:bootstrap_version]
-            else
-              Chef::VERSION.split(".").first
-            end
-
-            installer_version_string = "&v=#{chef_version_string}"
-
-            # If bootstrapping a pre-release version add the prerelease query string
-            if chef_version_string.split(".").length > 3
-              installer_version_string << "&prerelease=true"
-            end
-          end
-
-          installer_version_string
-        end
-
-        def win_wget
-          win_wget = <<-WGET
-url = WScript.Arguments.Named("url")
-path = WScript.Arguments.Named("path")
-proxy = null
-Set objXMLHTTP = CreateObject("MSXML2.ServerXMLHTTP")
-Set wshShell = CreateObject( "WScript.Shell" )
-Set objUserVariables = wshShell.Environment("USER")
-
-rem http proxy is optional
-rem attempt to read from HTTP_PROXY env var first
-On Error Resume Next
-
-If NOT (objUserVariables("HTTP_PROXY") = "") Then
-proxy = objUserVariables("HTTP_PROXY")
-
-rem fall back to named arg
-ElseIf NOT (WScript.Arguments.Named("proxy") = "") Then
-proxy = WScript.Arguments.Named("proxy")
-End If
-
-If NOT isNull(proxy) Then
-rem setProxy method is only available on ServerXMLHTTP 6.0+
-Set objXMLHTTP = CreateObject("MSXML2.ServerXMLHTTP.6.0")
-objXMLHTTP.setProxy 2, proxy
-End If
-
-On Error Goto 0
-
-objXMLHTTP.open "GET", url, false
-objXMLHTTP.send()
-If objXMLHTTP.Status = 200 Then
-Set objADOStream = CreateObject("ADODB.Stream")
-objADOStream.Open
-objADOStream.Type = 1
-objADOStream.Write objXMLHTTP.ResponseBody
-objADOStream.Position = 0
-Set objFSO = Createobject("Scripting.FileSystemObject")
-If objFSO.Fileexists(path) Then objFSO.DeleteFile path
-Set objFSO = Nothing
-objADOStream.SaveToFile path
-objADOStream.Close
-Set objADOStream = Nothing
-End if
-Set objXMLHTTP = Nothing
-WGET
-          escape_and_echo(win_wget)
-        end
-
-        def win_wget_ps
-          win_wget_ps = <<-WGET_PS
-param(
-   [String] $remoteUrl,
-   [String] $localPath
-)
-
-$webClient = new-object System.Net.WebClient;
-
-$webClient.DownloadFile($remoteUrl, $localPath);
-WGET_PS
-
-          escape_and_echo(win_wget_ps)
-        end
-
-        def install_chef
-          # The normal install command uses regular double quotes in
-          # the install command, so request such a string from install_command
-          install_chef = install_command('"') + "\n" + fallback_install_task_command
+          start_chef << "chef-client -c c:/chef/client.rb -E #{bootstrap_environment}\n"
         end
 
         def bootstrap_directory
           bootstrap_directory = "C:\\chef"
-        end
-
-        def local_download_path
-          local_download_path = "%TEMP%\\chef-client-latest.msi"
         end
 
         def first_boot
@@ -254,65 +158,17 @@ WGET_PS
 
         private
 
-        def install_command(executor_quote)
-          "msiexec /qn /log #{executor_quote}%CHEF_CLIENT_MSI_LOG_PATH%#{executor_quote} /i #{executor_quote}%LOCAL_DESTINATION_MSI_PATH%#{executor_quote}"
-        end
-
         # Returns a string for copying the trusted certificates on the workstation to the system being bootstrapped
         # This string should contain both the commands necessary to both create the files, as well as their content
         def trusted_certs_content
           content = ""
-=begin
           if @chef_config[:trusted_certs_dir]
-            Dir.glob(File.join(PathHelper.escape_glob(@chef_config[:trusted_certs_dir]), "*.{crt,pem}")).each do |cert|
-              content << "> #{bootstrap_directory}/trusted_certs/#{File.basename(cert)} (\n" +
-                         escape_and_echo(IO.read(File.expand_path(cert))) + "\n)\n"
-            end
+            # Dir.glob(File.join(PathHelper.escape_glob(@chef_config[:trusted_certs_dir]), "*.{crt,pem}")).each do |cert|
+            #   content << "> #{bootstrap_directory}/trusted_certs/#{File.basename(cert)} (\n" +
+            #              escape_and_echo(IO.read(File.expand_path(cert))) + "\n)\n"
+            # end
           end
-=end
           content
-        end
-
-        def fallback_install_task_command
-          # This command will be executed by schtasks.exe in the batch
-          # code below. To handle tasks that contain arguments that
-          # need to be double quoted, schtasks allows the use of single
-          # quotes that will later be converted to double quotes
-          command = install_command('\'')
-<<-EOH
-          @set MSIERRORCODE=!ERRORLEVEL!
-          @if ERRORLEVEL 1 (
-              @echo WARNING: Failed to install Chef Client MSI package in remote context with status code !MSIERRORCODE!.
-              @echo WARNING: This may be due to a defect in operating system update KB2918614: http://support.microsoft.com/kb/2918614
-              @set OLDLOGLOCATION="%CHEF_CLIENT_MSI_LOG_PATH%-fail.log"
-              @move "%CHEF_CLIENT_MSI_LOG_PATH%" "!OLDLOGLOCATION!" > NUL
-              @echo WARNING: Saving installation log of failure at !OLDLOGLOCATION!
-              @echo WARNING: Retrying installation with local context...
-              @schtasks /create /f  /sc once /st 00:00:00 /tn chefclientbootstraptask /ru SYSTEM /rl HIGHEST /tr \"cmd /c #{command} & sleep 2 & waitfor /s %computername% /si chefclientinstalldone\"
-
-              @if ERRORLEVEL 1 (
-                  @echo ERROR: Failed to create Chef Client installation scheduled task with status code !ERRORLEVEL! > "&2"
-              ) else (
-                  @echo Successfully created scheduled task to install Chef Client.
-                  @schtasks /run /tn chefclientbootstraptask
-                  @if ERRORLEVEL 1 (
-                      @echo ERROR: Failed to execut Chef Client installation scheduled task with status code !ERRORLEVEL!. > "&2"
-                  ) else (
-                      @echo Successfully started Chef Client installation scheduled task.
-                      @echo Waiting for installation to complete -- this may take a few minutes...
-                      waitfor chefclientinstalldone /t 600
-                      if ERRORLEVEL 1 (
-                          @echo ERROR: Timed out waiting for Chef Client package to install
-                      ) else (
-                          @echo Finished waiting for Chef Client package to install.
-                      )
-                      @schtasks /delete /f /tn chefclientbootstraptask > NUL
-                  )
-              )
-          ) else (
-              @echo Successfully installed Chef Client package.
-          )
-EOH
         end
       end
     end
