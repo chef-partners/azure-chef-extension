@@ -7,9 +7,9 @@ require 'chef/azure/helpers/parse_json'
 require 'openssl'
 require 'base64'
 require 'tempfile'
+require 'chef/azure/core/windows_bootstrap_context'
 require 'erubis'
 require 'chef/knife'
-require 'chef/knife/core/bootstrap_context'
 
 class EnableChef
   include Chef::Mixin::ShellOut
@@ -45,8 +45,6 @@ class EnableChef
         report_heart_beat_to_azure(AzureHeartBeat::NOTREADY, 0, "chef-service enable failed.")
       end
     end
-
-
     return @exit_code
   end
 
@@ -115,55 +113,36 @@ class EnableChef
 
       load_settings
 
-      # Write validation key
-      File.open("#{bootstrap_directory}/validation.pem", "w") do |f|
-        f.write(@validation_key)
-      end
-
-      if windows?
-          # Write client.rb
-          File.open("#{bootstrap_directory}/client.rb", "w") do |f|
-            f.write(override_clientrb_file(@client_rb))
-          end
-          # write the first_boot.json
-          File.open("#{bootstrap_directory}/first-boot.json", "w") do |f|
-            f.write(<<-RUNLIST
-    {
-    "run_list": [#{ @run_list.empty? ? "" : escape_runlist(@run_list)}]
-    }
-    RUNLIST
-    )
-          end
-      end
-
       # run chef-client for first time with no runlist to register the node
       puts "Running chef client for first time with no runlist..."
 
       begin
+        require 'chef/azure/core/bootstrap_context'
         config = {}
         config[:environment] = value_from_json_file(handler_settings_file,'runtimeSettings','0','handlerSettings', 'publicSettings', 'bootstrap_options','environment')
         config[:chef_node_name] = value_from_json_file(handler_settings_file,'runtimeSettings','0','handlerSettings', 'publicSettings', 'bootstrap_options','chef_node_name')
         config[:encrypted_data_bag_secret ] = value_from_json_file(handler_settings_file,'runtimeSettings','0','handlerSettings', 'publicSettings', 'bootstrap_options','encrypted_data_bag_secret')
+        Chef::Config[:validation_key_content] = @validation_key
         Chef::Config[:chef_server_url] = value_from_json_file(handler_settings_file,'runtimeSettings','0','handlerSettings', 'publicSettings', 'bootstrap_options','chef_server_url')
         Chef::Config[:validation_client_name] = value_from_json_file(handler_settings_file,'runtimeSettings','0','handlerSettings', 'publicSettings', 'bootstrap_options','validation_client_name')
 
         if windows?
           context = Chef::Knife::Core::WindowsBootstrapContext.new(config, {}, Chef::Config)
           template_file = Gem.find_files(File.join("chef","azure","bootstrap","windows-chef-client-msi.erb")).first
+          bootstrap_bat_file ||= "#{ENV['TMP']}/bootstrap.bat"
+          template = IO.read(template_file).chomp
+          bash_template = Erubis::Eruby.new(template).evaluate(context)
+          File.open(bootstrap_bat_file, 'w') {|f| f.write(bash_template)}
+          bootstrap_command = "cmd.exe /C #{bootstrap_bat_file}"
         else
           context = Chef::Knife::Core::BootstrapContext.new(config, {}, Chef::Config)
           template_file = Gem.find_files(File.join("chef","knife","bootstrap","chef-full.erb")).first
+          template = IO.read(template_file).chomp
+          bootstrap_command = Erubis::Eruby.new(template).evaluate(context)
         end
 
-        template = IO.read(template_file).chomp
-        bash_template = Erubis::Eruby.new(template).evaluate(context)
-        result = shell_out(bash_template)
+        result = shell_out(bootstrap_command)
         result.error!
-
-        # previous code
-#        params = " -c #{bootstrap_directory}/client.rb -E _default -L #{@azure_plugin_log_location}/chef-client.log --once "
-#        result = shell_out("chef-client #{params}")
-#        result.error!
       rescue Mixlib::ShellOut::ShellCommandFailed => e
         Chef::Log.warn "chef-client run - node registration failed (#{e})"
         @chef_client_error = "chef-client run - node registration failed (#{e})"
@@ -185,7 +164,6 @@ class EnableChef
       child_pid = Process.spawn "chef-client #{params}"
       Process.detach child_pid
       puts "Successfully launched chef-client process with PID [#{child_pid}]"
-
     end
   end
 
