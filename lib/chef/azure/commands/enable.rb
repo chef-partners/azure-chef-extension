@@ -142,6 +142,8 @@ class EnableChef
         end
 
         result = shell_out(bootstrap_command)
+        # remove the temp bootstrap file
+        FileUtils.rm(bootstrap_bat_file)
         result.error!
       rescue Mixlib::ShellOut::ShellCommandFailed => e
         Chef::Log.warn "chef-client run - node registration failed (#{e})"
