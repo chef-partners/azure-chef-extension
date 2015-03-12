@@ -134,16 +134,16 @@ class EnableChef
           bash_template = Erubis::Eruby.new(template).evaluate(context)
           File.open(bootstrap_bat_file, 'w') {|f| f.write(bash_template)}
           bootstrap_command = "cmd.exe /C #{bootstrap_bat_file}"
+          # remove the temp bootstrap file
+          FileUtils.rm(bootstrap_bat_file)
         else
           context = Chef::Knife::Core::BootstrapContext.new(config, {}, Chef::Config)
-          template_file = Gem.find_files(File.join("chef","knife","bootstrap","chef-full.erb")).first
+          template_file = Gem.find_files(File.join("chef","azure","bootstrap","chef-full.erb")).first
           template = IO.read(template_file).chomp
           bootstrap_command = Erubis::Eruby.new(template).evaluate(context)
         end
 
         result = shell_out(bootstrap_command)
-        # remove the temp bootstrap file
-        FileUtils.rm(bootstrap_bat_file)
         result.error!
       rescue Mixlib::ShellOut::ShellCommandFailed => e
         Chef::Log.warn "chef-client run - node registration failed (#{e})"
