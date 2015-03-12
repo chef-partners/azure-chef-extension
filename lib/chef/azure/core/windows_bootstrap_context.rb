@@ -131,6 +131,19 @@ CONFIG
             end
           end
 
+          client_rb << <<-CONFIG
+# Add support to use chef Handlers for heartbeat and
+# status reporting to Azure
+require \"chef/azure/chefhandlers/start_handler\"
+require \"chef/azure/chefhandlers/report_handler\"
+require \"chef/azure/chefhandlers/exception_handler\"
+
+start_handlers << AzureExtension::StartHandler.new(\"#{@config[:chef_extension_root]}\")
+report_handlers << AzureExtension::ReportHandler.new(\"#{@config[:chef_extension_root]}\")
+exception_handlers << AzureExtension::ExceptionHandler.new(\"#{@config[:chef_extension_root]}\")
+
+CONFIG
+
           escape_and_echo(client_rb)
         end
 
