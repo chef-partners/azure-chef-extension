@@ -160,11 +160,12 @@ describe EnableChef do
       @object = Object.new
       File.stub(:read)
       OpenSSL::X509::Certificate.stub(:new)
-      OpenSSL::PKey::RSA.stub(:new)
+      OpenSSL::PKey::RSA.stub(:new).and_return(@object)
       Base64.stub(:decode64)
       OpenSSL::PKCS7.stub(:new).and_return(@object)
       @object.should_receive(:decrypt)
-      instance.should_receive(:value_from_json_file).once
+      @object.should_receive(:to_pem)
+      instance.should_receive(:value_from_json_file).once.and_return("")
       instance.send(:get_validation_key, "encrypted_text")
     end
   end
