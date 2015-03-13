@@ -249,6 +249,11 @@ CONFIG
 
     #extract validation_key from decrypted hash
     validation_key = value_from_json_file(decrypted_text, "validation_key")
-    return validation_key
+    begin
+      validation_key = OpenSSL::PKey::RSA.new(validation_key.squeeze("\n")).to_pem
+    rescue OpenSSL::PKey::RSAError => e
+      Chef::Log.error "Chef validation key parsing error. #{e.inspect}"
+      validation_key
+    end
   end
 end
