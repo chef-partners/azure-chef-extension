@@ -230,6 +230,7 @@ CONFIG
       decrypt_content_file_path = File.expand_path(File.dirname(File.dirname(__FILE__)))
       decrypt_content_file_path += "\\helpers\\powershell\\decrypt_content_on_windows.ps1"
       thumb_print = value_from_json_file(handler_settings_file,'runtimeSettings','0','handlerSettings', 'protectedSettingsCertThumbprint') 
+      shell_out!('mode con:cols=300 lines=600')
       result= shell_out("powershell.exe -nologo -noprofile -executionpolicy \"unrestricted\" -file #{decrypt_content_file_path} #{thumb_print} #{encrypted_text}")
       decrypted_text = result.stdout
       result.error!
