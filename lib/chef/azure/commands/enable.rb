@@ -126,10 +126,11 @@ class EnableChef
         Chef::Config[:validation_key_content] = @validation_key
         Chef::Config[:chef_server_url] = value_from_json_file(handler_settings_file,'runtimeSettings','0','handlerSettings', 'publicSettings', 'bootstrap_options','chef_server_url')
         Chef::Config[:validation_client_name] = value_from_json_file(handler_settings_file,'runtimeSettings','0','handlerSettings', 'publicSettings', 'bootstrap_options','validation_client_name')
+        template_file = File.expand_path(File.dirname(File.dirname(__FILE__)))
 
         if windows?
           context = Chef::Knife::Core::WindowsBootstrapContext.new(config, {}, Chef::Config)
-          template_file = Gem.find_files(File.join("chef","azure","bootstrap","windows-chef-client-msi.erb")).first
+          template_file += "\\bootstrap\\windows-chef-client-msi.erb"
           bootstrap_bat_file ||= "#{ENV['TMP']}/bootstrap.bat"
           template = IO.read(template_file).chomp
           bash_template = Erubis::Eruby.new(template).evaluate(context)
@@ -139,7 +140,7 @@ class EnableChef
           FileUtils.rm(bootstrap_bat_file)
         else
           context = Chef::Knife::Core::BootstrapContext.new(config, {}, Chef::Config)
-          template_file = Gem.find_files(File.join("chef","azure","bootstrap","chef-full.erb")).first
+          template_file += "\\bootstrap\\chef-full.erb"
           template = IO.read(template_file).chomp
           bootstrap_command = Erubis::Eruby.new(template).evaluate(context)
         end
