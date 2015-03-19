@@ -23,7 +23,10 @@ class Chef
         end
 
         def config_content
-          client_rb = <<-CONFIG
+          client_rb = ""
+          client_rb << @config[:user_client_rb] + "\r\n" unless @config[:user_client_rb].empty
+
+          client_rb << <<-CONFIG
 log_location     STDOUT
 chef_server_url  "#{@chef_config[:chef_server_url]}"
 validation_client_name "#{@chef_config[:validation_client_name]}"

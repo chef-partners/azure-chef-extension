@@ -60,25 +60,19 @@ class Chef
         end
 
         def config_content
-          client_rb = <<-CONFIG
-log_level        :info
-log_location     "c:/chef/log.txt"
+          client_rb = ""
+          client_rb << @config[:user_client_rb] + "\r\n" unless @config[:user_client_rb].empty
 
-chef_server_url  "#{@chef_config[:chef_server_url]}"
-validation_client_name "#{@chef_config[:validation_client_name]}"
+          client_rb = super
+          client_rb << <<-CONFIG
+log_level        :info
 client_key        "c:/chef/client.pem"
 validation_key    "c:/chef/validation.pem"
 
 file_cache_path   "c:/chef/cache"
 file_backup_path  "c:/chef/backup"
 cache_options     ({:path => "c:/chef/cache/checksums", :skip_expires => true})
-
 CONFIG
-          if @config[:chef_node_name]
-            client_rb << %Q{node_name "#{@config[:chef_node_name]}"\n}
-          else
-            client_rb << "# Using default node name (fqdn)\n"
-          end
 
           # We configure :verify_api_cert only when it's overridden on the CLI
           # or when specified in the knife config.
@@ -112,13 +106,7 @@ CONFIG
 
           if knife_config[:bootstrap_proxy]
             client_rb << "\n"
-            client_rb << %Q{http_proxy        "#{knife_config[:bootstrap_proxy]}"\n}
-            client_rb << %Q{https_proxy       "#{knife_config[:bootstrap_proxy]}"\n}
             client_rb << %Q{no_proxy          "#{knife_config[:bootstrap_no_proxy]}"\n} if knife_config[:bootstrap_no_proxy]
-          end
-
-          if knife_config[:bootstrap_no_proxy]
-            client_rb << %Q{no_proxy       "#{knife_config[:bootstrap_no_proxy]}"\n}
           end
 
           if @config[:encrypted_data_bag_secret]

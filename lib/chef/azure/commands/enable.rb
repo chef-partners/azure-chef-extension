@@ -123,6 +123,7 @@ class EnableChef
         config[:chef_node_name] = value_from_json_file(handler_settings_file,'runtimeSettings','0','handlerSettings', 'publicSettings', 'bootstrap_options','chef_node_name')
         config[:encrypted_data_bag_secret ] = value_from_json_file(handler_settings_file,'runtimeSettings','0','handlerSettings', 'publicSettings', 'bootstrap_options','encrypted_data_bag_secret')
         config[:chef_extension_root] = @chef_extension_root
+        config[:user_client_rb] = @client_rb
         Chef::Config[:validation_key_content] = @validation_key
         Chef::Config[:chef_server_url] = value_from_json_file(handler_settings_file,'runtimeSettings','0','handlerSettings', 'publicSettings', 'bootstrap_options','chef_server_url')
         Chef::Config[:validation_client_name] = value_from_json_file(handler_settings_file,'runtimeSettings','0','handlerSettings', 'publicSettings', 'bootstrap_options','validation_client_name')
@@ -192,28 +193,6 @@ class EnableChef
         raise error_message
       end
     end
-  end
-
-  def override_clientrb_file(user_client_rb)
-    client_rb = <<-CONFIG
-client_key        '#{bootstrap_directory}/client.pem'
-validation_key    '#{bootstrap_directory}/validation.pem'
-log_location  '#{@azure_plugin_log_location}/chef-client.log'
-
-# Add support to use chef Handlers for heartbeat and
-# status reporting to Azure
-require 'chef/azure/chefhandlers/start_handler'
-require 'chef/azure/chefhandlers/report_handler'
-require 'chef/azure/chefhandlers/exception_handler'
-
-start_handlers << AzureExtension::StartHandler.new('#{@chef_extension_root}')
-report_handlers << AzureExtension::ReportHandler.new('#{@chef_extension_root}')
-exception_handlers << AzureExtension::ExceptionHandler.new('#{@chef_extension_root}')
-
-
-CONFIG
-
-    "#{user_client_rb}\r\n#{client_rb}"
   end
 
   def escape_runlist(run_list)
