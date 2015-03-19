@@ -148,7 +148,7 @@ describe EnableChef do
       expect {instance.send(:handler_settings_file)}.to raise_error
     end
   end
-  
+
   context "escape_runlist" do
     it "escapes and formats the runlist." do
       instance.send(:escape_runlist, "test")
@@ -177,22 +177,6 @@ describe EnableChef do
       instance.should_receive(:handler_settings_file)
       instance.should_receive(:value_from_json_file).twice
       instance.send(:get_validation_key, "encrypted_text")
-    end
-  end
-
-  context "override_clientrb_file" do
-    before { instance.instance_variable_set(:@azure_plugin_log_location,Dir.home) }
-    it "add StartHandler to client rb" do
-      client_rb = instance.send(:override_clientrb_file,"")
-      client_rb.should include("start_handlers << AzureExtension::StartHandler.new")
-    end
-    it "add ReportHandler to client rb" do
-      client_rb = instance.send(:override_clientrb_file,"")
-      client_rb.should include("report_handlers << AzureExtension::ReportHandler.new")
-    end
-    it "add ExceptionHandler to client rb" do
-      client_rb = instance.send(:override_clientrb_file,"")
-      client_rb.should include("exception_handlers << AzureExtension::ExceptionHandler.new")
     end
   end
 end
