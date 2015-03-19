@@ -124,6 +124,7 @@ class EnableChef
         config[:encrypted_data_bag_secret ] = value_from_json_file(handler_settings_file,'runtimeSettings','0','handlerSettings', 'publicSettings', 'bootstrap_options','encrypted_data_bag_secret')
         config[:chef_extension_root] = @chef_extension_root
         config[:user_client_rb] = @client_rb
+        config[:log_location] = @azure_plugin_log_location
         Chef::Config[:validation_key_content] = @validation_key
         Chef::Config[:chef_server_url] = value_from_json_file(handler_settings_file,'runtimeSettings','0','handlerSettings', 'publicSettings', 'bootstrap_options','chef_server_url')
         Chef::Config[:validation_client_name] = value_from_json_file(handler_settings_file,'runtimeSettings','0','handlerSettings', 'publicSettings', 'bootstrap_options','validation_client_name')

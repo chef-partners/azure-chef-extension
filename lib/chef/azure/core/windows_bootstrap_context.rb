@@ -66,6 +66,7 @@ class Chef
           client_rb = super
           client_rb << <<-CONFIG
 log_level        :info
+log_location     '#{@config[:log_location]}/chef-client.log'
 client_key        "c:/chef/client.pem"
 validation_key    "c:/chef/validation.pem"
 
