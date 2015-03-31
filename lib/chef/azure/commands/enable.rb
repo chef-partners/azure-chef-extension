@@ -119,36 +119,41 @@ class EnableChef
       begin
         require 'chef/azure/core/bootstrap_context'
         config = {}
-        config[:environment] = value_from_json_file(handler_settings_file,'runtimeSettings','0','handlerSettings', 'publicSettings', 'bootstrap_options','environment')
-        config[:chef_node_name] = value_from_json_file(handler_settings_file,'runtimeSettings','0','handlerSettings', 'publicSettings', 'bootstrap_options','chef_node_name')
-        config[:encrypted_data_bag_secret ] = value_from_json_file(handler_settings_file,'runtimeSettings','0','handlerSettings', 'publicSettings', 'bootstrap_options','encrypted_data_bag_secret')
+        bootstrap_options = value_from_json_file(handler_settings_file,'runtimeSettings','0','handlerSettings', 'publicSettings', 'bootstrap_options')
+        bootstrap_options = eval(bootstrap_options) ? eval(bootstrap_options) : {}
+
+        config[:environment] = bootstrap_options['environment'] if bootstrap_options['environment']
+        config[:chef_node_name] = bootstrap_options['chef_node_name'] if bootstrap_options['chef_node_name']
         config[:chef_extension_root] = @chef_extension_root
         config[:user_client_rb] = @client_rb
         config[:log_location] = @azure_plugin_log_location
         Chef::Config[:validation_key_content] = @validation_key
-        Chef::Config[:chef_server_url] = value_from_json_file(handler_settings_file,'runtimeSettings','0','handlerSettings', 'publicSettings', 'bootstrap_options','chef_server_url')
-        Chef::Config[:validation_client_name] = value_from_json_file(handler_settings_file,'runtimeSettings','0','handlerSettings', 'publicSettings', 'bootstrap_options','validation_client_name')
+        Chef::Config[:chef_server_url] = bootstrap_options['chef_server_url'] if bootstrap_options['chef_server_url']
+        Chef::Config[:validation_client_name] =  bootstrap_options['validation_client_name'] if bootstrap_options['validation_client_name']
         template_file = File.expand_path(File.dirname(File.dirname(__FILE__)))
-
+        config[:secret] =  bootstrap_options['secret'] || bootstrap_options['encrypted_data_bag_secret']
+        runlist = @run_list.empty? ? [] : [@run_list]
         if windows?
-          context = Chef::Knife::Core::WindowsBootstrapContext.new(config, {}, Chef::Config)
+          context = Chef::Knife::Core::WindowsBootstrapContext.new(config, runlist, Chef::Config, config[:secret])
           template_file += "\\bootstrap\\windows-chef-client-msi.erb"
           bootstrap_bat_file ||= "#{ENV['TMP']}/bootstrap.bat"
           template = IO.read(template_file).chomp
           bash_template = Erubis::Eruby.new(template).evaluate(context)
           File.open(bootstrap_bat_file, 'w') {|f| f.write(bash_template)}
           bootstrap_command = "cmd.exe /C #{bootstrap_bat_file}"
+
+          result = shell_out(bootstrap_command)
+          result.error!
           # remove the temp bootstrap file
           FileUtils.rm(bootstrap_bat_file)
         else
-          context = Chef::Knife::Core::BootstrapContext.new(config, {}, Chef::Config)
-          template_file += "\\bootstrap\\chef-full.erb"
+          context = Chef::Knife::Core::BootstrapContext.new(config, runlist, Chef::Config, config[:secret])
+          template_file += '/bootstrap/chef-full.erb'
           template = IO.read(template_file).chomp
           bootstrap_command = Erubis::Eruby.new(template).evaluate(context)
+          result = shell_out(bootstrap_command)
+          result.error!
         end
-
-        result = shell_out(bootstrap_command)
-        result.error!
       rescue Mixlib::ShellOut::ShellCommandFailed => e
         Chef::Log.warn "chef-client run - node registration failed (#{e})"
         @chef_client_error = "chef-client run - node registration failed (#{e})"

@@ -21,6 +21,13 @@ exists() {
 
 mkdir -p /etc/chef
 
+<% if client_pem -%>
+cat > /etc/chef/client.pem <<'EOP'
+<%= ::File.read(::File.expand_path(client_pem)) %>
+EOP
+chmod 0600 /etc/chef/client.pem
+<% end -%>
+
 cat > /etc/chef/validation.pem <<'EOP'
 <%= validation_key %>
 EOP
@@ -31,6 +38,11 @@ cat > /etc/chef/encrypted_data_bag_secret <<'EOP'
 <%= encrypted_data_bag_secret %>
 EOP
 chmod 0600 /etc/chef/encrypted_data_bag_secret
+<% end -%>
+
+<% unless trusted_certs.empty? -%>
+mkdir -p /etc/chef/trusted_certs
+<%= trusted_certs %>
 <% end -%>
 
 <%# Generate Ohai Hints -%>

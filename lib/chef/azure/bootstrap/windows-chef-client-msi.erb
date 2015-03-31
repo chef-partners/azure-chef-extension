@@ -44,11 +44,12 @@ echo Writing validation key...
 echo Validation key written.
 @echo on
 
-<% if @config[:encrypted_data_bag_secret] -%>
+<% if @config[:secret] -%>
 > <%= bootstrap_directory %>\encrypted_data_bag_secret (
- <%= encrypted_data_bag_secret %>
+ <%= secret %>
 )
 <% end -%>
+
 
 <% unless trusted_certs_script.empty? -%>
 mkdir <%= bootstrap_directory %>\trusted_certs

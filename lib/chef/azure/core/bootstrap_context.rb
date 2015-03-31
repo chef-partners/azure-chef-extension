@@ -9,7 +9,7 @@ class Chef
       #
       class BootstrapContext
 
-      	def validation_key
+        def validation_key
           @chef_config[:validation_key_content]
         end
 
@@ -24,10 +24,9 @@ class Chef
 
         def config_content
           client_rb = ""
-          client_rb << @config[:user_client_rb] + "\r\n" unless @config[:user_client_rb].empty
-
+          
           client_rb << <<-CONFIG
-log_location     '#{@config[:log_location]}/chef-client.log'
+log_location     "#{@config[:log_location]}/chef-client.log"
 chef_server_url  "#{@chef_config[:chef_server_url]}"
 validation_client_name "#{@chef_config[:validation_client_name]}"
 CONFIG
@@ -50,6 +49,7 @@ CONFIG
             client_rb << %Q{encrypted_data_bag_secret "/etc/chef/encrypted_data_bag_secret"\n}
           end
 
+          client_rb << @config[:user_client_rb] + "\r\n" unless @config[:user_client_rb].empty?
           client_rb << <<-CONFIG
 # Add support to use chef Handlers for heartbeat and
 # status reporting to Azure
