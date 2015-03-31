@@ -17,7 +17,6 @@
 #
 
 require 'chef/knife/core/bootstrap_context'
-
 # Chef::Util::PathHelper in Chef 11 is a bit juvenile still
   require 'chef/azure/core/path_helper'
 
@@ -51,8 +50,8 @@ class Chef
           escape_and_echo(super)
         end
 
-        def encrypted_data_bag_secret
-          escape_and_echo(@config[:encrypted_data_bag_secret])
+        def secret
+          escape_and_echo(@config[:secret])
         end
 
         def trusted_certs_script
@@ -61,19 +60,24 @@ class Chef
 
         def config_content
           client_rb = ""
-          client_rb << @config[:user_client_rb] + "\r\n" unless @config[:user_client_rb].empty
 
-          client_rb = super
           client_rb << <<-CONFIG
 log_level        :info
 log_location     '#{@config[:log_location]}/chef-client.log'
 client_key        "c:/chef/client.pem"
 validation_key    "c:/chef/validation.pem"
-
+chef_server_url  "#{@chef_config[:chef_server_url]}"
+validation_client_name "#{@chef_config[:validation_client_name]}"
 file_cache_path   "c:/chef/cache"
 file_backup_path  "c:/chef/backup"
 cache_options     ({:path => "c:/chef/cache/checksums", :skip_expires => true})
 CONFIG
+
+          if @config[:chef_node_name]
+            client_rb << %Q{node_name "#{@config[:chef_node_name]}"\n}
+          else
+            client_rb << "# Using default node name (fqdn)\n"
+          end
 
           # We configure :verify_api_cert only when it's overridden on the CLI
           # or when specified in the knife config.
@@ -110,7 +114,7 @@ CONFIG
             client_rb << %Q{no_proxy          "#{knife_config[:bootstrap_no_proxy]}"\n} if knife_config[:bootstrap_no_proxy]
           end
 
-          if @config[:encrypted_data_bag_secret]
+          if @config[:secret]
             client_rb << %Q{encrypted_data_bag_secret "c:/chef/encrypted_data_bag_secret"\n}
           end
 
@@ -119,6 +123,8 @@ CONFIG
               client_rb << %Q{trusted_certs_dir "c:/chef/trusted_certs"\n}
             end
           end
+
+          client_rb << @config[:user_client_rb] + "\r\n" unless @config[:user_client_rb].empty?
 
           client_rb << <<-CONFIG
 # Add support to use chef Handlers for heartbeat and
