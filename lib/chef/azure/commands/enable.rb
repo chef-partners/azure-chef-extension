@@ -132,7 +132,7 @@ class EnableChef
         Chef::Config[:validation_client_name] =  bootstrap_options['validation_client_name'] if bootstrap_options['validation_client_name']
         template_file = File.expand_path(File.dirname(File.dirname(__FILE__)))
         config[:secret] =  bootstrap_options['secret'] || bootstrap_options['encrypted_data_bag_secret']
-        runlist = @run_list.empty? ? [] : [@run_list]
+        runlist = @run_list.empty? ? [] : [escape_runlist(@run_list)]
         if windows?
           context = Chef::Knife::Core::WindowsBootstrapContext.new(config, runlist, Chef::Config, config[:secret])
           template_file += "\\bootstrap\\windows-chef-client-msi.erb"
@@ -206,13 +206,13 @@ class EnableChef
     run_list.split(/,\s*|\s/).reject(&:empty?).each do |item|
       if(item.match(/\s*"?recipe\[\S*\]"?\s*/))
         run_list_item = item.split(/\s*"?'?recipe\["?'?|"?'?\]"?'?/)[1]
-        parsedRunlist << "\"recipe[#{run_list_item}]\""
+        parsedRunlist << "recipe[#{run_list_item}]"
       elsif(item.match(/\s*"?role\[\S*\]"?\s*/))
         run_list_item = item.split(/\s*"?'?role\["?'?|"?'?\]"?'?/)[1]
-        parsedRunlist << "\"role[#{run_list_item}]\""
+        parsedRunlist << "role[#{run_list_item}]"
       else
         item = item.match(/\s*"?'?\[?"?'?(?<itm>\S*[^\p{Punct}])"?'?\]?"?'?\s*/)[:itm]
-        parsedRunlist << "\"recipe[#{item}]\""
+        parsedRunlist << "recipe[#{item}]"
       end
     end
     parsedRunlist.join(",")
