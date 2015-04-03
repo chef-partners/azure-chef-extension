@@ -142,7 +142,7 @@ This is how the JSON will look like:
 {"bootstrap_options": {"chef_node_name":"mynode3", "chef_server_url":"https://api.opscode.com/organizations/some-org", "validation_client_name":"some-org-validator"},"runlist":"recipe[getting-started]","autoUpdateClient":"false"}
 ```
 
-**Note:** `chef_server_url` and `validation_client_name` are mandetory to pass for the node to bootstrap.
+**Note:** `chef_server_url` and `validation_client_name` are mandatory to pass for the node to bootstrap.
 
 These options can be set in `client_rb` JSON object too:
 ```
