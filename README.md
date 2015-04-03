@@ -127,3 +127,32 @@ The task depends on:
   :build_date_yyyymmdd = The build date when package was published, in format yyyymmdd
 
     rake 'update[deploy_to_production,windows,11.12.4.2,20140530,Chef.Bootstrap.WindowsAzure.Test,confirm_internal_deployment]'
+
+
+JSON for Bootstrap options
+==========================
+User can pass boostrap options in JSON format to the extension. This is useful while creating a VM through Azure using powershell cmdlets. Bootstrap options can be passed in `publicconfig`.
+
+**Supported Options:** `chef_node_name`, `chef_server_url`, `validation_client_name`, `environment`, `chef_node_name`, `secret`
+
+This is how the JSON will look like:
+```
+#publicconfig.config
+
+{"bootstrap_options": {"chef_node_name":"mynode3", "chef_server_url":"https://api.opscode.com/organizations/some-org", "validation_client_name":"some-org-validator"},"runlist":"recipe[getting-started]","autoUpdateClient":"false"}
+```
+
+**Note:** `chef_server_url` and `validation_client_name` are mandatory to pass for the node to bootstrap.
+
+These options can be set in `client_rb` JSON object too:
+```
+#publicconfig.config
+
+{"client_rb": "log_level        :debug\nlog_location     STDOUT\nchef_server_url  \"https://api.opscode.com/organizations/some-org\"\nvalidation_client_name   \"some-org-validator\"\nclient_key        \"c:/chef/client.pem\"\nvalidation_key    \"c:/chef/validation.pem\"",
+  "runlist": "\"recipe[getting-started]\"","bootstrap_options": {}}
+```
+
+Powershell command to use `publicconfig.config`:
+```
+Set-AzureVMExtension -VM <$vmObj> -ExtensionName ‘ChefClient’ -Publisher ‘Chef.Bootstrap.WindowsAzure’ -Version 11.12 -PublicConfigPath 'C:\\path\\to\\publicconfig.config' -PrivateConfigPath 'C:\\path\\to\\privateconfig.config'
+```
