@@ -132,7 +132,7 @@ class EnableChef
         Chef::Config[:validation_client_name] =  bootstrap_options['validation_client_name'] if bootstrap_options['validation_client_name']
         template_file = File.expand_path(File.dirname(File.dirname(__FILE__)))
         config[:secret] =  bootstrap_options['secret'] || bootstrap_options['encrypted_data_bag_secret']
-        runlist = @run_list.empty? ? [] : [escape_runlist(@run_list)]
+        runlist = @run_list.empty? ? [] : escape_runlist(@run_list)
         if windows?
           context = Chef::Knife::Core::WindowsBootstrapContext.new(config, runlist, Chef::Config, config[:secret])
           template_file += "\\bootstrap\\windows-chef-client-msi.erb"
@@ -215,7 +215,6 @@ class EnableChef
         parsedRunlist << "recipe[#{item}]"
       end
     end
-    parsedRunlist.join(",")
   end
 
   def get_validation_key(encrypted_text)
