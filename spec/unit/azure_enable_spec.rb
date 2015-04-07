@@ -176,8 +176,66 @@ describe EnableChef do
       File.stub(:dirname)
       instance.stub(:shell_out).and_return(OpenStruct.new(:exitstatus => 0, :stdout => ""))
       instance.should_receive(:handler_settings_file)
-      instance.should_receive(:value_from_json_file).twice
+      instance.should_receive(:value_from_json_file).twice.and_return("")
       instance.send(:get_validation_key, "encrypted_text")
+    end
+  end
+
+  context "runlist is in correct format when" do
+    it "accepts format: recipe[cookbook]" do
+      sample_input = "recipe[abc]"
+      expected_output = ["recipe[abc]"]
+      escape_runlist_call = instance.send(:escape_runlist,sample_input)
+      expect(escape_runlist_call).to eq(expected_output)
+    end
+
+    it "accepts format: role[rolename]" do
+      sample_input = "role[abc]"
+      expected_output = ["role[abc]"]
+      escape_runlist_call = instance.send(:escape_runlist,sample_input)
+      expect(escape_runlist_call).to eq(expected_output)
+    end
+
+    it "accepts format: recipe[cookbook1],recipe[cookbook2]" do
+      sample_input = "recipe[cookbook1],recipe[cookbook2]"
+      expected_output = ["recipe[cookbook1]","recipe[cookbook2]"]
+      escape_runlist_call = instance.send(:escape_runlist,sample_input)
+      expect(escape_runlist_call).to eq(expected_output)
+    end
+
+    it "accepts format: recipe[cookbook1],role[rolename]" do
+      sample_input = "recipe[cookbook1],role[rolename]"
+      expected_output = ["recipe[cookbook1]","role[rolename]"]
+      escape_runlist_call = instance.send(:escape_runlist,sample_input)
+      expect(escape_runlist_call).to eq(expected_output)
+    end
+
+    it "accepts format: cookbook1,cookbook2" do
+      sample_input = "cookbook1,cookbook2"
+      expected_output = ["cookbook1","cookbook2"]
+      escape_runlist_call = instance.send(:escape_runlist,sample_input)
+      expect(escape_runlist_call).to eq(expected_output)
+    end
+
+    it "accepts format: recipe[cookbook::recipe]" do
+      sample_input = "recipe[cookbook::recipe]"
+      expected_output = ["recipe[cookbook::recipe]"]
+      escape_runlist_call = instance.send(:escape_runlist,sample_input)
+      expect(escape_runlist_call).to eq(expected_output)
+    end
+
+    it "accepts format: recipe[recipe1],recipe2" do
+      sample_input = "recipe[recipe1],recipe2"
+      expected_output = ["recipe[recipe1]","recipe2"]
+      escape_runlist_call = instance.send(:escape_runlist,sample_input)
+      expect(escape_runlist_call).to eq(expected_output)
+    end
+
+    it "accepts format: role[rolename],recipe" do
+      sample_input = "role[rolename],recipe"
+      expected_output = ["role[rolename]","recipe"]
+      escape_runlist_call = instance.send(:escape_runlist,sample_input)
+      expect(escape_runlist_call).to eq(expected_output)
     end
   end
 end
