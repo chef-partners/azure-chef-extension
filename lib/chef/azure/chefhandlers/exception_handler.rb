@@ -34,6 +34,7 @@ module AzureExtension
       first_boot = JSON.parse(first_boot)
       run_list = first_boot["run_list"]
       node.run_list.reset!(run_list)
+      node.save
     end
   end
 end
