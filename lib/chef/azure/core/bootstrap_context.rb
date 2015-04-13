@@ -24,8 +24,9 @@ class Chef
 
         def config_content
           client_rb = ""
-          
+
           client_rb << <<-CONFIG
+log_level        :info
 log_location     "#{@config[:log_location]}/chef-client.log"
 chef_server_url  "#{@chef_config[:chef_server_url]}"
 validation_client_name "#{@chef_config[:validation_client_name]}"
