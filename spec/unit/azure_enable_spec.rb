@@ -112,14 +112,42 @@ describe EnableChef do
   end
 
   context "configure_chef_only_once" do
-    it "runs the chef-client for the first time" do
+    it "runs the chef-client for the first time for windows" do
       allow(instance).to receive(:puts)
+      allow(File).to receive(:exists?).and_return(false)
+      allow(File).to receive(:open)
       allow(instance).to receive(:shell_out).and_return(OpenStruct.new(:exitstatus => 0, :stdout => ""))
-      allow(File).to receive_message_chain(:open, :write).and_return(true)
-      allow(instance).to receive(:load_settings)
+      allow(instance).to receive(:bootstrap_directory).and_return(Dir.home)
+      allow(instance).to receive(:handler_settings_file).and_return(mock_data("handler_settings.settings"))
+      allow(instance).to receive(:get_validation_key).and_return("")
+      allow(instance).to receive(:windows?).and_return(true)
+      sample_config = {:chef_node_name=>"mynode3", :chef_extension_root=>"./", :user_client_rb=>"", :log_location=>nil, :secret=>nil}
+      sample_runlist = ["recipe[getting-started]", "recipe[apt]"]
+      expect(Chef::Knife::Core::WindowsBootstrapContext).to receive(:new).with(sample_config, sample_runlist, any_args)
+      allow(Erubis::Eruby).to receive(:new)
+      allow(Erubis::Eruby.new).to receive(:evaluate)
+      allow(FileUtils).to receive(:rm)
       allow(Process).to receive(:spawn)
       allow(Process).to receive(:detach)
+      instance.send(:configure_chef_only_once)
+    end
+
+    it "runs the chef-client for the first time for linux" do
+      allow(instance).to receive(:puts)
+      allow(File).to receive(:exists?).and_return(false)
+      allow(File).to receive(:open)
+      allow(instance).to receive(:shell_out).and_return(OpenStruct.new(:exitstatus => 0, :stdout => ""))
       allow(instance).to receive(:bootstrap_directory).and_return(Dir.home)
+      allow(instance).to receive(:handler_settings_file).and_return(mock_data("handler_settings.settings"))
+      allow(instance).to receive(:get_validation_key).and_return("")
+      allow(instance).to receive(:windows?).and_return(false)
+      sample_config = {:chef_node_name=>"mynode3", :chef_extension_root=>"./", :user_client_rb=>"", :log_location=>nil, :secret=>nil}
+      sample_runlist = ["recipe[getting-started]", "recipe[apt]"]
+      expect(Chef::Knife::Core::BootstrapContext).to receive(:new).with(sample_config, sample_runlist, any_args)
+      allow(Erubis::Eruby).to receive(:new)
+      allow(Erubis::Eruby.new).to receive(:evaluate)
+      allow(Process).to receive(:spawn)
+      allow(Process).to receive(:detach)
       instance.send(:configure_chef_only_once)
     end
   end

@@ -52,10 +52,4 @@ describe "EnableChef get_validation_key generates correct validation.pem file" d
       expect(validation_key_cmd).to eq(@key)
     end
   end
-
-
-  def mock_data(file_name)
-    file =  File.expand_path(File.dirname("spec/assets/*"))+"/#{file_name}"
-    File.read(file)
-  end
 end
