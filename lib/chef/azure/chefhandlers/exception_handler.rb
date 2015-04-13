@@ -33,8 +33,15 @@ module AzureExtension
       first_boot = File.read("#{bootstrap_directory}/first-boot.json")
       first_boot = JSON.parse(first_boot)
       run_list = first_boot["run_list"]
-      node.run_list.reset!(run_list)
-      node.save
+      nodeObj = Chef::Node.load(node.name)
+      set_run_list(nodeObj, run_list)
+      nodeObj.save
+    end
+
+    # set runlist
+    def set_run_list(node, entries)
+      node.run_list.run_list_items.clear
+      entries.each { |e| node.run_list << e }
     end
   end
 end
