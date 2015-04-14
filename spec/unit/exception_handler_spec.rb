@@ -15,6 +15,10 @@ describe AzureExtension do
 
     def reset!(some_arg)
     end
+
+    def run_list
+      OpenStruct.new(:run_list_items => OpenStruct.new(:clear => ""))
+    end
   end
 
   context "report on chef-client failure" do
@@ -49,12 +53,23 @@ describe AzureExtension do
     it "loads runlist from first_boot.json" do
       # mocking node methods
       def instance.node
-        OpenStruct.new(:run_list => DummyClass.new, :save => "")
+        OpenStruct.new(:run_list => DummyClass.new, :save => "", :name => "")
       end
 
       allow(File).to receive(:read).and_return("{\"run_list\":[\"recipe[getting-started]\"]}\n")
       expect(JSON).to receive(:parse).and_return({"run_list"=>["recipe[getting-started]"]})
+      allow(Chef::Node).to receive(:load).with("").and_return(OpenStruct.new(:save => ""))
+      allow(instance).to receive(:set_run_list)
       instance.load_run_list
+    end
+  end
+
+  context "set_run_list" do
+    it "sets runlist for node object" do
+      #DummyClass has node method run_list
+      node = DummyClass.new
+      entries = []
+      instance.send(:set_run_list, node, entries)
     end
   end
 end
