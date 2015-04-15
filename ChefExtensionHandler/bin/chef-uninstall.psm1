@@ -51,8 +51,17 @@ function Uninstall-ChefClientPackage {
   $result = $chef_pkg.Uninstall()
   echo $result
 
-  # clean up config files and install folder
-  if (Test-Path $bootstrapDirectory) {
+  $powershellVersion = Get-PowershellVersion
+
+  if ($powershellVersion -ge 3) {
+    $json_handlerSettings = Get-HandlerSettings
+    $deleteChefConfig = $json_handlerSettings.publicSettings.deleteChefConfig
+  } else {
+    $deleteChefConfig = Get-deleteChefConfigSetting
+  }
+
+  # clean up config files and install folder only if deleteChefConfig is true
+  if ((Test-Path $bootstrapDirectory) -And ($deleteChefConfig -eq "true")) {
     Remove-Item -Recurse -Force $bootstrapDirectory
   }
 
