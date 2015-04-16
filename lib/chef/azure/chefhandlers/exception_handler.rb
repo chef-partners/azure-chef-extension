@@ -33,6 +33,10 @@ module AzureExtension
       first_boot = File.read("#{bootstrap_directory}/first-boot.json")
       first_boot = JSON.parse(first_boot)
       run_list = first_boot["run_list"]
+
+      # Using old way to set node's runlist attribute. Not possible to use
+      # Validatorless bootstraps to solve this problem, As 'User.pem'
+      # is not present on server.
       nodeObj = Chef::Node.load(node.name)
       set_run_list(nodeObj, run_list)
       nodeObj.save
