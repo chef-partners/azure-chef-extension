@@ -156,3 +156,12 @@ Powershell command to use `publicconfig.config`:
 ```
 Set-AzureVMExtension -VM <$vmObj> -ExtensionName ‘ChefClient’ -Publisher ‘Chef.Bootstrap.WindowsAzure’ -Version 11.12 -PublicConfigPath 'C:\\path\\to\\publicconfig.config' -PrivateConfigPath 'C:\\path\\to\\privateconfig.config'
 ```
+
+Set deleteChefConfig option to true in `publicconfig` if you want to delete chef configuration files while update or uninstall.
+```
+
+#publicconfig.config
+
+{"runlist":"recipe[getting-started]","autoUpdateClient":"false", "deleteChefConfig":"true"}
+```
+

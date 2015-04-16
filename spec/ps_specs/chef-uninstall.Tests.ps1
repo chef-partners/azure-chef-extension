@@ -20,7 +20,28 @@ $sharedHelper = $here.Replace("\spec\ps_specs", "\ChefExtensionHandler\bin\share
 . $sharedHelper
 
 describe "#Uninstall-ChefClientPackage" {
-  context "when configuration directory exist" {
+  context "when delete configuration settings set to false and powershell version is 3" {
+    it "uninstall chef package" {
+      $chef_pkg = New-Module {
+        function Uninstall {}
+      } -asCustomObject
+
+      mock Remove-Item
+      mock Get-BootstrapDirectory { return $env:tmp}
+      mock Get-ChefInstallDirectory { return $env:tmp }
+      mock Get-ChefPackage { return $chef_pkg }
+      mock Get-PowershellVersion { return 3 }
+      $deleteChefConfig = "{'publicSettings':{'deleteChefConfig':'false'}}" | ConvertFrom-Json
+      mock Get-HandlerSettings { return $deleteChefConfig }
+
+      Uninstall-ChefClientPackage
+
+      Assert-MockCalled Remove-Item -Times 1
+      Assert-MockCalled Get-ChefPackage -Times 1
+    }
+  }
+
+  context "when delete configuration settings set to true and powershell version is 3" {
     it "uninstall chef package and remove configuration directory" {
       $chef_pkg = New-Module {
         function Uninstall {}
@@ -30,6 +51,49 @@ describe "#Uninstall-ChefClientPackage" {
       mock Get-BootstrapDirectory { return $env:tmp}
       mock Get-ChefInstallDirectory { return $env:tmp }
       mock Get-ChefPackage { return $chef_pkg }
+      mock Get-PowershellVersion { return 3 }
+      $deleteChefConfig = "{'publicSettings':{'deleteChefConfig':'true'}}" | ConvertFrom-Json
+      mock Get-HandlerSettings { return $deleteChefConfig }
+
+      Uninstall-ChefClientPackage
+
+      Assert-MockCalled Remove-Item -Times 2
+      Assert-MockCalled Get-ChefPackage -Times 1
+    }
+  }
+
+  context "when delete configuration settings set to false and powershell version is 2" {
+    it "uninstall chef package" {
+      $chef_pkg = New-Module {
+        function Uninstall {}
+      } -asCustomObject
+
+      mock Remove-Item
+      mock Get-BootstrapDirectory { return $env:tmp}
+      mock Get-ChefInstallDirectory { return $env:tmp }
+      mock Get-ChefPackage { return $chef_pkg }
+      mock Get-PowershellVersion { return 2 }
+      mock Get-deleteChefConfigSetting { return 'false' }
+
+      Uninstall-ChefClientPackage
+
+      Assert-MockCalled Remove-Item -Times 1
+      Assert-MockCalled Get-ChefPackage -Times 1
+    }
+  }
+
+  context "when delete configuration settings set to true and powershell version is 2" {
+    it "uninstall chef package and remove configuration directory" {
+      $chef_pkg = New-Module {
+        function Uninstall {}
+      } -asCustomObject
+
+      mock Remove-Item
+      mock Get-BootstrapDirectory { return $env:tmp}
+      mock Get-ChefInstallDirectory { return $env:tmp }
+      mock Get-ChefPackage { return $chef_pkg }
+      mock Get-PowershellVersion { return 2 }
+      mock Get-deleteChefConfigSetting { return 'true' }
 
       Uninstall-ChefClientPackage
 
@@ -48,6 +112,9 @@ describe "#Uninstall-ChefClientPackage" {
       mock Get-BootstrapDirectory { return "$($env:tmp)\\invalid"}
       mock Get-ChefInstallDirectory { return "$($env:tmp)\\invalid" }
       mock Get-ChefPackage { return $chef_pkg }
+      mock Get-PowershellVersion { return 3 }
+      $deleteChefConfig = "{'publicSettings':{'deleteChefConfig':'false'}}" | ConvertFrom-Json
+      mock Get-HandlerSettings { return $deleteChefConfig }
 
       Uninstall-ChefClientPackage
 
