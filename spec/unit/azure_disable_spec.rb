@@ -10,30 +10,30 @@ describe DisableChef do
 
   context "run" do
     it "disables chef" do
-      instance.should_receive(:load_env)
-      instance.should_receive(:report_heart_beat_to_azure).twice
-      instance.should_receive(:disable_chef)
+      expect(instance).to receive(:load_env)
+      expect(instance).to receive(:report_heart_beat_to_azure).twice
+      expect(instance).to receive(:disable_chef)
       instance.run
     end
   end
 
   context "load_env" do
     it "loads azure specific environment configurations from config file." do
-      instance.should_receive(:read_config)
+      expect(instance).to receive(:read_config)
       instance.send(:load_env)
     end
   end
 
   context "disable_chef" do
     it "disables chef service and returns the status to azure with success." do
-      instance.should_receive(:report_status_to_azure).with("chef-service disabled", "success")
-      ChefService.stub_chain(:new, :disable).and_return(0)
+      expect(instance).to receive(:report_status_to_azure).with("chef-service disabled", "success")
+      allow(ChefService).to receive_message_chain(:new, :disable).and_return(0)
       instance.send(:disable_chef)
     end
 
     it "disables chef service and returns the status to azure with error." do
-      instance.should_receive(:report_status_to_azure).with("chef-service disable failed - ", "error")
-      ChefService.stub_chain(:new, :disable).and_return(1)
+      expect(instance).to receive(:report_status_to_azure).with("chef-service disable failed - ", "error")
+      allow(ChefService).to receive_message_chain(:new, :disable).and_return(1)
       instance.send(:disable_chef)
     end
   end
