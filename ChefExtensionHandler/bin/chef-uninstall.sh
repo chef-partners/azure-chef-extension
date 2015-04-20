@@ -51,6 +51,16 @@ linux_distributor=$(get_linux_distributor)
 
 update_process_descriptor=/etc/chef/.updating_chef_extension
 
+delete_node(){
+  `ruby -e "require 'chef/azure/helpers/shared'; include ChefAzure::DeleteNode; delete_node(File.expand_path(File.dirname(File.dirname(__FILE__))))"`
+  if [ $? -ne 0 ]; then
+    echo "Unable to delete ths node.."
+    exit 1
+  else
+    echo "Node deleted from chef server successfully."
+  fi
+}
+
 if [ -f $update_process_descriptor ]; then
   echo "Not tried to uninstall, as the update process is running"
   rm $update_process_descriptor
@@ -74,6 +84,9 @@ else
 
   # Uninstall the custom gem
   azure_chef_extn_gem=`gem list azure-chef-extension | grep azure-chef-extension | awk '{print $1}'`
+
+  # Call to delete node and client from chef server
+  delete_node
 
   if test "$azure_chef_extn_gem" = "azure-chef-extension" ; then
     echo "Removing azure-chef-extension gem."
