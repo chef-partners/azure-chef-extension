@@ -97,14 +97,18 @@ module ChefAzure
       begin
         Chef::Config.from_file("#{bootstrap_directory}/client.rb")
 
+        unless Chef::Config[:node_name]
+          #TODO need to retrive fqdn value
+        end
+
         exit_code = 0
         message = "success"
         error_message = "Error while deleting node from chef server.."
 
-        node = Chef::Node.load(Chef::Config.node_name)
+        node = Chef::Node.load(Chef::Config[:node_name])
         node.destroy
 
-        client = Chef::ApiClient.load(Chef::Config.node_name)
+        client = Chef::ApiClient.load(Chef::Config[:node_name])
         client.destroy
       rescue => e
         Chef::Log.error "#{error_message} (#{e})"
