@@ -1,8 +1,9 @@
-
+require 'chef'
 require 'json'
 require 'chef/azure/heartbeat'
 require 'chef/azure/status'
 require 'chef/config'
+require 'ohai'
 
 module ChefAzure
   module Shared
@@ -98,7 +99,9 @@ module ChefAzure
         Chef::Config.from_file("#{bootstrap_directory}/client.rb")
 
         unless Chef::Config[:node_name]
-          #TODO need to retrive fqdn value
+          ohai = Ohai::System.new
+          ohai.all_plugins
+          Chef::Config[:node_name] = ohai[:fqdn] || ohai[:machinename] || ohai[:hostname]
         end
 
         exit_code = 0
