@@ -93,7 +93,7 @@ module ChefAzure
   module DeleteNode
     include ChefAzure::Shared
 
-    def delete_node(extension_root)
+    def delete_node
       Chef::Log.info "Inside delete node call"
       begin
         Chef::Config.from_file("#{bootstrap_directory}/client.rb")
