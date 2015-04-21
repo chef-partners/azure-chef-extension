@@ -52,7 +52,7 @@ linux_distributor=$(get_linux_distributor)
 update_process_descriptor=/etc/chef/.updating_chef_extension
 
 delete_node(){
-  `ruby -e "require 'chef/azure/helpers/shared'; include ChefAzure::DeleteNode; delete_node(File.expand_path(File.dirname(File.dirname(__FILE__))))"`
+  `ruby -e "require 'chef/azure/helpers/shared'; include ChefAzure::DeleteNode; delete_node"`
   if [ $? -ne 0 ]; then
     echo "Unable to delete ths node.."
     exit 1

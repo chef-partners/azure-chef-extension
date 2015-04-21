@@ -90,31 +90,21 @@ module ChefAzure
   end
 
   module DeleteNode
+    include ChefAzure::Shared
+
     def delete_node(extension_root)
       Chef::Log.info "Inside delete node call"
       begin
-        @chef_extension_root = extension_root
-        bootstrap_options = value_from_json_file(handler_settings_file,'runtimeSettings','0','handlerSettings', 'publicSettings', 'bootstrap_options')
-        client_rb = value_from_json_file(handler_settings_file, 'runtimeSettings', '0', 'handlerSettings', 'publicSettings', 'client_rb')
-
-        # TODO : Need to work on node_name to get fqdn if not set through bootstrap option
-        node_name = bootstrap_options['node_name'] || client_rb['node_name']
-        Chef::Config.chef_server_url = bootstrap_options['chef_server_url'] || client_rb['node_name']
-        # TODO: Need to update location as per OS
-        Chef::Config.client_key = "/etc/chef/client.pem"
-        Chef::Config.validation_client_name = client_rb['validation_client_name']
-        Chef::Config.node_name = node_name
-        # TODO: Need to update location as per OS
-        Chef::Config.validation_key = "/etc/chef/validation.pem"
+        Chef::Config.from_file("#{bootstrap_directory}/client.rb")
 
         exit_code = 0
         message = "success"
         error_message = "Error while deleting node from chef server.."
 
-        node = Chef::Node.load(node_name)
+        node = Chef::Node.load(Chef::Config.node_name)
         node.destroy
 
-        client = Chef::ApiClient.load(node_name)
+        client = Chef::ApiClient.load(Chef::Config.node_name)
         client.destroy
       rescue => e
         Chef::Log.error "#{error_message} (#{e})"
@@ -122,24 +112,6 @@ module ChefAzure
         exit_code = 1
       end
       return exit_code
-    end
-
-    def handler_settings_file
-      handler_env = JSON.parse(File.read("#{@chef_extension_root}/HandlerEnvironment.json"))
-      azure_config_folder = handler_env[0]["handlerEnvironment"]["configFolder"]
-      @handler_settings_file ||=
-      begin
-        files = Dir.glob("#{File.expand_path(azure_config_folder)}/*.settings").sort
-        if files and not files.empty?
-          files.last
-        else
-          error_message = "Configuration error. Azure chef extension Settings file missing."
-          Chef::Log.error error_message
-          report_status_to_azure error_message, "error"
-          @exit_code = 1
-          raise error_message
-        end
-      end
     end
   end
 end
