@@ -1,5 +1,13 @@
 #!/bin/sh
 
+#funtions to delete ubuntu chef configuration files i.e. /etc/chef
+remove_ubuntu_chef_config(){
+  if [ ! -z $delete_chef_config ] && [ $delete_chef_config = "true" ] ; then
+    echo "Deleteing chef configurations directory /etc/chef."
+    rm -rf /etc/chef || true
+  fi
+}
+
 # Function to uninstall ubuntu chef_pkg
 uninstall_ubuntu_chef_package(){
   pkg_name=`dpkg -l | grep chef | awk '{print $2}'`
@@ -47,8 +55,24 @@ if [ -f $update_process_descriptor ]; then
   echo "Not tried to uninstall, as the update process is running"
   rm $update_process_descriptor
 else
-  # Uninstall the custom gem
+
   export PATH=$PATH:/opt/chef/embedded/bin:/opt/chef/bin
+
+  get_script_dir(){
+    SCRIPT=$(readlink -f "$0")
+    script_dir=`dirname $SCRIPT`
+    echo "${script_dir}"
+  }
+
+  commands_script_path=$(get_script_dir)
+
+  chef_ext_dir=`dirname $commands_script_path`
+  handler_settings_file=`ls $chef_ext_dir/config/*.settings -S -r | head -1`
+
+  # Reading deleteChefConfig value from settings file
+  delete_chef_config=`ruby -e "require 'chef/azure/helpers/parse_json';value_from_json_file_for_ps '$handler_settings_file','runtimeSettings','0','handlerSettings','publicSettings','deleteChefConfig'"`
+
+  # Uninstall the custom gem
   azure_chef_extn_gem=`gem list azure-chef-extension | grep azure-chef-extension | awk '{print $1}'`
 
   if test "$azure_chef_extn_gem" = "azure-chef-extension" ; then
@@ -61,14 +85,15 @@ else
     echo "Gem azure-chef-extension is not installed !!!"
   fi
 
-  case $linux_distributor in 
+  case $linux_distributor in
     "ubuntu")
+      remove_ubuntu_chef_config
       uninstall_ubuntu_chef_package
       ;;
-    "centos") 
+    "centos")
       uninstall_centos_chef_package
       ;;
-    *) 
+    *)
       echo "Unknown Distributor: $linux_distributor"
       exit 1
       ;;

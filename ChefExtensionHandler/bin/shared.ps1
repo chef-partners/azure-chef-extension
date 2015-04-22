@@ -151,3 +151,9 @@ function Get-autoUpdateClientSetting{
   $latestSettingFile = Get-HandlerSettingsFileName
   Get-JsonValueUsingRuby "$chefExtensionRoot\\RuntimeSettings\\$latestSettingFile" "runtimeSettings" 0 "handlerSettings" "publicSettings" "autoUpdateClient"
 }
+
+# Get the uninstall settings for powershell 2
+function Get-deleteChefConfigSetting{
+  $latestSettingFile = Get-HandlerSettingsFileName
+  Get-JsonValueUsingRuby "$chefExtensionRoot\\RuntimeSettings\\$latestSettingFile" "runtimeSettings" 0 "handlerSettings" "publicSettings" "deleteChefConfig"
+}
