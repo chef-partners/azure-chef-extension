@@ -131,6 +131,7 @@ describe "#Uninstall-ChefClient" {
       mock Get-SharedHelper {return $tempPS}
       mock Read-JsonFile
       mock Write-ChefStatus
+      mock Delete-Node
       mock Uninstall-ChefService
       mock Uninstall-AzureChefExtensionGem
       mock Uninstall-ChefClientPackage
@@ -142,6 +143,7 @@ describe "#Uninstall-ChefClient" {
       Remove-Item $tempPS
       Assert-MockCalled Write-ChefStatus -Times 2
       Assert-MockCalled Read-JsonFile -Times 1
+      Assert-MockCalled Delete-Node -Times 1
       Assert-MockCalled Uninstall-ChefService -Times 1
       Assert-MockCalled Uninstall-AzureChefExtensionGem -Times 1
       Assert-MockCalled Uninstall-ChefClientPackage -Times 1
@@ -155,6 +157,7 @@ describe "#Uninstall-ChefClient" {
       mock Get-SharedHelper {return $tempPS}
       mock Read-JsonFile
       mock Write-ChefStatus
+      mock Delete-Node
       mock Uninstall-ChefService
       mock Uninstall-AzureChefExtensionGem
       mock Uninstall-ChefClientPackage
@@ -166,7 +169,7 @@ describe "#Uninstall-ChefClient" {
       Remove-Item $tempPS
       Assert-MockCalled Write-ChefStatus -Times 0
       Assert-MockCalled Read-JsonFile -Times 0
-
+      Assert-MockCalled Delete-Node -Times 1
       Assert-MockCalled Uninstall-ChefService -Times 1
       Assert-MockCalled Uninstall-AzureChefExtensionGem -Times 1
       Assert-MockCalled Uninstall-ChefClientPackage -Times 1
@@ -181,6 +184,7 @@ describe "#Uninstall-ChefClient" {
       mock Get-SharedHelper {return $tempPS}
       mock Read-JsonFile
       mock Write-ChefStatus
+      mock Delete-Node
       mock Uninstall-ChefService
       mock Uninstall-AzureChefExtensionGem
       mock Uninstall-ChefClientPackage
@@ -194,6 +198,7 @@ describe "#Uninstall-ChefClient" {
       Assert-MockCalled Update-ChefExtensionRegistry -Times 1
       Assert-MockCalled Write-ChefStatus -Times 1
       Assert-MockCalled Read-JsonFile -Times 1
+      Assert-MockCalled Delete-Node -Times 0
       Assert-MockCalled Uninstall-ChefService -Times 0
       Assert-MockCalled Uninstall-AzureChefExtensionGem -Times 0
       Assert-MockCalled Uninstall-ChefClientPackage -Times 0
