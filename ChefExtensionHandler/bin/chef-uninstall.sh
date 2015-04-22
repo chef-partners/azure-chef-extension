@@ -52,12 +52,14 @@ linux_distributor=$(get_linux_distributor)
 update_process_descriptor=/etc/chef/.updating_chef_extension
 
 delete_node(){
-  `ruby -e "require 'chef/azure/helpers/shared'; include ChefAzure::DeleteNode; delete_node"`
-  if [ $? -ne 0 ]; then
-    echo "Unable to delete ths node.."
-    exit 1
-  else
-    echo "Node deleted from chef server successfully."
+  if [ ! -z $delete_chef_node ] && [ $delete_chef_node = "true" ] ; then
+    `ruby -e "require 'chef/azure/helpers/shared'; include ChefAzure::DeleteNode; delete_node"`
+    if [ $? -ne 0 ]; then
+      echo "Unable to delete ths node.."
+      exit 1
+    else
+      echo "Node deleted from chef server successfully."
+    fi
   fi
 }
 
@@ -81,6 +83,9 @@ else
 
   # Reading deleteChefConfig value from settings file
   delete_chef_config=`ruby -e "require 'chef/azure/helpers/parse_json';value_from_json_file_for_ps '$handler_settings_file','runtimeSettings','0','handlerSettings','publicSettings','deleteChefConfig'"`
+
+  # Reading deleteNode value from settings file
+  delete_chef_node=`ruby -e "require 'chef/azure/helpers/parse_json';value_from_json_file_for_ps '$handler_settings_file','runtimeSettings','0','handlerSettings','publicSettings','deleteChefNode'"`
 
   # Uninstall the custom gem
   azure_chef_extn_gem=`gem list azure-chef-extension | grep azure-chef-extension | awk '{print $1}'`
