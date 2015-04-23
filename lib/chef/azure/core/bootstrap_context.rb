@@ -25,12 +25,6 @@ class Chef
         def config_content
           client_rb = ""
 
-          client_rb << <<-CONFIG
-log_level        :info
-log_location     "#{@config[:log_location]}/chef-client.log"
-chef_server_url  "#{@chef_config[:chef_server_url]}"
-validation_client_name "#{@chef_config[:validation_client_name]}"
-CONFIG
           if @config[:chef_node_name]
             client_rb << %Q{node_name "#{@config[:chef_node_name]}"\n}
           else
@@ -43,14 +37,21 @@ CONFIG
           end
 
           if knife_config[:bootstrap_no_proxy]
-            client_rb << %Q{no_proxy       "#{knife_config[:bootstrap_no_proxy]}"\n}
+            client_rb << %Q{no_proxy       '#{knife_config[:bootstrap_no_proxy]}'\n}
           end
 
           if encrypted_data_bag_secret
-            client_rb << %Q{encrypted_data_bag_secret "/etc/chef/encrypted_data_bag_secret"\n}
+            client_rb << %Q{encrypted_data_bag_secret '/etc/chef/encrypted_data_bag_secret'\n}
           end
 
           client_rb << @config[:user_client_rb] + "\r\n" unless @config[:user_client_rb].empty?
+
+          client_rb <<  %Q{log_location       '#{@config[:log_location]}/chef-client.log'\n}
+          client_rb <<  %Q{chef_server_url       '#{@config[:chef_server_url]}'\n} if @config[:chef_server_url]
+          client_rb <<  %Q{validation_client_name       '#{@config[:validation_client_name]}'\n} if @config[:validation_client_name]
+          client_rb <<  %Q{client_key      '/etc/chef/client.pem'\n}
+          client_rb <<  %Q{validation_key      '/etc/chef/validation.pem'\n}
+
           client_rb << <<-CONFIG
 # Add support to use chef Handlers for heartbeat and
 # status reporting to Azure

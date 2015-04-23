@@ -128,8 +128,8 @@ class EnableChef
         config[:user_client_rb] = @client_rb
         config[:log_location] = @azure_plugin_log_location
         Chef::Config[:validation_key_content] = @validation_key
-        Chef::Config[:chef_server_url] = bootstrap_options['chef_server_url'] if bootstrap_options['chef_server_url']
-        Chef::Config[:validation_client_name] =  bootstrap_options['validation_client_name'] if bootstrap_options['validation_client_name']
+        config[:chef_server_url] = bootstrap_options['chef_server_url'] if bootstrap_options['chef_server_url']
+        config[:validation_client_name] =  bootstrap_options['validation_client_name'] if bootstrap_options['validation_client_name']
         template_file = File.expand_path(File.dirname(File.dirname(__FILE__)))
         config[:secret] =  bootstrap_options['secret'] || bootstrap_options['encrypted_data_bag_secret']
         runlist = @run_list.empty? ? [] : escape_runlist(@run_list)
