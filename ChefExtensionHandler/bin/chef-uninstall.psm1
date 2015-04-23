@@ -38,6 +38,27 @@ function Get-ChefPackage {
   Get-WmiObject -Class Win32_Product | Where-Object { $_.Name.contains("Chef Client") }
 }
 
+function Delete-Node {
+   $powershellVersion = Get-PowershellVersion
+
+  if ($powershellVersion -ge 3) {
+    $json_handlerSettings = Get-HandlerSettings
+    $deleteChefNode = $json_handlerSettings.publicSettings.deleteChefNode
+  } else {
+    $deleteChefNode = Get-deleteChefNodeSetting
+  }
+
+  if ($deleteChefNode -eq "true"){
+    ruby.exe -e "require 'chef/azure/helpers/shared'; include ChefAzure::DeleteNode; delete_node"
+    if ($LASTEXITCODE -ne 0){
+      echo "Unable to delete ths node.."
+      exit 1
+    }else{
+      echo "Node delet ed from chef server successfully."
+    }
+  }
+}
+
 function Uninstall-ChefClientPackage {
   $bootstrapDirectory = Get-BootstrapDirectory
   $chefInstallDirectory = Get-ChefInstallDirectory
@@ -89,6 +110,8 @@ function Uninstall-ChefClient {
 
   if (!(Test-ChefExtensionRegistry)) {
     if ($logStatus) {  Write-ChefStatus "uninstalling-chef" "transitioning" "Uninstalling Chef" }
+
+    Delete-Node
 
     Uninstall-ChefService
 

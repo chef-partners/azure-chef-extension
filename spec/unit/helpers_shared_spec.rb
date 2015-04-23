@@ -75,3 +75,55 @@ describe ChefAzure::Config do
     end
   end
 end
+
+describe ChefAzure::DeleteNode do
+  include ChefAzure::Shared
+  before do
+    allow(dummy_class).to receive(:bootstrap_directory).and_return('/etc/chef')
+    allow(Chef::Config).to receive(:from_file).and_return('')
+    Chef::Config[:node_name] = ''
+  end
+
+  let(:dummy_class) { Class.new { extend ChefAzure::DeleteNode } }
+
+  context 'delete_node' do
+    it 'deletes node and client from chef server' do
+      Chef::Config[:node_name] = 'foo'
+      allow(Chef::Node).to receive(:load).with('foo').and_return(double(:destroy=>true))
+      allow(Chef::ApiClient).to receive(:load).with('foo').and_return(double(:destroy=>true))
+      expect(dummy_class.delete_node).to eq(0)
+    end
+
+    it 'returns exit code 1 if node name not set' do
+      expect(Chef::Config[:node_name]).to be_empty
+      expect(dummy_class.delete_node).to eq(1)
+    end
+
+    it 'sets fqdn as node name while deleting node_name from chef server' do
+      @fqdn = 'hostname.domainname'
+      @hostname = 'hostname'
+      @platform = 'example-platform'
+      @platform_version = 'example-platform'
+      mock_ohai = {
+        :fqdn => @fqdn,
+        :hostname => @hostname,
+        :platform => @platform,
+        :platform_version => @platform_version,
+        :data => {
+          :origdata => 'somevalue'
+        },
+        :data2 => {
+          :origdata => 'somevalue',
+          :newdata => 'somevalue'
+        }
+      }
+      expect(Chef::Config[:node_name]).to be_empty
+      allow(Ohai::System).to receive(:new).and_return(mock_ohai)
+      allow(mock_ohai).to receive(:all_plugins).and_return(true)
+      Chef::Config[:node_name] = mock_ohai[:fqdn] || mock_ohai[:hostname]
+      allow(Chef::Node).to receive(:load).with('hostname.domainname').and_return(double(:destroy=>true))
+      allow(Chef::ApiClient).to receive(:load).with('hostname.domainname').and_return(double(:destroy=>true))
+      expect(dummy_class.delete_node).to eq(0)
+    end
+  end
+end

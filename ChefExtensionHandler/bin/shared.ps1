@@ -157,3 +157,9 @@ function Get-deleteChefConfigSetting{
   $latestSettingFile = Get-HandlerSettingsFileName
   Get-JsonValueUsingRuby "$chefExtensionRoot\\RuntimeSettings\\$latestSettingFile" "runtimeSettings" 0 "handlerSettings" "publicSettings" "deleteChefConfig"
 }
+
+# Get the delete node settings for powershell 2
+function Get-deleteChefNodeSetting{
+  $latestSettingFile = Get-HandlerSettingsFileName
+  Get-JsonValueUsingRuby "$chefExtensionRoot\\RuntimeSettings\\$latestSettingFile" "runtimeSettings" 0 "handlerSettings" "publicSettings" "deleteChefNode"
+}

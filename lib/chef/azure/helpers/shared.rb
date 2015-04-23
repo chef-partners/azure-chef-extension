@@ -1,8 +1,9 @@
-
+require 'chef'
 require 'json'
 require 'chef/azure/heartbeat'
 require 'chef/azure/status'
 require 'chef/config'
+require 'ohai'
 
 module ChefAzure
   module Shared
@@ -86,6 +87,38 @@ module ChefAzure
 
     def report_status_to_azure (message, status_type)
       AzureExtensionStatus.log(@azure_status_file, message, status_type)
+    end
+  end
+
+  module DeleteNode
+    include ChefAzure::Shared
+
+    def delete_node
+      Chef::Log.info "Inside delete node call"
+      begin
+        Chef::Config.from_file("#{bootstrap_directory}/client.rb")
+
+        unless Chef::Config[:node_name]
+          ohai = Ohai::System.new
+          ohai.all_plugins
+          Chef::Config[:node_name] = ohai[:fqdn] || ohai[:machinename] || ohai[:hostname]
+        end
+
+        exit_code = 0
+        message = "success"
+        error_message = "Error while deleting node from chef server.."
+
+        node = Chef::Node.load(Chef::Config[:node_name])
+        node.destroy
+
+        client = Chef::ApiClient.load(Chef::Config[:node_name])
+        client.destroy
+      rescue => e
+        Chef::Log.error "#{error_message} (#{e})"
+        message = "#{error_message} - #{e} - Check log file for details", "error"
+        exit_code = 1
+      end
+      return exit_code
     end
   end
 end
