@@ -75,3 +75,59 @@ describe ChefAzure::Config do
     end
   end
 end
+
+describe ChefAzure::DeleteNode do
+  include ChefAzure::Shared
+  before do
+
+  end
+
+  let(:dummy_class) { Class.new { extend ChefAzure::DeleteNode } }
+
+  context "delete_node" do
+    it "deletes node and client from chef server" do
+      allow(dummy_class).to receive(:bootstrap_directory).and_return('/etc/chef')
+      allow(Chef::Config).to receive(:from_file).and_return("")
+      Chef::Config[:node_name] = 'foo'
+      allow(Chef::Node).to receive(:load).with('foo').and_return(double(:destroy=>true))
+      allow(Chef::ApiClient).to receive(:load).with('foo').and_return(double(:destroy=>true))
+      expect(dummy_class.delete_node).to eq(0)
+    end
+
+    it 'return exit code 1 if node name not set' do
+      allow(dummy_class).to receive(:bootstrap_directory).and_return('/etc/chef')
+      allow(Chef::Config).to receive(:from_file).and_return("")
+      expect(dummy_class.delete_node).to eq(1)
+    end
+
+    it 'set node_name as fqdn/hostname if node net is not set in configuration file' do
+      @fqdn = "hostname.domainname"
+      @hostname = "hostname"
+      @platform = "example-platform"
+      @platform_version = "example-platform"
+      Chef::Config[:node_name] = ''
+      mock_ohai = {
+        :fqdn => @fqdn,
+        :hostname => @hostname,
+        :platform => @platform,
+        :platform_version => @platform_version,
+        :data => {
+          :origdata => "somevalue"
+        },
+        :data2 => {
+          :origdata => "somevalue",
+          :newdata => "somevalue"
+        }
+      }
+      allow(dummy_class).to receive(:bootstrap_directory).and_return('/etc/chef')
+      allow(Chef::Config).to receive(:from_file).and_return("")
+      expect(Chef::Config[:node_name]).to be_empty
+      allow(Ohai::System).to receive(:new).and_return(mock_ohai)
+      allow(mock_ohai).to receive(:all_plugins).and_return(true)
+      Chef::Config[:node_name] = mock_ohai[:fqdn] || mock_ohai[:hostname]
+      allow(Chef::Node).to receive(:load).with('hostname.domainname').and_return(double(:destroy=>true))
+      allow(Chef::ApiClient).to receive(:load).with('hostname.domainname').and_return(double(:destroy=>true))
+      expect(dummy_class.delete_node).to eq(0)
+    end
+  end
+end
