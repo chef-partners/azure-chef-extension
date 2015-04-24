@@ -121,7 +121,7 @@ describe EnableChef do
       allow(instance).to receive(:handler_settings_file).and_return(mock_data("handler_settings.settings"))
       allow(instance).to receive(:get_validation_key).and_return("")
       allow(instance).to receive(:windows?).and_return(true)
-      sample_config = {:chef_node_name=>"mynode3", :chef_extension_root=>"./", :user_client_rb=>"", :log_location=>nil, :secret=>nil}
+      sample_config = {:chef_node_name=>"mynode3", :chef_extension_root=>"./", :user_client_rb=>"", :log_location=>nil, :chef_server_url=>"https://api.opscode.com/organizations/clochefacc", :validation_client_name=>"clochefacc-validator", :secret=>nil}
       sample_runlist = ["recipe[getting-started]", "recipe[apt]"]
       expect(Chef::Knife::Core::WindowsBootstrapContext).to receive(:new).with(sample_config, sample_runlist, any_args)
       allow(Erubis::Eruby).to receive(:new)
@@ -141,7 +141,7 @@ describe EnableChef do
       allow(instance).to receive(:handler_settings_file).and_return(mock_data("handler_settings.settings"))
       allow(instance).to receive(:get_validation_key).and_return("")
       allow(instance).to receive(:windows?).and_return(false)
-      sample_config = {:chef_node_name=>"mynode3", :chef_extension_root=>"./", :user_client_rb=>"", :log_location=>nil, :secret=>nil}
+      sample_config = {:chef_node_name=>"mynode3", :chef_extension_root=>"./", :user_client_rb=>"", :log_location=>nil, :chef_server_url=>"https://api.opscode.com/organizations/clochefacc", :validation_client_name=>"clochefacc-validator", :secret=>nil}
       sample_runlist = ["recipe[getting-started]", "recipe[apt]"]
       expect(Chef::Knife::Core::BootstrapContext).to receive(:new).with(sample_config, sample_runlist, any_args)
       allow(Erubis::Eruby).to receive(:new)
