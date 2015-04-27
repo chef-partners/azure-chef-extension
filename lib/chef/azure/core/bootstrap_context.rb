@@ -24,6 +24,10 @@ class Chef
 
         def config_content
           client_rb = ""
+          # Add user provided client_rb to the beginning of a file.
+          # And replace user_client_rb "'" (single qoute) by "\"" (escaped double qoute) if any,
+          # This is necessary as Mixlib::Shellout removes "'" (single qoute) on Linux.
+          client_rb << @config[:user_client_rb].gsub("'","\"") + "\r\n" unless @config[:user_client_rb].empty?
 
           if @config[:chef_node_name]
             client_rb << %Q{node_name "#{@config[:chef_node_name]}"\n}
@@ -43,8 +47,6 @@ class Chef
           if encrypted_data_bag_secret
             client_rb << %Q{encrypted_data_bag_secret "/etc/chef/encrypted_data_bag_secret"\n}
           end
-
-          client_rb << @config[:user_client_rb] + "\r\n" unless @config[:user_client_rb].empty?
 
           client_rb <<  %Q{log_location       "#{@config[:log_location]}/chef-client.log"\n}
           client_rb <<  %Q{chef_server_url       "#{@config[:chef_server_url]}"\n} if @config[:chef_server_url]

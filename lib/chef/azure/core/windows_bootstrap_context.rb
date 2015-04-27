@@ -60,6 +60,8 @@ class Chef
 
         def config_content
           client_rb = ""
+          # Add user provided client_rb to the beginning of a file.
+          client_rb << @config[:user_client_rb] + "\r\n" unless @config[:user_client_rb].empty?
 
           client_rb << <<-CONFIG
 log_level        :info
@@ -118,8 +120,6 @@ CONFIG
               client_rb << %Q{trusted_certs_dir 'c:/chef/trusted_certs'\n}
             end
           end
-
-          client_rb << @config[:user_client_rb] + "\r\n" unless @config[:user_client_rb].empty?
 
           client_rb <<  %Q{log_location       '#{@config[:log_location]}/chef-client.log'\n}
           client_rb <<  %Q{chef_server_url       '#{@config[:chef_server_url]}'\n} if @config[:chef_server_url]
