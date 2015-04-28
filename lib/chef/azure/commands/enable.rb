@@ -191,6 +191,23 @@ class EnableChef
     Chef::Config[:knife][:hints]["azure"] ||= cloud_attributes
   end
 
+  def load_cloud_attributes_in_hints
+    cloud_attributes = {}
+    cloud_attributes["vm_name"] = Socket.hostname
+    if windows?
+      vm_dns =  shell_out!("ipconfig").stdout
+      cloud_attributes["fqdn"] = vm_dns.gsub(/[a-zA-Z0-9-]*.[a-zA-Z0-9]*.[a-zA-Z0-9]*.cloudapp.net/).first.split('.')[0] + '.cloudapp.net' if vm_dns
+    else
+      vm_dns = shell_out("hostname --fqdn").stdout
+      if vm_dns.split('.').length > 1
+        cloud_attributes["fqdn"] = vm_dns.gsub(/[a-zA-Z0-9-]*.[a-zA-Z0-9]*.[a-zA-Z0-9]*.cloudapp.net/).first.split('.')[0] if vm_dns
+      end
+      cloud_attributes["fqdn"] = vm_dns + '.cloudapp.net' if vm_dns
+    end
+    Chef::Config[:knife][:hints] ||= {}
+    Chef::Config[:knife][:hints]["azure"] ||= cloud_attributes
+  end
+
   def load_settings
     protected_settings = value_from_json_file(handler_settings_file,'runtimeSettings','0','handlerSettings', 'protectedSettings')
     @validation_key = get_validation_key(protected_settings)
