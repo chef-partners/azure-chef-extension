@@ -193,7 +193,7 @@ class EnableChef
 
   def load_cloud_attributes_in_hints
     cloud_attributes = {}
-    cloud_attributes["vm_name"] = Socket.hostname
+    cloud_attributes["vm_name"] = Socket.gethostname
     if windows?
       vm_dns =  shell_out!("ipconfig").stdout
       cloud_attributes["fqdn"] = vm_dns.gsub(/[a-zA-Z0-9-]*.[a-zA-Z0-9]*.[a-zA-Z0-9]*.cloudapp.net/).first.split('.')[0] + '.cloudapp.net' if vm_dns
