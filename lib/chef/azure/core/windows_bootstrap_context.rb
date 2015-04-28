@@ -60,21 +60,18 @@ class Chef
 
         def config_content
           client_rb = ""
+          # Add user provided client_rb to the beginning of a file.
+          client_rb << @config[:user_client_rb] + "\r\n" unless @config[:user_client_rb].empty?
 
           client_rb << <<-CONFIG
 log_level        :info
-log_location     '#{@config[:log_location]}/chef-client.log'
-client_key        "c:/chef/client.pem"
-validation_key    "c:/chef/validation.pem"
-chef_server_url  "#{@chef_config[:chef_server_url]}"
-validation_client_name "#{@chef_config[:validation_client_name]}"
-file_cache_path   "c:/chef/cache"
-file_backup_path  "c:/chef/backup"
-cache_options     ({:path => "c:/chef/cache/checksums", :skip_expires => true})
+file_cache_path   'c:/chef/cache'
+file_backup_path  'c:/chef/backup'
+cache_options     ({:path => 'c:/chef/cache/checksums', :skip_expires => true})
 CONFIG
 
           if @config[:chef_node_name]
-            client_rb << %Q{node_name "#{@config[:chef_node_name]}"\n}
+            client_rb << %Q{node_name '#{@config[:chef_node_name]}'\n}
           else
             client_rb << "# Using default node name (fqdn)\n"
           end
@@ -111,20 +108,24 @@ CONFIG
 
           if knife_config[:bootstrap_proxy]
             client_rb << "\n"
-            client_rb << %Q{no_proxy          "#{knife_config[:bootstrap_no_proxy]}"\n} if knife_config[:bootstrap_no_proxy]
+            client_rb << %Q{no_proxy          '#{knife_config[:bootstrap_no_proxy]}'\n} if knife_config[:bootstrap_no_proxy]
           end
 
           if @config[:secret]
-            client_rb << %Q{encrypted_data_bag_secret "c:/chef/encrypted_data_bag_secret"\n}
+            client_rb << %Q{encrypted_data_bag_secret 'c:/chef/encrypted_data_bag_secret'\n}
           end
 
           if(Gem::Specification.find_by_name('chef').version.version.to_f >= 12)
             unless trusted_certs.empty?
-              client_rb << %Q{trusted_certs_dir "c:/chef/trusted_certs"\n}
+              client_rb << %Q{trusted_certs_dir 'c:/chef/trusted_certs'\n}
             end
           end
 
-          client_rb << @config[:user_client_rb] + "\r\n" unless @config[:user_client_rb].empty?
+          client_rb <<  %Q{log_location       '#{@config[:log_location]}/chef-client.log'\n}
+          client_rb <<  %Q{chef_server_url       '#{@config[:chef_server_url]}'\n} if @config[:chef_server_url]
+          client_rb <<  %Q{validation_client_name       '#{@config[:validation_client_name]}'\n} if @config[:validation_client_name]
+          client_rb <<  %Q{client_key      'c:/chef/client.pem'\n}
+          client_rb <<  %Q{validation_key      'c:/chef/validation.pem'\n}
 
           client_rb << <<-CONFIG
 # Add support to use chef Handlers for heartbeat and

@@ -24,13 +24,11 @@ class Chef
 
         def config_content
           client_rb = ""
+          # Add user provided client_rb to the beginning of a file.
+          # And replace user_client_rb "'" (single qoute) by "\"" (escaped double qoute) if any,
+          # This is necessary as Mixlib::Shellout removes "'" (single qoute) on Linux.
+          client_rb << @config[:user_client_rb].gsub("'","\"") + "\r\n" unless @config[:user_client_rb].empty?
 
-          client_rb << <<-CONFIG
-log_level        :info
-log_location     "#{@config[:log_location]}/chef-client.log"
-chef_server_url  "#{@chef_config[:chef_server_url]}"
-validation_client_name "#{@chef_config[:validation_client_name]}"
-CONFIG
           if @config[:chef_node_name]
             client_rb << %Q{node_name "#{@config[:chef_node_name]}"\n}
           else
@@ -50,7 +48,12 @@ CONFIG
             client_rb << %Q{encrypted_data_bag_secret "/etc/chef/encrypted_data_bag_secret"\n}
           end
 
-          client_rb << @config[:user_client_rb] + "\r\n" unless @config[:user_client_rb].empty?
+          client_rb <<  %Q{log_location       "#{@config[:log_location]}/chef-client.log"\n}
+          client_rb <<  %Q{chef_server_url       "#{@config[:chef_server_url]}"\n} if @config[:chef_server_url]
+          client_rb <<  %Q{validation_client_name       "#{@config[:validation_client_name]}"\n} if @config[:validation_client_name]
+          client_rb <<  %Q{client_key      "/etc/chef/client.pem"\n}
+          client_rb <<  %Q{validation_key      "/etc/chef/validation.pem"\n}
+
           client_rb << <<-CONFIG
 # Add support to use chef Handlers for heartbeat and
 # status reporting to Azure
