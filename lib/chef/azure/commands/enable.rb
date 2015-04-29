@@ -187,8 +187,8 @@ class EnableChef
       cloud_attributes["fqdn"] = vm_dns.gsub(/[a-zA-Z0-9-]*.[a-zA-Z0-9]*.[a-zA-Z0-9]*.cloudapp.net/).first.split('.')[0] + '.cloudapp.net' if vm_dns
     else
       vm_dns = shell_out("hostname --fqdn").stdout
-      if vm_dns.split('.').length > 1
-        cloud_attributes["fqdn"] = vm_dns.gsub(/[a-zA-Z0-9-]*.[a-zA-Z0-9]*.[a-zA-Z0-9]*.cloudapp.net/).first.split('.')[0] if vm_dns
+      if vm_dns && vm_dns.split('.').length > 1
+        vm_dns = vm_dns.gsub(/[a-zA-Z0-9-]*.[a-zA-Z0-9]*.[a-zA-Z0-9]*.cloudapp.net/).first.split('.')[0]
       end
       cloud_attributes["fqdn"] = vm_dns + '.cloudapp.net' if vm_dns
     end
