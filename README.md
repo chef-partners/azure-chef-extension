@@ -1,10 +1,109 @@
-azure-chef-extension
-====================
+#azure-chef-extension
 
 Azure resource extension to enable Chef on Azure virtual machine instances.
 
-Azure Chef Extension Version Scheme
-===================================
+##Features:
+
+1. It can be installed through Azure RESTFUL API for extension
+2. The execution output of the scripts is logged in the log directory specified in HandlerEnvironment.json
+3. Status of the extension is reported back to Azure so that user can see the status on Azure Portal
+
+##Platforms and version its supported:
+
+| Platform | Version    |
+|----------|------------|
+| Ubuntu   | 12.04, 14+  |
+| Windows  | 2008r2, 2012, 2012r2 |
+
+
+##Azure Chef Extension usage:
+#####Options those can be set in publicconfig.config
+```javascript
+{
+  "client_rb": "< your client.rb configuration >".
+  "runlist":"< your run list >",
+  "autoUpdateClient":"< true|false >",
+  "deleteChefConfig":"< true|false >",
+  "bootstrap_options": {
+    "chef_node_name":"< your node name >",
+    "chef_server_url":"< your chef server url >",
+    "validation_client_name":"< your chef organization validation client name  >"
+  }
+}
+```
+`client_rb`: Set this option to specify the configuration details for the chef-client. Refer to [client.rb] (https://docs.chef.io/config_rb_client.html)
+
+`run_list`: A run-list defines all of the information necessary for Chef to configure a node into the desired state.
+It is an ordered list of roles and/or recipes that are run in the exact order defined in the run-list.
+
+`autoUpdateClient` : Set this option to true to auto udpate chef extension version by default its set to false.  Extension's Hotfix versions are auto-updated on the VM when the VM is restarted. for e.g.: A VM that has 1205.12.2.0, gets auto updated to 1205.12.2.1 when 1205.12.2.1 is published.
+
+`deleteChefCofig`: Set deleteChefConfig option to true in publicconfig if you want to delete chef configuration files while update or uninstall. By default it is set to false.
+
+`bootstrap_options`: Set bootstrap options while creating a VM through Azure using powershell cmdlets. Bootstrap options used by Chef-Client during node converge. It overrides the configuration set in client_rb option. for e.g. node_name option i.e. if you set node_name as "foo" in the client_rb and in bootstrap_option you set chef_node_name as "bar" it will take "bar" as node name instead of "foo".
+
+***Supported options in bootstrap_options json:***  `chef_node_name`, `chef_server_url`, `validation_client_name`, `environment`, `chef_node_name`, `secret`
+
+***Note***: chef_server_url and validation_client_name are mandatory to pass for the node to bootstrap.
+
+publicconfig.config example:
+
+```javascript
+{
+  "client_rb": "chef_server_url  \"https://api.opscode.com/organizations/some-org\"\nvalidation_client_name   \"some-org-validator\"\nclient_key    \"c:/chef/client.pem\"\nvalidation_key    \"c:/chef/validation.pem\"",
+  "runlist":"recipe[getting-started]",
+  "autoUpdateClient":"false",
+  "deleteChefConfig":"false",
+  "bootstrap_options": {
+    "chef_node_name":"mynode3",
+    "chef_server_url":"https://api.opscode.com/organizations/some-org",
+    "validation_client_name":"some-org-validator"
+  }
+}
+```
+
+#####Options those can be set in privateconfig.config
+```javascript
+{
+  "validation_key": "<your chef organisation validation key>"
+}
+```
+
+**Following are the References to doc for different Azure command line tools**
+
+| Client                    | How to use                                                   |
+|---------------------------|--------------------------------------------------------------|
+| Azure portal              | https://docs.chef.io/azure_portal.html                       |
+| Azure Powershell cmdlets  | https://msdn.microsoft.com/en-us/library/azure/dn874067.aspx |
+| Knife cloud api bootstrap | https://docs.chef.io/plugin_knife_azure.html                 |
+| Azure Xplat CLI           | https://gist.github.com/siddheshwar-more/9f3e412d773ef57780fc |
+
+
+**Powershell script to try Azure Chef Extension by using Set-AzureVMExtension cmdlet:**
+
+```javascript
+$vm1 = "<VM name>"
+$svc = "<VM name>"
+$username = "<username>"
+$password = "<password>"
+
+$img = "<your windows image>"
+
+$vmObj1 = New-AzureVMConfig -Name $vm1 -InstanceSize Small -ImageName $img
+
+$vmObj1 = Add-AzureProvisioningConfig -VM $vmObj1 -Password $password -AdminUsername $username –Windows
+
+# use the shared config files
+# ExtensionName = ChefClient(for windows), LinuxChefClient (for ubuntu)
+$vObj1 = Set-AzureVMExtension -VM $vmObj1 -ExtensionName ‘ChefClient’ -Publisher ‘Chef.Bootstrap.WindowsAzure’ -Version 11.12 -PublicConfigPath '<your path to publiconfig.config>' -PrivateConfigPath '<your path to privateconfig.config>'
+
+New-AzureVM -Location 'West US' -ServiceName $svc -VM $vObj1
+
+# Look into your hosted chef account to verify the registerd node(VM)
+```
+
+##Azure Chef Extension Version Scheme
+
 **Description:**
 
 Extensions versions are specified in 4 digit format : `<MajorVersion.MinorVersion.BuildNumber.RevisionNumber>`.
@@ -46,14 +145,12 @@ Chef-Client versions are specified in 4 digit format: `<MajorVersion.MinorVersio
     # Increase Extension Major version by +1
     New Extension Version will be 1101.11.16.0
 
-Build and Packaging
-===================
+##Build and Packaging
 You can use rake tasks to build and publish the new builds to Azure subscription.
 
 **Note:** The arguments have fix order and recommended to specify all for readability and avoiding confusion.
 
-Build
--------
+#####Build
     rake build[:target_type, :extension_version, :confirmation_required]
 
 :target_type = [windows/ubuntu/centos] default is windows
@@ -64,8 +161,7 @@ Build
 
     rake 'build[ubuntu,11.6]'
 
-Publish
------------
+#####Publish
 Rake task to generate a build and publish the generated zip package to Azure.
 
     rake publish[:deploy_type, :target_type, :extension_version, :chef_deploy_namespace, :operation, :internal_or_public, :confirmation_required]
@@ -94,8 +190,7 @@ The task depends on:
 
     rake 'publish[deploy_to_production,ubuntu,11.6,Chef.Bootstrap.WindowsAzure.Test,update,confirm_internal_deployment]'
 
-Delete
------------
+#####Delete
 Rake task to delete a published package to Azure.
 **Note:**
 Only internal packages can be deleted.
@@ -114,8 +209,7 @@ The task depends on:
 
     rake 'delete[delete_from_production,ubuntu,Chef.Bootstrap.WindowsAzure.Test,11.12.4.2]'
 
-Update
------------
+#####Update
 Rake task to udpate a published package to Azure. Used to switch published versions from "internal" to "public" and vice versa. You need to know the build date.
 
     rake update[:deploy_type, :target_type, :extension_version, :build_date_yyyymmdd, :chef_deploy_namespace, :internal_or_public, :confirmation_required]
@@ -126,42 +220,4 @@ The task depends on:
 
   :build_date_yyyymmdd = The build date when package was published, in format yyyymmdd
 
-    rake 'update[deploy_to_production,windows,11.12.4.2,20140530,Chef.Bootstrap.WindowsAzure.Test,confirm_internal_deployment]'
-
-Chef Extension options
-======================
-
-**deleteChefConfig** :
-Set `deleteChefConfig` option to true in `publicconfig` if you want to delete chef configuration files while update or uninstall.
-```
-#publicconfig.config
-
-{"runlist":"recipe[getting-started]","autoUpdateClient":"false", "deleteChefConfig":"true"}
-```
-
-###JSON for Bootstrap options :
-
-User can pass boostrap options in JSON format to the extension. This is useful while creating a VM through Azure using powershell cmdlets. Bootstrap options can be passed in `publicconfig`.
-
-**Supported Options:** `chef_node_name`, `chef_server_url`, `validation_client_name`, `environment`, `chef_node_name`, `secret`
-
-**Note:** `chef_server_url` and `validation_client_name` are mandatory to pass for the node to bootstrap.
-
-This is how the JSON will look like:
-```
-#publicconfig.config
-
-{"bootstrap_options": {"chef_node_name":"mynode3", "chef_server_url":"https://api.opscode.com/organizations/some-org", "validation_client_name":"some-org-validator"},"runlist":"recipe[getting-started]","autoUpdateClient":"false"}
-```
-These options can be set in `client_rb` JSON object too:
-```
-#publicconfig.config
-
-{"client_rb": "log_level        :debug\nlog_location     STDOUT\nchef_server_url  \"https://api.opscode.com/organizations/some-org\"\nvalidation_client_name   \"some-org-validator\"\nclient_key        \"c:/chef/client.pem\"\nvalidation_key    \"c:/chef/validation.pem\"",
-  "runlist": "\"recipe[getting-started]\"","bootstrap_options": {}}
-```
-
-Powershell command to use `publicconfig.config`:
-```
-Set-AzureVMExtension -VM <$vmObj> -ExtensionName ‘ChefClient’ -Publisher ‘Chef.Bootstrap.WindowsAzure’ -Version 11.12 -PublicConfigPath 'C:\\path\\to\\publicconfig.config' -PrivateConfigPath 'C:\\path\\to\\privateconfig.config'
-```
+  rake 'update[deploy_to_production,windows,11.12.4.2,20140530,Chef.Bootstrap.WindowsAzure.Test,confirm_internal_deployment]'
