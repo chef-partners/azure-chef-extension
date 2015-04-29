@@ -40,7 +40,7 @@ It is an ordered list of roles and/or recipes that are run in the exact order de
 
 `deleteChefCofig`: Set deleteChefConfig option to true in publicconfig if you want to delete chef configuration files while update or uninstall. By default it is set to false.
 
-`bootstrap_options`: Set bootstrap options while creating a VM through Azure using powershell cmdlets. Bootstrap options used by Chef-Client during node converge. It overrides the configuration set in client_rb option. for e.g. node_name option i.e. if you set node_name as "foo" in the client_rb and in bootstrap_option you set chef_node_name as "bar" it will take "bar" as node name instead of "foo".
+`bootstrap_options`: Set bootstrap options while adding chef extension to Azure VM. Bootstrap options used by Chef-Client during node converge. It overrides the configuration set in client_rb option. for e.g. node_name option i.e. if you set node_name as "foo" in the client_rb and in bootstrap_option you set chef_node_name as "bar" it will take "bar" as node name instead of "foo".
 
 ***Supported options in bootstrap_options json:***  `chef_node_name`, `chef_server_url`, `validation_client_name`, `environment`, `chef_node_name`, `secret`
 
@@ -220,4 +220,4 @@ The task depends on:
 
   :build_date_yyyymmdd = The build date when package was published, in format yyyymmdd
 
-  rake 'update[deploy_to_production,windows,11.12.4.2,20140530,Chef.Bootstrap.WindowsAzure.Test,confirm_internal_deployment]'
+    rake 'update[deploy_to_production,windows,11.12.4.2,20140530,Chef.Bootstrap.WindowsAzure.Test,confirm_internal_deployment]'
