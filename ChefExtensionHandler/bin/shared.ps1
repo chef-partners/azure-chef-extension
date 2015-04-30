@@ -9,6 +9,8 @@ $scriptDir = Chef-GetScriptDirectory
 
 $chefExtensionRoot = [System.IO.Path]::GetFullPath("$scriptDir\\..")
 
+$chefExtensionParent = [System.IO.Path]::GetFullPath("$scriptDir\\..\\..")
+
 # Returns a json object from json file
 function Read-JsonFromFile
 {
@@ -17,7 +19,13 @@ function Read-JsonFromFile
 
 function Get-HandlerSettingsFileName
 {
-  (Get-ChildItem "$chefExtensionRoot\\RuntimeSettings" -Filter *.settings | Sort-Object Name -descending | Select-Object -First 1 ).Name
+  param([string]$extensionDirPath = $chefExtensionRoot)
+  (Get-ChildItem "$extensionDirPath\\RuntimeSettings" -Filter *.settings | Sort-Object Name -descending | Select-Object -First 1 ).Name
+}
+
+function Get-PreviousExtensionVersion
+{
+  (Get-ChildItem $chefExtensionParent | Sort-Object Name -descending | Select-Object -Index 1 ).Name
 }
 
 function Get-HandlerSettingsFilePath {
@@ -35,6 +43,14 @@ function Get-HandlerEnvironmentFilePath {
 function Get-HandlerSettings {
   $latestSettingFile = Get-HandlerSettingsFileName
   $runtimeSettingsJson = Read-JsonFromFile $chefExtensionRoot"\\RuntimeSettings\\$latestSettingFile"
+  $runtimeSettingsJson.runtimeSettings[0].handlerSettings
+}
+
+# returns the Prevoius Extension Versions HandlerSettings read from the latest settings file
+function Get-PrevoiusVersionHandlerSettings {
+  $extensionPreviousVersion = Get-PreviousExtensionVersion
+  $latestSettingFile = Get-HandlerSettingsFileName "$chefExtensionParent\\$extensionPreviousVersion"
+  $runtimeSettingsJson = Read-JsonFromFile "$chefExtensionParent\\$extensionPreviousVersion\\RuntimeSettings\\$latestSettingFile"
   $runtimeSettingsJson.runtimeSettings[0].handlerSettings
 }
 
@@ -124,7 +140,14 @@ function Get-HandlerEnvironment {
 # Reads all the json files needed and sets the fields needed
 function Read-JsonFile
 {
-  $json_handlerSettingsFileName = Get-HandlerSettingsFileName
+  param([boolean]$calledFromUpdate = $False)
+  if ($calledFromUpdate) {
+    $extensionPreviousVersion = Get-PreviousExtensionVersion
+    $json_handlerSettingsFileName = Get-HandlerSettingsFileName "$chefExtensionParent\\$extensionPreviousVersion"
+  }else {
+    $json_handlerSettingsFileName = Get-HandlerSettingsFileName
+  }
+
   $json_handlerEnvironment = Get-HandlerEnvironment
   $json_statusFolder = $json_handlerEnvironment.statusFolder
 
@@ -148,12 +171,16 @@ function Read-JsonFileUsingRuby
 
 # Get the auto update setting for powershell 2
 function Get-autoUpdateClientSetting{
-  $latestSettingFile = Get-HandlerSettingsFileName
-  Get-JsonValueUsingRuby "$chefExtensionRoot\\RuntimeSettings\\$latestSettingFile" "runtimeSettings" 0 "handlerSettings" "publicSettings" "autoUpdateClient"
+  $extensionPreviousVersion = Get-PreviousExtensionVersion
+  $latestSettingFile = Get-HandlerSettingsFileName "$chefExtensionParent\\$extensionPreviousVersion"
+
+  Get-JsonValueUsingRuby "$chefExtensionParent\\$extensionPreviousVersion\\RuntimeSettings\\$latestSettingFile" "runtimeSettings" 0 "handlerSettings" "publicSettings" "autoUpdateClient"
 }
 
 # Get the uninstall settings for powershell 2
 function Get-deleteChefConfigSetting{
-  $latestSettingFile = Get-HandlerSettingsFileName
-  Get-JsonValueUsingRuby "$chefExtensionRoot\\RuntimeSettings\\$latestSettingFile" "runtimeSettings" 0 "handlerSettings" "publicSettings" "deleteChefConfig"
+  $extensionPreviousVersion = Get-PreviousExtensionVersion
+  $latestSettingFile = Get-HandlerSettingsFileName "$chefExtensionParent\\$extensionPreviousVersion"
+
+  Get-JsonValueUsingRuby "$chefExtensionParent\\$extensionPreviousVersion\\$latestSettingFile" "runtimeSettings" 0 "handlerSettings" "publicSettings" "deleteChefConfig"
 }
