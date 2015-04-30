@@ -43,7 +43,7 @@ function Update-ChefClient {
   $powershellVersion = Get-PowershellVersion
 
   if ($powershellVersion -ge 3) {
-    $json_handlerSettings = Get-HandlerSettings
+    $json_handlerSettings = Get-PrevoiusVersionHandlerSettings
     $autoUpdateClient = $json_handlerSettings.publicSettings.autoUpdateClient
   } else {
     $autoUpdateClient = Get-autoUpdateClientSetting
@@ -51,9 +51,8 @@ function Update-ChefClient {
 
   # Auto update flag in Runtime Settings allows the user to opt for automatic chef-client update.
   # Default value is false
-
   if($autoUpdateClient -ne "true"){
-    echo "Auto update disabled"
+    Write-host "Auto update disabled"
     return
   }
 
@@ -67,14 +66,14 @@ function Update-ChefClient {
 
     $bootstrapDirectory = Get-BootstrapDirectory
     $backupLocation = Get-TempBackupDir
-
+    $calledFromUpdate = $True
     # Save chef configuration.
     Copy-Item $bootstrapDirectory $backupLocation -recurse
     echo "Configuration saved to $backupLocation"
 
     # uninstall chef. this will work since the uninstall script is idempotent.
     echo "Calling Uninstall-ChefClient from $scriptDir\chef-uninstall.psm1"
-    Uninstall-ChefClient
+    Uninstall-ChefClient $calledFromUpdate
     echo "Uninstall completed"
 
     # Restore Chef Configuration
