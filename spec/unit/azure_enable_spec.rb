@@ -272,16 +272,8 @@ describe EnableChef do
   end
 
   context "load_cloud_attributes_in_hints" do
-    it 'loads cloud attributs in Chef::Config["knife"]["hints"] for windows' do
+    it 'loads cloud attributs in Chef::Config["knife"]["hints"]' do
       allow(instance).to receive(Socket.gethostname).and_return("something")
-      allow(instance).to receive(:windows?).and_return(true)
-      allow(instance).to receive(:shell_out).and_return(OpenStruct.new(:exitstatus => 0, :stdout => "something.d2.cloudapp.net"))
-      instance.send(:load_cloud_attributes_in_hints)
-    end
-
-    it 'loads cloud attributs in Chef::Config["knife"]["hints"] for linux' do
-      allow(instance).to receive(Socket.gethostname).and_return("something")
-      allow(instance).to receive(:shell_out).and_return(OpenStruct.new(:exitstatus => 0, :stdout => "something.d2.cloudapp.net"))
       instance.send(:load_cloud_attributes_in_hints)
     end
   end
