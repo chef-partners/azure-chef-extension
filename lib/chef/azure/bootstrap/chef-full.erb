@@ -63,7 +63,3 @@ EOP
 cat > /etc/chef/first-boot.json <<'EOP'
 <%= first_boot.to_json %>
 EOP
-
-echo "Starting first Chef Client run..."
-
-<%= start_chef %>'
