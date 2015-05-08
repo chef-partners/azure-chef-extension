@@ -153,6 +153,15 @@ class EnableChef
           bootstrap_command = Erubis::Eruby.new(template).evaluate(context)
           result = shell_out(bootstrap_command)
           result.error!
+
+          # Chef service creates a cronjob for starting chef-client service which executes after 30 minutes
+          # So we need to start this service once
+          puts "Starting chef-client service"
+          params = "-c #{bootstrap_directory}/client.rb -E _default -L #{@azure_plugin_log_location}/chef-client.log --once "
+          child_pid = Process.spawn "chef-client #{params}"
+          Process.detach child_pid
+          puts "Successfully launched chef-client process with PID [#{child_pid}]"
+
         end
       rescue Mixlib::ShellOut::ShellCommandFailed => e
         Chef::Log.warn "chef-client run - node registration failed (#{e})"
