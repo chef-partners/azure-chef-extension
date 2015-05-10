@@ -25,14 +25,16 @@ function Archive-ChefClientLog($chefClientMsiLogPath) {
 }
 
 function Run-ChefInstaller($localDestinationMsiPath, $chefClientMsiLogPath) {
-  echo "Installing chef"
+  Write-Host("[$(Get-Date)] Installing chef...")
   Start-Process -FilePath "msiexec.exe" -ArgumentList "/qn /log $chefClientMsiLogPath /i $localDestinationMsiPath" -Wait -Passthru
+  Write-Host("[$(Get-Date)] Chef Client Package installed successfully!")
 }
 
 function Install-AzureChefExtensionGem($chefExtensionRoot) {
   # Install the custom gem
-  echo "Installing Azure-Chef-Extension gem"
+  Write-Host("[$(Get-Date)] Installing Azure-Chef-Extension gem")
   gem install "$chefExtensionRoot\\gems\\*.gem" --no-ri --no-rdoc
+  Write-Host("[$(Get-Date)] Installed Azure-Chef-Extension gem successfully")
 }
 
 function Chef-GetExtensionRoot {
@@ -51,6 +53,7 @@ function Get-LocalDestinationMsiPath($chefExtensionRoot) {
 
 function Install-ChefClient {
   trap [Exception] {echo $_.Exception.Message;exit 1}
+
   # Source the shared PS
   . $(Get-SharedHelper)
 

@@ -17,17 +17,17 @@ function Get-SharedHelper {
 }
 
 function Uninstall-ChefService {
-  echo "Uninstalling chef service"
+  Write-Host("[$(Get-Date)] Uninstalling chef service...")
   # uninstall does both disable and remove the service
   $result = chef-service-manager -a uninstall
-  echo $result
+  Write-Host("[$(Get-Date)] $result")
 }
 
 function Uninstall-AzureChefExtensionGem {
-  echo "Uninstalling Azure-Chef-Extension gem"
+  Write-Host("[$(Get-Date)] Uninstalling Azure-Chef-Extension gem...")
   # Uninstall the custom gem
   $result = gem uninstall -Ix azure-chef-extension
-  echo $result
+  Write-Host("[$(Get-Date)] $result")
 }
 
 function Get-ChefInstallDirectory {
@@ -47,10 +47,10 @@ function Uninstall-ChefClientPackage {
   # Get chef_pkg by matching "chef client " string with $_.Name
   $chef_pkg = Get-ChefPackage
 
-  echo "removing chef client and configuration files"
+  Write-Host("[$(Get-Date)] Removing chef client and configuration files")
   # Uninstall chef_pkg
   $result = $chef_pkg.Uninstall()
-  echo $result
+  Write-Host("[$(Get-Date)] $result")
 
   $powershellVersion = Get-PowershellVersion
 
@@ -105,7 +105,7 @@ function Uninstall-ChefClient {
 
     if ($logStatus) { Write-ChefStatus "uninstalling-chef" "success" "Uninstalled Chef" }
   } else {
-    echo "Not tried to uninstall, as the update process is running"
+    Write-Host("[$(Get-Date)] Not tried to uninstall, as the update process is running")
     Update-ChefExtensionRegistry "X"
     if ($logStatus) { Write-ChefStatus "updating-chef-extension" "transitioning" "Skipping Uninstall" }
   }

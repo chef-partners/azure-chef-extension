@@ -26,11 +26,11 @@ install_file() {
   echo "Installing Chef $version"
   case "$1" in
     "deb")
-      echo "installing with dpkg...$2"
+      echo "[$(date)] Installing with dpkg...$2"
       dpkg -i "$2"
       ;;
     "rpm")
-      echo "installing with rpm...$2"
+      echo "[$(date)] Installing with rpm...$2"
       rpm -i "$2"
       ;;
     *)
@@ -39,22 +39,23 @@ install_file() {
       ;;
   esac
   if test $? -ne 0; then
-    echo "Chef Client installation failed"
+    echo "[$(date)] Chef Client installation failed"
     exit 1
   else
-    echo "Chef Client installation succeeded"
+    echo "[$(date)] Chef Client Package installation succeeded!"
   fi
 }
 
 # install azure chef extension gem
 install_chef_extension_gem(){
+ echo "[$(date)] Installing Azure Chef Extension gem"
  gem install "$1" --no-ri --no-rdoc
 
   if test $? -ne 0; then
-    echo "Azure Chef Extension gem installation failed"
+    echo "[$(date)] Azure Chef Extension gem installation failed"
     exit 1
   else
-    echo "Azure Chef Extension gem installation succeeded"
+    echo "[$(date)] Azure Chef Extension gem installation succeeded"
   fi
 }
 
