@@ -17,14 +17,14 @@ class ChefService
       if windows?
         status = shell_out("chef-service-manager -a status")
         if status.exitstatus == 0 and status.stdout.include?("Service chef-client doesn't exist on the system")
-          puts "Installing chef-client service..."
+          puts "#{Time.now} Installing chef-client service..."
           params = " -a install -c #{bootstrap_directory}\\client.rb -L #{log_location}\\chef-client.log "
           result = shell_out("chef-service-manager #{params}")
           result.error!
-          puts "Installed chef-client service."
+          puts "#{Time.now} Installed chef-client service."
         else
           status.error!
-          puts "chef-client service is already installed."
+          puts "#{Time.now} chef-client service is already installed."
         end
       end
       # Unix - only start chef-client in daemonize mode using self.enable
@@ -46,12 +46,12 @@ class ChefService
     message = "success"
     error_message = "Error enabling chef-client service"
     if is_running?
-      puts "chef-client service is already running..."
+      puts "#{Time.now} chef-client service is already running..."
       return [exit_code, message]
     end
 
     begin
-      puts "Starting chef-client service..."
+      puts "#{Time.now} Starting chef-client service..."
       if windows?
         result = shell_out("chef-service-manager -a start")
         result.error!
@@ -80,7 +80,7 @@ class ChefService
       message = "#{error_message} - #{e} - Check log file for details", "error"
       exit_code = 1
     end
-    puts "Started chef-client service." if exit_code == 0
+    puts "#{Time.now} Started chef-client service." if exit_code == 0
     [exit_code, message]
   end
 
@@ -90,12 +90,12 @@ class ChefService
     message = "success"
     error_message = "Error disabling chef-client service"
     if not is_running?
-      puts "chef-client service is already stopped..."
+      puts "#{Time.now} chef-client service is already stopped..."
       return [exit_code, message]
     end
 
     begin
-      puts "Disabling chef-client service..."
+      puts "#{Time.now} Disabling chef-client service..."
       if windows?
         result = shell_out("chef-service-manager -a stop")
         result.error!
@@ -106,6 +106,7 @@ class ChefService
 
         puts "Removing chef-cron = \"#{chef_cron}\""
         result = shell_out("chef-apply -e \"#{chef_cron}\"")
+        result.error!
       end
     rescue Mixlib::ShellOut::ShellCommandFailed => e
       Chef::Log.error "#{error_message} (#{e})"
@@ -116,7 +117,7 @@ class ChefService
       message = "#{error_message} - #{e} - Check log file for details", "error"
       exit_code = 1
     end
-    puts "Disabled chef-client service" if exit_code == 0
+    puts "#{Time.now} Disabled chef-client service" if exit_code == 0
     [exit_code, message]
   end
 

@@ -111,10 +111,9 @@ class EnableChef
         FileUtils.mkdir_p("#{bootstrap_directory}")
       end
 
-      load_settings
+      puts "#{Time.now} Creating chef configuration files"
 
-      # run chef-client for first time with no runlist to register the node
-      puts "Running chef client for first time with no runlist..."
+      load_settings
 
       begin
         require 'chef/azure/core/bootstrap_context'
@@ -144,6 +143,7 @@ class EnableChef
 
           result = shell_out(bootstrap_command)
           result.error!
+          puts "#{Time.now} Created chef configuration files"
           # remove the temp bootstrap file
           FileUtils.rm(bootstrap_bat_file)
         else
@@ -153,15 +153,14 @@ class EnableChef
           bootstrap_command = Erubis::Eruby.new(template).evaluate(context)
           result = shell_out(bootstrap_command)
           result.error!
-
+          puts "#{Time.now} Created chef configuration files"
           # Chef service creates a cronjob for starting chef-client service which executes after 30 minutes
           # So we need to start this service once
-          puts "Starting chef-client service"
+          puts "#{Time.now} Starting chef-client with no runlist"
           params = "-c #{bootstrap_directory}/client.rb -E _default -L #{@azure_plugin_log_location}/chef-client.log --once "
           child_pid = Process.spawn "chef-client #{params}"
           Process.detach child_pid
-          puts "Successfully launched chef-client process with PID [#{child_pid}]"
-
+          puts "#{Time.now} Successfully launched chef-client process with PID [#{child_pid}]"
         end
       rescue Mixlib::ShellOut::ShellCommandFailed => e
         Chef::Log.warn "chef-client run - node registration failed (#{e})"
