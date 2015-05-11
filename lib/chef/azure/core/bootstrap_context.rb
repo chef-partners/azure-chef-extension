@@ -13,15 +13,6 @@ class Chef
           @chef_config[:validation_key_content]
         end
 
-        def start_chef
-          # If the user doesn't have a client path configure, let bash use the PATH for what it was designed for
-          client_path = @chef_config[:chef_client_path] || 'chef-client'
-          s = "#{client_path} "
-          s << ' -l debug' if @config[:verbosity] and @config[:verbosity] >= 2
-          s << " -E #{bootstrap_environment}"
-          s
-        end
-
         def config_content
           client_rb = ""
           # Add user provided client_rb to the beginning of a file.

@@ -15,6 +15,7 @@ uninstall_ubuntu_chef_package(){
   install_status=`dpkg -s "$pkg_name" | grep "$dpkg_installed"`
 
   if test "$install_status" = "$dpkg_installed" ; then
+    echo "[$(date)] Uninstalling package $pkg_name ..."
     dpkg -P $pkg_name
     check_uninstallation_status
   else
@@ -27,18 +28,19 @@ uninstall_centos_chef_package(){
   pkg_name=`rpm -qi chef | grep Name | awk '{print $3}'`
 
   if test "$pkg_name" = "chef" ; then
+    echo "[$(date)] Uninstalling package $pkg_name ..."
     rpm -ev $pkg_name
     check_uninstallation_status
   else
-    echo "No Package found to uninstall!!!"
+    echo "[$(date)] No Package found to uninstall!!!"
   fi
 }
 
 check_uninstallation_status(){
   if [ $? -eq 0 ]; then
-    echo "Package $pkg_name uninstalled successfully."
+    echo "[$(date)] Package $pkg_name uninstalled successfully."
   else
-    echo "Unable to uninstall package Chef."
+    echo "[$(date)] Unable to uninstall package Chef."
   fi
 }
 
@@ -51,8 +53,10 @@ linux_distributor=$(get_linux_distributor)
 
 update_process_descriptor=/etc/chef/.updating_chef_extension
 
+called_from_update=$1
+
 if [ -f $update_process_descriptor ]; then
-  echo "Not tried to uninstall, as the update process is running"
+  echo "[$(date)] Not tried to uninstall, as the update process is running"
   rm $update_process_descriptor
 else
 
@@ -67,7 +71,15 @@ else
   commands_script_path=$(get_script_dir)
 
   chef_ext_dir=`dirname $commands_script_path`
-  handler_settings_file=`ls $chef_ext_dir/config/*.settings -S -r | head -1`
+
+  if [ "$called_from_update" = "update" ]; then
+    waagentdir="$(dirname "$chef_ext_dir")"
+    previous_extension=`ls "$waagentdir" | grep Chef.Bootstrap.WindowsAzure.LinuxChefClient- | tail -2 | head -1`
+    previous_extension="$waagentdir/$previous_extension"
+    handler_settings_file=`ls $previous_extension/config/*.settings -S -r | head -1`
+  else
+    handler_settings_file=`ls $chef_ext_dir/config/*.settings -S -r | head -1`
+  fi
 
   # Reading deleteChefConfig value from settings file
   delete_chef_config=`ruby -e "require 'chef/azure/helpers/parse_json';value_from_json_file_for_ps '$handler_settings_file','runtimeSettings','0','handlerSettings','publicSettings','deleteChefConfig'"`
@@ -76,13 +88,15 @@ else
   azure_chef_extn_gem=`gem list azure-chef-extension | grep azure-chef-extension | awk '{print $1}'`
 
   if test "$azure_chef_extn_gem" = "azure-chef-extension" ; then
-    echo "Removing azure-chef-extension gem."
+    echo "[$(date)] Removing azure-chef-extension gem."
     gem uninstall azure-chef-extension
     if [ $? -ne 0 ]; then
-      echo "Unable to uninstall gem azure-chef-extension."
+      echo "[$(date)] Unable to uninstall gem azure-chef-extension."
+    else
+      echo "[$(date)] Uninstalled azure-chef-extension gem successfully."
     fi
   else
-    echo "Gem azure-chef-extension is not installed !!!"
+    echo "[$(date)] Gem azure-chef-extension is not installed !!!"
   fi
 
   case $linux_distributor in

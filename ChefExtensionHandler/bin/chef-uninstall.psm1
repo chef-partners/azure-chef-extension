@@ -17,17 +17,17 @@ function Get-SharedHelper {
 }
 
 function Uninstall-ChefService {
-  echo "Uninstalling chef service"
+  Write-Host("[$(Get-Date)] Uninstalling chef service...")
   # uninstall does both disable and remove the service
   $result = chef-service-manager -a uninstall
-  echo $result
+  Write-Host("[$(Get-Date)] $result")
 }
 
 function Uninstall-AzureChefExtensionGem {
-  echo "Uninstalling Azure-Chef-Extension gem"
+  Write-Host("[$(Get-Date)] Uninstalling Azure-Chef-Extension gem...")
   # Uninstall the custom gem
   $result = gem uninstall -Ix azure-chef-extension
-  echo $result
+  Write-Host("[$(Get-Date)] $result")
 }
 
 function Get-ChefInstallDirectory {
@@ -39,6 +39,7 @@ function Get-ChefPackage {
 }
 
 function Uninstall-ChefClientPackage {
+  param([boolean]$calledFromUpdate = $False)
   $bootstrapDirectory = Get-BootstrapDirectory
   $chefInstallDirectory = Get-ChefInstallDirectory
 
@@ -46,15 +47,20 @@ function Uninstall-ChefClientPackage {
   # Get chef_pkg by matching "chef client " string with $_.Name
   $chef_pkg = Get-ChefPackage
 
-  echo "removing chef client and configuration files"
+  Write-Host("[$(Get-Date)] Removing chef client and configuration files")
   # Uninstall chef_pkg
   $result = $chef_pkg.Uninstall()
-  echo $result
+  Write-Host("[$(Get-Date)] $result")
 
   $powershellVersion = Get-PowershellVersion
 
   if ($powershellVersion -ge 3) {
-    $json_handlerSettings = Get-HandlerSettings
+    if ($calledFromUpdate) {
+      $json_handlerSettings = Get-PrevoiusVersionHandlerSettings
+    } else {
+      $json_handlerSettings = Get-HandlerSettings
+    }
+
     $deleteChefConfig = $json_handlerSettings.publicSettings.deleteChefConfig
   } else {
     $deleteChefConfig = Get-deleteChefConfigSetting
@@ -71,6 +77,7 @@ function Uninstall-ChefClientPackage {
 }
 
 function Uninstall-ChefClient {
+  param([boolean]$calledFromUpdate = $False)
   trap [Exception] {echo $_.Exception.Message;exit 1}
 
   $env:Path += ";C:\opscode\chef\bin;C:\opscode\chef\embedded\bin"
@@ -82,7 +89,7 @@ function Uninstall-ChefClient {
   # so the hack - use ruby json parsing for versions lower than 3.0
   if ( $(Get-PowershellVersion) -ge 3 ) {
     $logStatus = $True
-    $json_handlerSettingsFileName, $json_statusFolder = Read-JsonFile
+    $json_handlerSettingsFileName, $json_statusFolder = Read-JsonFile $calledFromUpdate
   } else {
     $logStatus = $False
   }
@@ -94,11 +101,11 @@ function Uninstall-ChefClient {
 
     Uninstall-AzureChefExtensionGem
 
-    Uninstall-ChefClientPackage
+    Uninstall-ChefClientPackage $calledFromUpdate
 
     if ($logStatus) { Write-ChefStatus "uninstalling-chef" "success" "Uninstalled Chef" }
   } else {
-    echo "Not tried to uninstall, as the update process is running"
+    Write-Host("[$(Get-Date)] Not tried to uninstall, as the update process is running")
     Update-ChefExtensionRegistry "X"
     if ($logStatus) { Write-ChefStatus "updating-chef-extension" "transitioning" "Skipping Uninstall" }
   }
