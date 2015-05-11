@@ -143,11 +143,6 @@ CONFIG
           escape_and_echo(client_rb)
         end
 
-        def start_chef
-          start_chef = "SET \"PATH=%PATH%;C:\\ruby\\bin;C:\\opscode\\chef\\bin;C:\\opscode\\chef\\embedded\\bin\"\n"
-          start_chef << "chef-client -c c:/chef/client.rb -E #{bootstrap_environment}\n"
-        end
-
         def bootstrap_directory
           bootstrap_directory = "C:\\chef"
         end

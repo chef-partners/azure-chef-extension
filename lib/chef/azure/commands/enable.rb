@@ -154,28 +154,22 @@ class EnableChef
           result = shell_out(bootstrap_command)
           result.error!
           puts "#{Time.now} Created chef configuration files"
-          # Chef service creates a cronjob for starting chef-client service which executes after 30 minutes
-          # So we need to start this service once
-          puts "#{Time.now} Starting chef-client with no runlist"
-          params = "-c #{bootstrap_directory}/client.rb -E _default -L #{@azure_plugin_log_location}/chef-client.log --once "
-          child_pid = Process.spawn "chef-client #{params}"
-          Process.detach child_pid
-          puts "#{Time.now} Successfully launched chef-client process with PID [#{child_pid}]"
         end
       rescue Mixlib::ShellOut::ShellCommandFailed => e
-        Chef::Log.warn "chef-client run - node registration failed (#{e})"
-        @chef_client_error = "chef-client run - node registration failed (#{e})"
+        Chef::Log.warn "chef-client configuration files creation failed (#{e})"
+        @chef_client_error = "chef-client configuration files creation failed (#{e})"
         return
       rescue => e
         Chef::Log.error e
-        @chef_client_error = "chef-client run - node registration failed (#{e})"
+        @chef_client_error = "chef-client configuration files creation failed (#{e})"
         return
       end
-
-      puts "Node registered successfully"
-      File.open("#{bootstrap_directory}/node-registered", "w") do |file|
-        file.write("Node registered.")
-      end
+      # Now the run chef-client with runlist in background, as we done want enable command to wait, else long running chef-client with runlist will timeout azure.
+      puts "#{Time.now} Launching chef-client to register node with the runlist"
+      params = "-c #{bootstrap_directory}/client.rb -j #{bootstrap_directory}/first-boot.json -E _default -L #{@azure_plugin_log_location}/chef-client.log --once "
+      child_pid = Process.spawn "chef-client #{params}"
+      Process.detach child_pid
+      puts "#{Time.now} Successfully launched chef-client process with PID [#{child_pid}]"
     end
   end
 
