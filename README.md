@@ -105,10 +105,10 @@ New-AzureVM -Location 'West US' -ServiceName $svc -VM $vObj1
 
 **Updating Extension manually**
 
-1. Create a VM with old extension version Ex:1205 .12
+1. Suppose you have a VM with extension version 1205 .12
 2. `$vmm = Get-AzureVM -Name "<vm-name>" -ServiceName "<cloud-service-name>"`
 3. Set `autoUpdateClient` to true in publicconfig.config file
-4. Update to latest one- Ex- 1206.12
+4. Update to latest version- Ex- 1206.12
 ```
 $vmOb = Set-AzureVMExtension -VM $vmm -ExtensionName 'ChefClient' -Publisher ‘Chef.Bootstrap.WindowsAzure’ -Version '1206.12' -PublicConfigPath 'path\\to\\publicconfig.config' -PrivateConfigPath 'path\\to\\privateconfig.config'
 
