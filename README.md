@@ -17,7 +17,7 @@ Azure resource extension to enable Chef on Azure virtual machine instances.
 
 
 ##Azure Chef Extension usage:
-#####Options those can be set in publicconfig.config
+#####Options that can be set in publicconfig.config
 ```javascript
 {
   "client_rb": "< your client.rb configuration >".
@@ -36,7 +36,8 @@ Azure resource extension to enable Chef on Azure virtual machine instances.
 `run_list`: A run-list defines all of the information necessary for Chef to configure a node into the desired state.
 It is an ordered list of roles and/or recipes that are run in the exact order defined in the run-list.
 
-`autoUpdateClient` : Set this option to true to auto udpate chef extension version by default its set to false.  Extension's Hotfix versions are auto-updated on the VM when the VM is restarted. for e.g.: A VM that has 1205.12.2.0, gets auto updated to 1205.12.2.1 when 1205.12.2.1 is published.
+`autoUpdateClient` : Set this option to true to auto udpate chef extension version. By default it's set to false.  Extension's Hotfix versions are auto-updated on the VM when the VM is restarted. for e.g.: A VM that has 1205.12.2.0, gets auto updated to 1205.12.2.1 when 1205.12.2.1 is published.
+This option should be set to true for updating the extension manually also.
 
 `deleteChefCofig`: Set deleteChefConfig option to true in publicconfig if you want to delete chef configuration files while update or uninstall. By default it is set to false.
 
@@ -52,7 +53,7 @@ publicconfig.config example:
 {
   "client_rb": "chef_server_url  \"https://api.opscode.com/organizations/some-org\"\nvalidation_client_name   \"some-org-validator\"\nclient_key    \"c:/chef/client.pem\"\nvalidation_key    \"c:/chef/validation.pem\"",
   "runlist":"recipe[getting-started]",
-  "autoUpdateClient":"false",
+  "autoUpdateClient":"true",
   "deleteChefConfig":"false",
   "bootstrap_options": {
     "chef_node_name":"mynode3",
@@ -62,7 +63,7 @@ publicconfig.config example:
 }
 ```
 
-#####Options those can be set in privateconfig.config
+#####Options that can be set in privateconfig.config
 ```javascript
 {
   "validation_key": "<your chef organisation validation key>"
@@ -100,6 +101,18 @@ $vObj1 = Set-AzureVMExtension -VM $vmObj1 -ExtensionName ‘ChefClient’ -Publi
 New-AzureVM -Location 'West US' -ServiceName $svc -VM $vObj1
 
 # Look into your hosted chef account to verify the registerd node(VM)
+```
+
+**Updating Extension manually**
+
+1. Suppose you have a VM with extension version 1205 .12
+2. `$vmm = Get-AzureVM -Name "<vm-name>" -ServiceName "<cloud-service-name>"`
+3. Set `autoUpdateClient` to true in publicconfig.config file
+4. Update to latest version- Ex- 1206.12
+```
+$vmOb = Set-AzureVMExtension -VM $vmm -ExtensionName 'ChefClient' -Publisher ‘Chef.Bootstrap.WindowsAzure’ -Version '1206.12' -PublicConfigPath 'path\\to\\publicconfig.config' -PrivateConfigPath 'path\\to\\privateconfig.config'
+
+Update-AzureVM -VM $vmOb.VM -Name "<vm-name>" -ServiceName "<cloud-service-name>
 ```
 
 ##Azure Chef Extension Version Scheme
