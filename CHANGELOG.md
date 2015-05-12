@@ -1,6 +1,6 @@
 # azure-chef-extension Change Log
 
-## Last release: 1206.12.2.1 (2015/05/12)
+## Last release: 1206.12.3.0 (2015/05/12)
 * [azure-chef-extension #34](https://github.com/chef-partners/azure-chef-extension/pull/34) Fixed update extension process related issues
 * [azure-chef-extension #33](https://github.com/chef-partners/azure-chef-extension/pull/33) Removed chef-client run with run_list part
 * [azure-chef-extension #29](https://github.com/chef-partners/azure-chef-extension/pull/29) Updated README doc
