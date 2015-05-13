@@ -198,6 +198,13 @@ class EnableChef
     Chef::Config[:knife][:hints]["azure"] ||= cloud_attributes
   end
 
+  def load_cloud_attributes_in_hints
+    cloud_attributes = {}
+    cloud_attributes["vm_name"] = Socket.gethostname
+    Chef::Config[:knife][:hints] ||= {}
+    Chef::Config[:knife][:hints]["azure"] ||= cloud_attributes
+  end
+
   def load_settings
     protected_settings = value_from_json_file(handler_settings_file,'runtimeSettings','0','handlerSettings', 'protectedSettings')
     @validation_key = get_validation_key(protected_settings)
