@@ -242,6 +242,7 @@ class EnableChef
         parsedRunlist << "recipe[#{item}]"
       end
     end
+    parsedRunlist
   end
 
   def get_validation_key(encrypted_text)
