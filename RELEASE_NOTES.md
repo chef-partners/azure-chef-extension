@@ -7,25 +7,40 @@ Example Note:
 Details about the thing that changed that needs to get included in the Release Notes in markdown.
 -->
 
-# azure-chef-extension 1206.12.3.0 release notes:
-This release of azure-chef-extension adds bug fixes, feature improvements and unit testcases.
+# azure-chef-extension 1207.12.3.0 release notes:
+This release of azure-chef-extension adds a major bug fix and a feature.
 
 See the [CHANGELOG](https://github.com/chef-partners/azure-chef-extension/blob/master/CHANGELOG.md) for a list of all changes in this release, and review.
 
 More information on the contribution process for Chef projects can be found in the [Chef Contributions document](https://docs.chef.io/community_contributions.html).
 
-## Features improved in azure-chef-extension 1206.12.3.0
+## Features improved in azure-chef-extension 1207.12.3.0
 
-* Performing bootstrap asynchronously to reduce time for enable command
-* [azure-chef-extension #22](https://github.com/chef-partners/azure-chef-extension/pull/22) Implemented changes to preserve runlist if first converge fails
-* Added complete unit testcase coverage
-* Added log_level attribute and set it to info for detailed log
+* [azure-chef-extension #31](https://github.com/chef-partners/azure-chef-extension/pull/31) Load azure attributes in hints file for ohai azure plugin
 
 ## azure-chef-extension on Github
 https://github.com/chef-partners/azure-chef-extension
 
-## Issues fixed in azure-chef-extension 1206.12.3.0
+## Issues fixed in azure-chef-extension 1207.12.3.0
 
-* [azure-chef-extension #34](https://github.com/chef-partners/azure-chef-extension/pull/34) Fixed update extension process related issues. This includes using last version extension's settings file during update process as this settings file is not available during update because WaAgent takes some time to create it.
-* [azure-chef-extension #24](https://github.com/chef-partners/azure-chef-extension/pull/24) Fixed Azure chef extension uninstall should not delete c:\chef or /etc/chef by default
-* [azure-chef-extension #21](https://github.com/chef-partners/azure-chef-extension/pull/21) Fix for providing multiple runlist item
+* [azure-chef-extension #36](https://github.com/chef-partners/azure-chef-extension/pull/36) Fixed escape runlist related issue that was causing Set-AzureVMChefExtension command to fail
+
+## Known Issues
+While trying to update the extension from an older version(eg. 1205.12.3.0) to the latest version(eg. 1207.12.3.0) with `deleteChefConfig` option `false` in `0.settings` file, `C:\chef\client.rb`( `\etc\chef\client.rb` in case of linux) file will have following contents at the end:
+
+```
+start_handlers << AzureExtension::StartHandler.new("C:/Packages/Plugins/Chef.Bootstrap.WindowsAzure.ChefClient/1205.12.2.1")
+report_handlers << AzureExtension::ReportHandler.new("C:/Packages/Plugins/Chef.Bootstrap.WindowsAzure.ChefClient/1205.12.2.1")
+exception_handlers << AzureExtension::ExceptionHandler.new("C:/Packages/Plugins/Chef.Bootstrap.WindowsAzure.ChefClient/1205.12.2.1")
+```
+
+But 1205.12.2.1 has got uninstalled during update. So, it will fail as `AzureExtension::ExceptionHandler.new("C:/Packages/Plugins/Chef.Bootstrap.WindowsAzure.ChefClient/1205.12.2.1") not exists`
+
+## Work around for the known issue
+In order to fix the above issue, user should manually update the version of chefclient in `client.rb` file to the installed version. e.g.
+
+```
+start_handlers << AzureExtension::StartHandler.new("C:/Packages/Plugins/Chef.Bootstrap.WindowsAzure.ChefClient/1207.12.3.0")
+report_handlers << AzureExtension::ReportHandler.new("C:/Packages/Plugins/Chef.Bootstrap.WindowsAzure.ChefClient/1207.12.3.0")
+exception_handlers << AzureExtension::ExceptionHandler.new("C:/Packages/Plugins/Chef.Bootstrap.WindowsAzure.ChefClient/1207.12.3.0")
+```

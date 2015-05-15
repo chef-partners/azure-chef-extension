@@ -1,5 +1,5 @@
 # azure-chef-extension Change Log
-## Last release: 1207.12.3.0 (2015/05/14)
+## Last release: 1207.12.3.0 (2015/05/15)
 * [azure-chef-extension #36](https://github.com/chef-partners/azure-chef-extension/pull/36) Fixed escape runlist related issue
 * [azure-chef-extension #31](https://github.com/chef-partners/azure-chef-extension/pull/31) Load azure attributes in hints file for ohai azure plugin
 
