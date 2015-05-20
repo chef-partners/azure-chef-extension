@@ -8,9 +8,10 @@ module AzureExtension
     include ChefAzure::Reporting
 
     def initialize(extension_root)
-      @chef_extension_root = extension_root
+      highest_version_file = find_highest_extension_version(extension_root)
+      @chef_extension_root = highest_version_file.empty? ? extension_root : highest_version_file
     end
-    
+
     def report
       if run_status.success?
         load_azure_env

@@ -8,24 +8,7 @@ module AzureExtension
     include ChefAzure::Reporting
 
     def initialize(extension_root)
-      #Get the latest version extension root. Required in case of extension update
-      highest_version_file = ""
-      if windows?
-      else
-	root_path = extension_root.split("-")
-	version = root_path.last.gsub(".","").to_i
-
-	Dir.glob(root_path.first + "*").each do |d|
-  		if d.split("-").size > 1
-    		d_version = d.split("-").last.gsub(".","").to_i    
-    		if d_version >= version
-      			version = d_version
-      			highest_version_file = d
-    		end
-  		end
-        end
-      end
-
+      highest_version_file = find_highest_extension_version(extension_root)
       @chef_extension_root = highest_version_file.empty? ? extension_root : highest_version_file
     end
 
