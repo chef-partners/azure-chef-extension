@@ -22,9 +22,20 @@ describe AzureExtension do
   end
 
   context "report on chef-client failure" do
+
+    before do
+      def instance.node
+        OpenStruct.new(:name => "")
+      end
+
+      allow(Chef::Search::Query).to receive(:new).and_return(DummyClass.new)
+
+    end
+
     it "reports to heartbeat when node is not registered" do
       allow(instance.run_status).to receive(:failed?).and_return(true)
       allow(File).to receive(:exists?).and_return(false)
+      allow(Chef::Search::Query.new).to receive(:search).and_return([[]])
       allow(instance).to receive(:backtrace).and_return(nil)
       expect(instance).to receive(:load_azure_env)
       expect(instance).to receive(:report_heart_beat_to_azure).with(AzureHeartBeat::READY, 0, "chef-service is running properly. Chef client run failed with error- Check log file for details...\nBacktrace:\n")
@@ -33,13 +44,9 @@ describe AzureExtension do
 
     it "reports to heartbeat and loads runlist from first_boot.json is node is registered" do
       # mocking node method
-      def instance.node
-        OpenStruct.new(:name => "")
-      end
 
       allow(instance.run_status).to receive(:failed?).and_return(true)
       allow(File).to receive(:exists?).and_return(true)
-      allow(Chef::Search::Query).to receive(:new).and_return(DummyClass.new)
       allow(Chef::Search::Query.new).to receive(:search).and_return([[OpenStruct.new(:run_list => [])]])
       expect(instance).to receive(:load_run_list)
       allow(instance).to receive(:backtrace).and_return(nil)
