@@ -8,7 +8,7 @@ module ChefAzure
   module Shared
     def find_highest_extension_version(extension_root)
       #Get the latest version extension root. Required in case of extension update
-      highest_version_file = ""
+      highest_version_extension = ""
       if windows?
         # Path format: C:\Packages\Plugins\Chef.Bootstrap.WindowsAzure.ChefClient\1205.12.2.1
         split_path = extension_root.split("/")
@@ -20,7 +20,7 @@ module ChefAzure
             d_version = d.gsub(".","").to_i
             if d_version >= version
                 version = d_version
-                highest_version_file = root_path + d
+                highest_version_extension = root_path + d
             end
           end
         end
@@ -34,12 +34,12 @@ module ChefAzure
             d_version = d.split("-").last.gsub(".","").to_i
             if d_version >= version
                 version = d_version
-                highest_version_file = d
+                highest_version_extension = d
             end
           end
         end
       end
-      highest_version_file
+      highest_version_extension
     end
 
     def windows?
