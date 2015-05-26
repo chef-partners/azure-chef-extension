@@ -20,6 +20,7 @@ describe "EnableChef" do
 
   context "for windows" do
     it "creates chef configuration files" do
+      allow(instance).to receive(:puts)
       allow(instance).to receive(:load_env)
       allow(instance).to receive(:report_heart_beat_to_azure)
       allow(File).to receive(:exists?).and_return(false)
@@ -42,27 +43,30 @@ describe "EnableChef" do
     end
   end
 
-  context "for linux" do
-    it "creates chef configuration files" do
-      allow(instance).to receive(:load_env)
-      allow(instance).to receive(:report_heart_beat_to_azure)
-      allow(File).to receive(:exists?).and_return(false)
-      allow(instance).to receive(:bootstrap_directory).and_return(@temp_directory)
-      allow(instance).to receive(:handler_settings_file).and_return(mock_data("handler_settings.settings"))
-      allow(instance).to receive(:get_validation_key).and_return("")
-      allow(instance).to receive(:windows?).and_return(false)
-      allow_any_instance_of(Chef::Knife::Core::BootstrapContext).to receive(:bootstrap_directory).and_return(@temp_directory)
-      allow_any_instance_of(Chef::Knife::Core::BootstrapContext).to receive(:start_chef).and_return(true)
-      allow(instance).to receive(:install_chef_service)
-      allow(instance).to receive(:enable_chef_service)
-      allow(Process).to receive(:spawn)
-      allow(Process).to receive(:detach)
-      instance.run
+  if chef_12?
+    context "for linux" do
+      it "creates chef configuration files" do
+        allow(instance).to receive(:puts)
+        allow(instance).to receive(:load_env)
+        allow(instance).to receive(:report_heart_beat_to_azure)
+        allow(File).to receive(:exists?).and_return(false)
+        allow(instance).to receive(:bootstrap_directory).and_return(@temp_directory)
+        allow(instance).to receive(:handler_settings_file).and_return(mock_data("handler_settings.settings"))
+        allow(instance).to receive(:get_validation_key).and_return("")
+        allow(instance).to receive(:windows?).and_return(false)
+        allow_any_instance_of(Chef::Knife::Core::BootstrapContext).to receive(:bootstrap_directory).and_return(@temp_directory)
+        allow_any_instance_of(Chef::Knife::Core::BootstrapContext).to receive(:start_chef).and_return(true)
+        allow(instance).to receive(:install_chef_service)
+        allow(instance).to receive(:enable_chef_service)
+        allow(Process).to receive(:spawn)
+        allow(Process).to receive(:detach)
+        instance.run
 
-      # verifying chef configuration files
-      expect(File.file? "#{@temp_directory}/client.rb").to be(true)
-      expect(File.file? "#{@temp_directory}/first-boot.json").to be(true)
-      expect(File.file? "#{@temp_directory}/validation.pem").to be(true)
+        # verifying chef configuration files
+        expect(File.file? "#{@temp_directory}/client.rb").to be(true)
+        expect(File.file? "#{@temp_directory}/first-boot.json").to be(true)
+        expect(File.file? "#{@temp_directory}/validation.pem").to be(true)
+      end
     end
   end
 end

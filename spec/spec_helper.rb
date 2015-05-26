@@ -8,3 +8,11 @@ def mock_data(file_name)
     file =  File.expand_path(File.dirname("spec/assets/*"))+"/#{file_name}"
     File.read(file)
 end
+
+def chef_11?
+  Chef::VERSION.split('.').first.to_i == 11
+end
+
+def chef_12?
+  Chef::VERSION.split('.').first.to_i == 12
+end
