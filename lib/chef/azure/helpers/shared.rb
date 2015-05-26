@@ -6,6 +6,42 @@ require 'chef/config'
 
 module ChefAzure
   module Shared
+    def find_highest_extension_version(extension_root)
+      #Get the latest version extension root. Required in case of extension update
+      highest_version_extension = ""
+      if windows?
+        # Path format: C:\Packages\Plugins\Chef.Bootstrap.WindowsAzure.ChefClient\1205.12.2.1
+        split_path = extension_root.split("/")
+        version = split_path.last.gsub(".","").to_i
+        root_path = extension_root.gsub(split_path.last, "")
+
+        Dir.entries(root_path).each do |d|
+          if d.split(".").size > 1
+            d_version = d.gsub(".","").to_i
+            if d_version >= version
+                version = d_version
+                highest_version_extension = root_path + d
+            end
+          end
+        end
+      else
+        # Path format: /var/lib/waagent/Chef.Bootstrap.WindowsAzure.LinuxChefClient-1207.12.3.0
+        root_path = extension_root.split("-")
+        version = root_path.last.gsub(".","").to_i
+
+        Dir.glob(root_path.first + "*").each do |d|
+          if d.split("-").size > 1
+            d_version = d.split("-").last.gsub(".","").to_i
+            if d_version >= version
+                version = d_version
+                highest_version_extension = d
+            end
+          end
+        end
+      end
+      highest_version_extension
+    end
+
     def windows?
       if RUBY_PLATFORM =~ /mswin|mingw|windows/
         true
@@ -45,6 +81,7 @@ module ChefAzure
         Chef::Config
       end
     end
+
   end
 
   module Config
