@@ -16,3 +16,7 @@ end
 def chef_12?
   Chef::VERSION.split('.').first.to_i == 12
 end
+
+RSpec.configure do |config|
+  config.filter_run_excluding :chef_12_only => true if :chef_12?
+end
