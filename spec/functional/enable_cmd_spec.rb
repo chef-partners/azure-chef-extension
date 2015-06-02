@@ -20,6 +20,7 @@ describe "EnableChef" do
 
   context "for windows" do
     it "creates chef configuration files" do
+      allow(instance).to receive(:puts)
       allow(instance).to receive(:load_env)
       allow(instance).to receive(:report_heart_beat_to_azure)
       allow(File).to receive(:exists?).and_return(false)
@@ -42,8 +43,9 @@ describe "EnableChef" do
     end
   end
 
-  context "for linux" do
+  context "for linux", :chef_12_only do
     it "creates chef configuration files" do
+      allow(instance).to receive(:puts)
       allow(instance).to receive(:load_env)
       allow(instance).to receive(:report_heart_beat_to_azure)
       allow(File).to receive(:exists?).and_return(false)
@@ -65,4 +67,5 @@ describe "EnableChef" do
       expect(File.file? "#{@temp_directory}/validation.pem").to be(true)
     end
   end
+
 end
