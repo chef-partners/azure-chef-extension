@@ -39,6 +39,13 @@ class Chef
             client_rb << %Q{encrypted_data_bag_secret "/etc/chef/encrypted_data_bag_secret"\n}
           end
 
+          # We configure :verify_api_cert only when it's overridden on the CLI
+          # or when specified in the knife config.
+          if !@config[:node_verify_api_cert].nil? || knife_config.has_key?(:verify_api_cert)
+            value = @config[:node_verify_api_cert].nil? ? knife_config[:verify_api_cert] : @config[:node_verify_api_cert]
+            client_rb << %Q{verify_api_cert #{value}\n}
+          end
+
           client_rb <<  %Q{log_location       "#{@config[:log_location]}/chef-client.log"\n}
           client_rb <<  %Q{chef_server_url       "#{@config[:chef_server_url]}"\n} if @config[:chef_server_url]
           client_rb <<  %Q{validation_client_name       "#{@config[:validation_client_name]}"\n} if @config[:validation_client_name]
