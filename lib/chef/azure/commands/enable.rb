@@ -131,6 +131,7 @@ class EnableChef
         config[:validation_client_name] =  bootstrap_options['validation_client_name'] if bootstrap_options['validation_client_name']
         template_file = File.expand_path(File.dirname(File.dirname(__FILE__)))
         config[:secret] =  bootstrap_options['secret'] || bootstrap_options['encrypted_data_bag_secret']
+        config[:node_verify_api_cert] =  bootstrap_options['node_verify_api_cert'] if bootstrap_options['node_verify_api_cert']
         runlist = @run_list.empty? ? [] : escape_runlist(@run_list)
         load_cloud_attributes_in_hints
         if windows?
