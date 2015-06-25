@@ -42,6 +42,14 @@ echo Writing validation key...
 )
 
 echo Validation key written.
+
+echo Writing client key...
+
+> <%= bootstrap_directory %>\client.pem (
+ <%= client_key %>
+)
+
+echo client key written.
 @echo on
 
 <% if @config[:secret] -%>
