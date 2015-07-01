@@ -262,10 +262,10 @@ class EnableChef
       # read certs & keys from the certificate bundle and attempts to decrypt
       cert_regex = /-----BEGIN CERTIFICATE-----(.*?)-----END CERTIFICATE-----/m
       key_regex = /-----BEGIN PRIVATE KEY-----(.*?)-----END PRIVATE KEY-----/m
-	  begin_cert_line = "-----BEGIN CERTIFICATE-----"
-	  end_cert_line = "-----END CERTIFICATE-----"
-	  begin_pri_key_line = "-----BEGIN PRIVATE KEY-----"
-	  end_pri_key_line = "-----END PRIVATE KEY-----"
+      begin_cert_line = "-----BEGIN CERTIFICATE-----"
+      end_cert_line = "-----END CERTIFICATE-----"
+      begin_pri_key_line = "-----BEGIN PRIVATE KEY-----"
+      end_pri_key_line = "-----END PRIVATE KEY-----"
 	  
       fc = File.read(certificate_path)
       cert_matches = fc.scan(cert_regex)
@@ -275,22 +275,22 @@ class EnableChef
       key_dict['keys'] = key_matches
   
       i = 0
-	  enc_text = encrypted_text
+      enc_text = encrypted_text
       while i < key_dict.count
-	    cert = "%s\n%s\n%s\n" % [begin_cert_line, key_dict['certs'][i].join.strip, end_cert_line]
-		key = "%s\n%s\n%s\n" % [begin_pri_key_line, key_dict['keys'][i].join.strip, end_pri_key_line]
-	    puts "Processing certificate %i of %i..." % [i+1, key_dict.count]
+	cert = "%s\n%s\n%s\n" % [begin_cert_line, key_dict['certs'][i].join.strip, end_cert_line]
+	key = "%s\n%s\n%s\n" % [begin_pri_key_line, key_dict['keys'][i].join.strip, end_pri_key_line]
+	puts "Processing certificate %i of %i..." % [i+1, key_dict.count]
         certificate = OpenSSL::X509::Certificate.new cert
         private_key = OpenSSL::PKey::RSA.new key
         encrypted_text = Base64.decode64(enc_text)
         encrypted_text = OpenSSL::PKCS7.new(encrypted_text)
         begin
           decrypted_text = encrypted_text.decrypt(private_key, certificate)		  
-		  puts "Processed certificate %i of %i" % [i+1, key_dict.count]
+          puts "Processed certificate %i of %i" % [i+1, key_dict.count]
         rescue
-		  puts "Error processing certificate %i of %i" % [i+1, key_dict.count]
+          puts "Error processing certificate %i of %i" % [i+1, key_dict.count]
         end
-		i+=1
+          i+=1
       end
     end
 
