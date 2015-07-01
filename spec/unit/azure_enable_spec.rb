@@ -189,6 +189,7 @@ describe EnableChef do
     it "extracts and returns the validation_key from encrypted text." do
       @object = Object.new
       allow(File).to receive(:read)
+      allow(File).to receive(:scan)
       allow(OpenSSL::X509::Certificate).to receive(:new)
       allow(OpenSSL::PKey::RSA).to receive(:new).and_return(@object)
       allow(Base64).to receive(:decode64)
