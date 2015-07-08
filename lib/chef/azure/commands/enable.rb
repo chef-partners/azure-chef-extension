@@ -59,9 +59,9 @@ class EnableChef
     # - Install the Chef service
     # - Start the Chef service
     begin
-      configure_chef_only_once
+      service_pid = configure_chef_only_once
 
-      install_chef_service if @exit_code == 0
+      install_chef_service(service_pid) if @exit_code == 0
 
       enable_chef_service if @exit_code == 0
 
@@ -76,8 +76,8 @@ class EnableChef
     @exit_code
   end
 
-  def install_chef_service
-    @exit_code, error_message = ChefService.new.install(@azure_plugin_log_location)
+  def install_chef_service(service_pid)
+    @exit_code, error_message = ChefService.new.install(@azure_plugin_log_location, service_pid)
     if @exit_code == 0
       report_status_to_azure "chef-service installed", "success"
     else
@@ -116,6 +116,8 @@ class EnableChef
       load_settings
 
       begin
+        service_status_file = "#{bootstrap_directory}/chef_client_service_status"
+        service_pid = Process.spawn "chef-service-manager -a status > #{service_status_file}"
         require 'chef/azure/core/bootstrap_context'
         config = {}
         bootstrap_options = value_from_json_file(handler_settings_file,'runtimeSettings','0','handlerSettings', 'publicSettings', 'bootstrap_options')
@@ -133,7 +135,7 @@ class EnableChef
         config[:secret] =  bootstrap_options['secret'] || bootstrap_options['encrypted_data_bag_secret']
         config[:node_verify_api_cert] =  bootstrap_options['node_verify_api_cert'] if bootstrap_options['node_verify_api_cert']
         runlist = @run_list.empty? ? [] : escape_runlist(@run_list)
-        load_cloud_attributes_in_hints
+       # load_cloud_attributes_in_hints
         if windows?
           context = Chef::Knife::Core::WindowsBootstrapContext.new(config, runlist, Chef::Config, config[:secret])
           template_file += "\\bootstrap\\windows-chef-client-msi.erb"
@@ -172,6 +174,8 @@ class EnableChef
       child_pid = Process.spawn "chef-client #{params}"
       Process.detach child_pid
       puts "#{Time.now} Successfully launched chef-client process with PID [#{child_pid}]"
+
+      service_pid
     end
   end
 
