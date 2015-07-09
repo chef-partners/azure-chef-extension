@@ -133,7 +133,7 @@ class EnableChef
         config[:secret] =  bootstrap_options['secret'] || bootstrap_options['encrypted_data_bag_secret']
         config[:node_verify_api_cert] =  bootstrap_options['node_verify_api_cert'] if bootstrap_options['node_verify_api_cert']
         runlist = @run_list.empty? ? [] : escape_runlist(@run_list)
-        load_cloud_attributes_in_hints
+       # load_cloud_attributes_in_hints
         if windows?
           context = Chef::Knife::Core::WindowsBootstrapContext.new(config, runlist, Chef::Config, config[:secret])
           template_file += "\\bootstrap\\windows-chef-client-msi.erb"
