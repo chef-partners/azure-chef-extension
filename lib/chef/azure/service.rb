@@ -8,25 +8,22 @@ class ChefService
   AZURE_CHEF_CRON_NAME = 'azure_chef_extension'
 
   # TODO - make these methods idempotent
-  def install(log_location, service_pid)
+  def install(log_location)
     log_location = log_location || bootstrap_directory # example default logs go to C:\chef\
     exit_code = 0
     message = "success"
     error_message = "Error installing chef-client service"
-    puts "#{Time.now} Getting chef-client service status"
-    Process.wait(service_pid) #Waits for a child process to exit, returns its process id, and sets $? to a Process::Status
-    exitstatus = $?.exitstatus
     begin
       if windows?
-        service_status_file = "#{bootstrap_directory}/chef_client_service_status"
-        puts "#{Time.now} Reading chef-client service status from #{service_status_file}"
-        if exitstatus == 0 and File.read(service_status_file).include?("Service chef-client doesn't exist on the system")
+        status = shell_out("chef-service-manager -a status")
+        if status.exitstatus == 0 and status.stdout.include?("Service chef-client doesn't exist on the system")
           puts "#{Time.now} Installing chef-client service..."
           params = " -a install -c #{bootstrap_directory}\\client.rb -L #{log_location}\\chef-client.log "
           result = shell_out("chef-service-manager #{params}")
           result.error!
           puts "#{Time.now} Installed chef-client service."
         else
+          status.error!
           puts "#{Time.now} chef-client service is already installed."
         end
       end
