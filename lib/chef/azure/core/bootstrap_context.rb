@@ -13,6 +13,10 @@ class Chef
           @chef_config[:validation_key_content]
         end
 
+        def client_key
+          @chef_config[:client_key_content]
+        end
+
         def config_content
           client_rb = ""
           # Add user provided client_rb to the beginning of a file.

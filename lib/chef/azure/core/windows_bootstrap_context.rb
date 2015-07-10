@@ -50,6 +50,10 @@ class Chef
           escape_and_echo(super)
         end
 
+        def client_key
+          escape_and_echo(super)
+        end
+
         def secret
           escape_and_echo(@config[:secret])
         end

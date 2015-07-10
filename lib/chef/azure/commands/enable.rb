@@ -127,6 +127,7 @@ class EnableChef
         config[:user_client_rb] = @client_rb
         config[:log_location] = @azure_plugin_log_location
         Chef::Config[:validation_key_content] = @validation_key
+        Chef::Config[:client_key_content] = @client_key
         config[:chef_server_url] = bootstrap_options['chef_server_url'] if bootstrap_options['chef_server_url']
         config[:validation_client_name] =  bootstrap_options['validation_client_name'] if bootstrap_options['validation_client_name']
         template_file = File.expand_path(File.dirname(File.dirname(__FILE__)))
@@ -185,6 +186,7 @@ class EnableChef
   def load_settings
     protected_settings = value_from_json_file(handler_settings_file,'runtimeSettings','0','handlerSettings', 'protectedSettings')
     @validation_key = get_validation_key(protected_settings)
+    @client_key = get_client_key(protected_settings)
     @client_rb = value_from_json_file(handler_settings_file, 'runtimeSettings', '0', 'handlerSettings', 'publicSettings', 'client_rb')
     @run_list = value_from_json_file(handler_settings_file, 'runtimeSettings', '0', 'handlerSettings', 'publicSettings', 'runlist')
   end
@@ -223,6 +225,31 @@ class EnableChef
   end
 
   def get_validation_key(encrypted_text)
+    decrypted_text = get_decrypted_key(encrypted_text)
+    #extract validation_key from decrypted hash
+    validation_key = value_from_json_file(decrypted_text, "validation_key")
+    begin
+      validation_key = OpenSSL::PKey::RSA.new(validation_key.squeeze("\n")).to_pem
+    rescue OpenSSL::PKey::RSAError => e
+      Chef::Log.error "Chef validation key parsing error. #{e.inspect}"
+      validation_key
+    end
+  end
+
+  def get_client_key(encrypted_text)
+    decrypted_text = get_decrypted_key(encrypted_text)
+
+    #extract client_key from decrypted hash
+    client_key = value_from_json_file(decrypted_text, "client_pem")
+    begin
+      client_key = OpenSSL::PKey::RSA.new(client_key.squeeze("\n")).to_pem
+    rescue OpenSSL::PKey::RSAError => e
+      Chef::Log.error "Chef client key parsing error. #{e.inspect}"
+      client_key
+    end
+  end
+
+  def get_decrypted_key(encrypted_text)
     if windows?
       decrypt_content_file_path = File.expand_path(File.dirname(File.dirname(__FILE__)))
       decrypt_content_file_path += "\\helpers\\powershell\\decrypt_content_on_windows.ps1"
@@ -232,7 +259,6 @@ class EnableChef
       decrypted_text = result.stdout
       result.error!
     else
-
       certificate_path = LINUX_CERT_PATH
 
       # read cert & get key from the certificate
@@ -244,14 +270,7 @@ class EnableChef
       encrypted_text = OpenSSL::PKCS7.new(encrypted_text)
       decrypted_text = encrypted_text.decrypt(private_key, certificate)
     end
-
-    #extract validation_key from decrypted hash
-    validation_key = value_from_json_file(decrypted_text, "validation_key")
-    begin
-      validation_key = OpenSSL::PKey::RSA.new(validation_key.squeeze("\n")).to_pem
-    rescue OpenSSL::PKey::RSAError => e
-      Chef::Log.error "Chef validation key parsing error. #{e.inspect}"
-      validation_key
-    end
+    decrypted_text
   end
+
 end
