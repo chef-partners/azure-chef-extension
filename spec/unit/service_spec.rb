@@ -14,7 +14,7 @@ describe ChefService do
       shellout_output1 = OpenStruct.new(:exitstatus => 0, :stdout => "Service chef-client doesn't exist on the system")
       shellout_output2 = OpenStruct.new(:exitstatus => 0, :stdout => "", :error => nil)
       allow(instance).to receive(:shell_out).and_return(shellout_output1, shellout_output2)
-      expect(instance).to receive(:puts).and_return("Installing chef-client service...", "Installed chef-client service.")
+      expect(instance).to receive(:puts).exactly(3).times
       install_cmd = instance.send(:install, "")
       expect(install_cmd).to eq([0, "success"])
     end
@@ -22,7 +22,7 @@ describe ChefService do
     it "doesn't install if chef-client service is already installed on windows" do
       allow(instance).to receive(:windows?).and_return(true)
       allow(instance).to receive(:shell_out).and_return(OpenStruct.new(:exitstatus => 1, :stdout => ""))
-      expect(instance).to receive(:puts).and_return("chef-client service is already installed.")
+      expect(instance).to receive(:puts).twice
       install_cmd = instance.send(:install, "")
       expect(install_cmd).to eq([0, "success"])
     end
@@ -50,7 +50,7 @@ describe ChefService do
       allow(instance).to receive(:is_running?).and_return(false)
       allow(instance).to receive(:windows?).and_return(true)
       expect(instance).to receive(:puts).and_return("Starting chef-client service...", "Started chef-client service.")
-      expect(instance).to receive(:shell_out).with("chef-service-manager -a start").and_return(OpenStruct.new(:exitstatus => 0, :stdout => ""))
+      expect(instance).to receive(:shell_out).with("sc.exe start chef-client").and_return(OpenStruct.new(:exitstatus => 0, :stdout => ""))
       enable_cmd = instance.send(:enable, "", "", "")
       expect(enable_cmd).to eq([0, "success"])
     end
@@ -79,7 +79,7 @@ describe ChefService do
       allow(instance).to receive(:is_running?).and_return(true)
       allow(instance).to receive(:windows?).and_return(true)
       expect(instance).to receive(:puts).and_return("Disabling chef-client service...", "Disabled chef-client service")
-      expect(instance).to receive(:shell_out).with("chef-service-manager -a stop").and_return(OpenStruct.new(:exitstatus => 0, :stdout => ""))
+      expect(instance).to receive(:shell_out).with("sc.exe stop chef-client").and_return(OpenStruct.new(:exitstatus => 0, :stdout => ""))
       disable_cmd = instance.send(:disable, "")
       expect(disable_cmd).to eq([0, "success"])
     end
@@ -123,13 +123,13 @@ describe ChefService do
   context "is_running?" do
     it "tells if chef-service is running on windows" do
       allow(instance).to receive(:windows?).and_return(true)
-      allow(instance).to receive(:shell_out).with("chef-service-manager -a status").and_return(OpenStruct.new(:exitstatus => 0, :stdout => "State of chef-client service is: running"))
+      allow(instance).to receive(:shell_out).with("sc.exe query chef-client").and_return(OpenStruct.new(:exitstatus => 0, :stdout => "RUNNING"))
       expect(instance.is_running?).to eq(true)
     end
 
     it "tells if chef-service is not running on windows" do
       allow(instance).to receive(:windows?).and_return(true)
-      allow(instance).to receive(:shell_out).with("chef-service-manager -a status").and_return(OpenStruct.new(:exitstatus => 1, :stdout => ""))
+      allow(instance).to receive(:shell_out).with("sc.exe query chef-client").and_return(OpenStruct.new(:exitstatus => 1, :stdout => ""))
       expect(instance.is_running?).to eq(false)
     end
 

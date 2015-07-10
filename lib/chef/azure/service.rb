@@ -15,8 +15,9 @@ class ChefService
     error_message = "Error installing chef-client service"
     begin
       if windows?
-        status = shell_out("chef-service-manager -a status")
-        if status.exitstatus == 0 and status.stdout.include?("Service chef-client doesn't exist on the system")
+        puts "#{Time.now} Getting chef-client service status"
+        status = shell_out("sc.exe query chef-client")
+        if status.exitstatus == 0 and !status.stdout.include?("RUNNING")
           puts "#{Time.now} Installing chef-client service..."
           params = " -a install -c #{bootstrap_directory}\\client.rb -L #{log_location}\\chef-client.log "
           result = shell_out("chef-service-manager #{params}")
@@ -53,7 +54,7 @@ class ChefService
     begin
       puts "#{Time.now} Starting chef-client service..."
       if windows?
-        result = shell_out("chef-service-manager -a start")
+        result = shell_out("sc.exe start chef-client")
         result.error!
       else
         # Unix like platform
@@ -97,7 +98,7 @@ class ChefService
     begin
       puts "#{Time.now} Disabling chef-client service..."
       if windows?
-        result = shell_out("chef-service-manager -a stop")
+        result = shell_out("sc.exe stop chef-client")
         result.error!
       else
         templates_dir = File.join(File.dirname(__FILE__), "/templates")
@@ -143,8 +144,8 @@ class ChefService
   def is_running?
     begin
       if windows?
-        result = shell_out("chef-service-manager -a status")
-        if result.exitstatus == 0 and result.stdout.include?("State of chef-client service is: running")
+        result = shell_out("sc.exe query chef-client")
+        if result.exitstatus == 0 and result.stdout.include?("RUNNING")
           return true
         else
           return false

@@ -133,7 +133,7 @@ class EnableChef
         config[:secret] =  bootstrap_options['secret'] || bootstrap_options['encrypted_data_bag_secret']
         config[:node_verify_api_cert] =  bootstrap_options['node_verify_api_cert'] if bootstrap_options['node_verify_api_cert']
         runlist = @run_list.empty? ? [] : escape_runlist(@run_list)
-        load_cloud_attributes_in_hints
+       # load_cloud_attributes_in_hints
         if windows?
           context = Chef::Knife::Core::WindowsBootstrapContext.new(config, runlist, Chef::Config, config[:secret])
           template_file += "\\bootstrap\\windows-chef-client-msi.erb"
@@ -173,30 +173,6 @@ class EnableChef
       Process.detach child_pid
       puts "#{Time.now} Successfully launched chef-client process with PID [#{child_pid}]"
     end
-  end
-
-  def load_cloud_attributes_in_hints
-    cloud_attributes = {}
-    cloud_attributes["vm_name"] = Socket.gethostname
-    Chef::Config[:knife][:hints] ||= {}
-    Chef::Config[:knife][:hints]["azure"] ||= cloud_attributes
-  end
-
-  def load_cloud_attributes_in_hints
-    cloud_attributes = {}
-    cloud_attributes["vm_name"] = Socket.gethostname
-    if windows?
-      vm_dns =  shell_out!("ipconfig").stdout
-      cloud_attributes["fqdn"] = vm_dns.gsub(/[a-zA-Z0-9-]*.[a-zA-Z0-9]*.[a-zA-Z0-9]*.cloudapp.net/).first.split('.')[0] + '.cloudapp.net' if vm_dns
-    else
-      vm_dns = shell_out!("hostname --fqdn").stdout
-      if vm_dns && vm_dns.split('.').length > 1
-        vm_dns = vm_dns.gsub(/[a-zA-Z0-9-]*.[a-zA-Z0-9]*.[a-zA-Z0-9]*.cloudapp.net/).first.split('.')[0]
-      end
-      cloud_attributes["fqdn"] = vm_dns + '.cloudapp.net' if vm_dns
-    end
-    Chef::Config[:knife][:hints] ||= {}
-    Chef::Config[:knife][:hints]["azure"] ||= cloud_attributes
   end
 
   def load_cloud_attributes_in_hints

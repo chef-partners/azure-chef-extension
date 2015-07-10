@@ -28,7 +28,7 @@ describe "DisableChef" do
       allow_any_instance_of(ChefService).to receive(:bootstrap_directory).and_return(@temp_directory)
       allow_any_instance_of(ChefService).to receive(:is_running?).and_return(true)
       allow_any_instance_of(ChefService).to receive(:windows?).and_return(true)
-      expect_any_instance_of(ChefService).to receive(:shell_out).with("chef-service-manager -a stop").and_return(OpenStruct.new(:exitstatus => 0, :stdout => "", :error => nil))
+      expect_any_instance_of(ChefService).to receive(:shell_out).with("sc.exe stop chef-client").and_return(OpenStruct.new(:exitstatus => 0, :stdout => "", :error => nil))
       instance.run
     end
 
