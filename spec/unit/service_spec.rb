@@ -11,7 +11,7 @@ describe ChefService do
   context "install" do
     it "installs service successfully for windows" do
       allow(instance).to receive(:windows?).and_return(true)
-      shellout_output1 = OpenStruct.new(:exitstatus => 0, :stdout => "Service chef-client doesn't exist on the system")
+      shellout_output1 = OpenStruct.new(:exitstatus => 1060, :stdout => "The specified service does not exist as an installed service.")
       shellout_output2 = OpenStruct.new(:exitstatus => 0, :stdout => "", :error => nil)
       allow(instance).to receive(:shell_out).and_return(shellout_output1, shellout_output2)
       expect(instance).to receive(:puts).exactly(3).times
