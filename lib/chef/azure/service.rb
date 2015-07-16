@@ -17,7 +17,7 @@ class ChefService
       if windows?
         puts "#{Time.now} Getting chef-client service status"
         status = shell_out("sc.exe query chef-client")
-        if status.exitstatus == 0 and !status.stdout.include?("RUNNING")
+        if status.exitstatus == 1060 && status.stdout.include?("The specified service does not exist as an installed service.")
           puts "#{Time.now} Installing chef-client service..."
           params = " -a install -c #{bootstrap_directory}\\client.rb -L #{log_location}\\chef-client.log "
           result = shell_out("chef-service-manager #{params}")
