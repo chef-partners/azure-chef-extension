@@ -35,6 +35,8 @@
 @endlocal
 
 @echo off
+
+<% if @chef_config[:validation_key_content] and ! @chef_config[:validation_key_content].empty? -%>
 echo Writing validation key...
 
 > <%= bootstrap_directory %>\validation.pem (
@@ -42,14 +44,18 @@ echo Writing validation key...
 )
 
 echo Validation key written.
+<% end -%>
 
+<% if @chef_config[:client_key_content] and ! @chef_config[:client_key_content].empty? -%>
 echo Writing client key...
 
 > <%= bootstrap_directory %>\client.pem (
  <%= client_key %>
 )
 
+
 echo client key written.
+<% end -%>
 @echo on
 
 <% if @config[:secret] -%>
