@@ -1,5 +1,5 @@
 # azure-chef-extension Change Log
-## Release: 1210.12.4.1 (2015/05/15)
+## Release: 1210.12.4.1 (2015/07/22)
 * [azure-chef-extension #25](https://github.com/chef-partners/azure-chef-extension/pull/25) Functional testcases for basic commands of azure chef extension
 * [azure-chef-extension #39](https://github.com/chef-partners/azure-chef-extension/pull/39) Azure extension handler issue
 * [azure-chef-extension #40](https://github.com/chef-partners/azure-chef-extension/pull/40) Fixed issue related to preserve runlist if first chef client run fails
