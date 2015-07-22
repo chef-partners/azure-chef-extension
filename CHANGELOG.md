@@ -1,4 +1,15 @@
 # azure-chef-extension Change Log
+## Release: 1210.12.4.1 (2015/05/15)
+* [azure-chef-extension #25](https://github.com/chef-partners/azure-chef-extension/pull/25) Functional testcases for basic commands of azure chef extension
+* [azure-chef-extension #39](https://github.com/chef-partners/azure-chef-extension/pull/39) Azure extension handler issue
+* [azure-chef-extension #40](https://github.com/chef-partners/azure-chef-extension/pull/40) Fixed issue related to preserve runlist if first chef client run fails
+* [azure-chef-extension #41](https://github.com/chef-partners/azure-chef-extension/pull/41) Functional testcase for disable command
+* [azure-chef-extension #42](https://github.com/chef-partners/azure-chef-extension/pull/42) Implemented node verify cert bootstrap option
+* [azure-chef-extension #46](https://github.com/chef-partners/azure-chef-extension/pull/46) Azure extension failing with timeout error
+* [azure-chef-extension #43](https://github.com/chef-partners/azure-chef-extension/pull/43) Added support for validator less bootstrap
+* [azure-chef-extension #48](https://github.com/chef-partners/azure-chef-extension/pull/48) Enable cmd fails when chef-client service is not already installed
+* [azure-chef-extension #49](https://github.com/chef-partners/azure-chef-extension/pull/49) Fixed empty client_key/validation_key issue
+
 ## Last release: 1207.12.3.0 (2015/05/15)
 * [azure-chef-extension #36](https://github.com/chef-partners/azure-chef-extension/pull/36) Fixed escape runlist related issue
 * [azure-chef-extension #31](https://github.com/chef-partners/azure-chef-extension/pull/31) Load azure attributes in hints file for ohai azure plugin
