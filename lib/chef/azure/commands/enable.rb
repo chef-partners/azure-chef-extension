@@ -169,7 +169,7 @@ class EnableChef
       end
       # Now the run chef-client with runlist in background, as we done want enable command to wait, else long running chef-client with runlist will timeout azure.
       puts "#{Time.now} Launching chef-client to register node with the runlist"
-      params = "-c #{bootstrap_directory}/client.rb -j #{bootstrap_directory}/first-boot.json -E _default -L #{@azure_plugin_log_location}/chef-client.log --once "
+      params = "-c #{bootstrap_directory}/client.rb -j #{bootstrap_directory}/first-boot.json -E #{config[:environment]} -L #{@azure_plugin_log_location}/chef-client.log --once "
       child_pid = Process.spawn "chef-client #{params}"
       Process.detach child_pid
       puts "#{Time.now} Successfully launched chef-client process with PID [#{child_pid}]"
