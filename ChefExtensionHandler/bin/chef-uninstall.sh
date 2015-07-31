@@ -51,16 +51,26 @@ get_linux_distributor(){
 
 
 ########### Script starts from here ###################
+echo "[$(date)] ***inside uninstall.sh Start of script" >> /home/azure/log.txt
 linux_distributor=$(get_linux_distributor)
+
+auto_update_false=/etc/chef/.auto_update_false
+
+if [ -f $auto_update_false ]; then
+  echo "[$(date)] Not doing uninstall, as auto update is false" >> /home/azure/log.txt
+  return
+  echo "[$(date)] inside chef-uninstall.sh: Continuing after return" >> /home/azure/log.txt
+fi
 
 update_process_descriptor=/etc/chef/.updating_chef_extension
 
 called_from_update=$1
 
 if [ -f $update_process_descriptor ]; then
-  echo "[$(date)] Not doing uninstall, as the update process is running"
+  echo "[$(date)] Not doing uninstall, as the update process is running" >> /home/azure/log.txt
+  rm $update_process_descriptor
 else
-
+  echo "Doing uninstall" >> /home/azure/log.txt
   export PATH=$PATH:/opt/chef/embedded/bin:/opt/chef/bin
 
   get_script_dir(){
@@ -132,3 +142,4 @@ else
 
   echo "Deleted related symlinks."
 fi
+echo "[$(date)] ***inside uninstall.sh End of script" >> /home/azure/log.txt
