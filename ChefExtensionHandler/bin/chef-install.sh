@@ -70,37 +70,29 @@ linux_distributor=$(get_linux_distributor)
 auto_update_false=/etc/chef/.auto_update_false
 
 if [ -f $auto_update_false ]; then
-  echo "[$(date)] Not doing install, as auto update is false" >> /home/azure/log.txt
+  echo "[$(date)] Not doing install, as auto update is false"
 else
-  echo "Doing install" >> /home/azure/log.txt
   # get chef installer
   case $linux_distributor in
     "ubuntu")
-      echo "[$(date)] ***inside install.sh Linux Distributor" >> /home/azure/log.txt
       chef_client_installer=$(get_deb_installer)
-      echo "[$(date)] ***inside install.sh chef_client_installer: $chef_client_installer" >> /home/azure/log.txt
       installer_type="deb"
       ;;
     "centos")
-      echo "[$(date)] ***inside install.sh centos Distributor" >> /home/azure/log.txt
       chef_client_installer=$(get_rpm_installer)
-      echo "[$(date)] ***inside install.sh chef_client_installer: $chef_client_installer" >> /home/azure/log.txt
       installer_type="rpm"
       ;;
     *)
-      echo "Unknown Distributor: $linux_distributor" >> /home/azure/log.txt
       exit 1
       ;;
   esac
 
   # install chef
   install_file $installer_type "$chef_client_installer"
-  echo "[$(date)] ***inside install.sh installer_type: $installer_type" >> /home/azure/log.txt
 
   export PATH=$PATH:/opt/chef/bin/:/opt/chef/embedded/bin
 
   # install azure chef extension gem
   install_chef_extension_gem "$chef_extension_root/gems/*.gem"
-  echo "[$(date)] ***inside install.sh after installing chef extension gem" >> /home/azure/log.txt
 fi
 
