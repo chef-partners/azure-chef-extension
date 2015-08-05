@@ -8,7 +8,7 @@ CHEF_EXT_DIR=$(dirname "$SCRIPT")
 
 echo $CHEF_EXT_DIR
 
-update_process_descriptor=/etc/chef/.auto_update_false
+auto_update_false=/etc/chef/.auto_update_false
 
 if [ -f $auto_update_false ]; then
   echo "[$(date)] Not doing enable, as auto update is false"
