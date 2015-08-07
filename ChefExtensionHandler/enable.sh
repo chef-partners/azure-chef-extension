@@ -8,4 +8,11 @@ CHEF_EXT_DIR=$(dirname "$SCRIPT")
 
 echo $CHEF_EXT_DIR
 
-ruby $CHEF_EXT_DIR/bin/chef-enable.rb
+auto_update_false=/etc/chef/.auto_update_false
+
+if [ -f $auto_update_false ]; then
+  echo "[$(date)] Not doing enable, as auto update is false"
+  rm $auto_update_false
+else
+	ruby $CHEF_EXT_DIR/bin/chef-enable.rb
+fi

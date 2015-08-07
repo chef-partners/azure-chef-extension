@@ -49,17 +49,24 @@ get_linux_distributor(){
   lsb_release -i | awk '{print tolower($3)}'
 }
 
+
+########### Script starts from here ###################
 linux_distributor=$(get_linux_distributor)
+
+auto_update_false=/etc/chef/.auto_update_false
+
+if [ -f $auto_update_false ]; then
+  return
+fi
 
 update_process_descriptor=/etc/chef/.updating_chef_extension
 
 called_from_update=$1
 
 if [ -f $update_process_descriptor ]; then
-  echo "[$(date)] Not tried to uninstall, as the update process is running"
+  echo "[$(date)] Not doing uninstall, as the update process is running"
   rm $update_process_descriptor
 else
-
   export PATH=$PATH:/opt/chef/embedded/bin:/opt/chef/bin
 
   get_script_dir(){

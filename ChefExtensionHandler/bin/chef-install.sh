@@ -63,29 +63,36 @@ get_linux_distributor(){
   lsb_release -i | awk '{print tolower($3)}'
 }
 
+
+########### Script starts from here ##################
 linux_distributor=$(get_linux_distributor)
 
-# get chef installer
-case $linux_distributor in
-  "ubuntu")
-    chef_client_installer=$(get_deb_installer)
-    installer_type="deb"
-    ;;
-  "centos")
-    chef_client_installer=$(get_rpm_installer)
-    installer_type="rpm"
-    ;;
-  *)
-    echo "Unknown Distributor: $linux_distributor"
-    exit 1
-    ;;
-esac
+auto_update_false=/etc/chef/.auto_update_false
 
-# install chef
-install_file $installer_type "$chef_client_installer"
+if [ -f $auto_update_false ]; then
+  echo "[$(date)] Not doing install, as auto update is false"
+else
+  # get chef installer
+  case $linux_distributor in
+    "ubuntu")
+      chef_client_installer=$(get_deb_installer)
+      installer_type="deb"
+      ;;
+    "centos")
+      chef_client_installer=$(get_rpm_installer)
+      installer_type="rpm"
+      ;;
+    *)
+      exit 1
+      ;;
+  esac
 
-export PATH=$PATH:/opt/chef/bin/:/opt/chef/embedded/bin
+  # install chef
+  install_file $installer_type "$chef_client_installer"
 
-# install azure chef extension gem
-install_chef_extension_gem "$chef_extension_root/gems/*.gem"
+  export PATH=$PATH:/opt/chef/bin/:/opt/chef/embedded/bin
+
+  # install azure chef extension gem
+  install_chef_extension_gem "$chef_extension_root/gems/*.gem"
+fi
 
