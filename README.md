@@ -119,44 +119,41 @@ Update-AzureVM -VM $vmOb.VM -Name "<vm-name>" -ServiceName "<cloud-service-name>
 
 **Description:**
 
-Extensions versions are specified in 4 digit format : `<MajorVersion.MinorVersion.BuildNumber.RevisionNumber>`.
+Extensions versions are specified in 4 digit format : `<MajorVersion.MinorVersion.BuildNumber.RevisionNumber>`, where major version is freezed as `1210`.
 
 Chef Extension package includes released Chef-Client package. Currently Extension version depends on Chef-Client version. So whenever new Chef Client is releases, we have to publish new Extension as well.
 
-Chef-Client versions are specified in 4 digit format: `<MajorVersion.MinorVersion.PatchVersion-RevisionNumber>`. Example: chef-client 11.14.6-1
+Chef-Client versions are specified in 4 digit format: `<MajorVersion.MinorVersion.PatchVersion-RevisionNumber>`. Example: chef-client 12.4.1-1
 
 **Use Following Extension Version Scheme:**
-* We are using Extension Major version from `1100.*.*.*`
+* We are using Extension Major version from `1210.*.*.*`
 * Set Extension Minor Version = Chef-Client's Major Version
 * Set Extension BuildNumber = Chef-Client's Minor Version
-* Set Extension RevisionNumber = Chef-Client's PatchVersion
-* Whenever Chef-Client 'Major' Version changes, increase Extension 'Major' Version by '+100'. When 'Minor' Version changes, increase Extension 'Major' Version by '+1'.
+* Set Extension RevisionNumber = Chef-Client's PatchVersion * 1000
+* When a patch is applied to extension, extension's RevisionNumber is increased by 1.
 
 **Example**
 
-    1. When Chef-Client Major Version Changes-
+    1. When Chef-Client Version Changes-
     Consider,
-    Current Chef-Client Version is 11.14.6-1
+    Current Chef-Client Version is 12.4.1
 
-    Current Extension Version is 1100.11.14.6
+    # Extension's RevisionNumber is Chef-Client's PatchVersion * 1000
+    Current Extension Version is 1210.12.4.1000
 
-    # Chef-Client Major version changed
-    After new Client-Client Version 12.0.0-1 is released
+    # Chef-Client version changes
+    After new Client-Client Version 12.4.2 is released
 
-    # Increase Extension Major version by +100
-    New Extension Version will be 1200.12.0.0
+    New Extension Version will be 1210.12.4.2000
 
-    2. When Chef Client Minor Version Changes-
-    Consider,
-    Current Chef-Client Version is 11.14.6-1
+    2. When a patch is applied to extension while Chef-Client's version is same-
+    Current Chef-Client Version is 12.4.1
 
-    Current Extension Version is 1100.11.14.6
+    # Extension's RevisionNumber is Chef-Client's PatchVersion * 1000
+    Current Extension Version is 1210.12.4.1000
 
-    # Chef-Client Minor version changed
-    After new Client-Client Version 11.16.0-1 is released
-
-    # Increase Extension Major version by +1
-    New Extension Version will be 1101.11.16.0
+    # After applying patch to Extension increase extension's RevisionNumber by 1
+    New Extension Version will be 1210.12.4.1001
 
 ##Build and Packaging
 You can use rake tasks to build and publish the new builds to Azure subscription.
