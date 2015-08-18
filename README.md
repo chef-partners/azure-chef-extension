@@ -231,3 +231,5 @@ The task depends on:
   :build_date_yyyymmdd = The build date when package was published, in format yyyymmdd
 
     rake 'update[deploy_to_production,windows,11.12.4.2,20140530,Chef.Bootstrap.WindowsAzure.Test,confirm_internal_deployment]'
+
+**Note:** Old extensions will not be available as there is a limit on the number of published extensions.
