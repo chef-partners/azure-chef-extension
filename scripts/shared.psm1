@@ -2,7 +2,7 @@
 function Poll-AzureOperationStatus($operationId, $subscription) {
   trap [Exception] {echo $_.Exception.Message;exit 1}
 
-  $uri = $subscription.ServiceEndpoint.AbsoluteUri
+  $uri = $subscription.ServiceEndpoint
   $subscriptionId = $subscription.subscriptionId
   $reqUri = "${uri}${subscriptionId}/operations/${operationId}"
 
