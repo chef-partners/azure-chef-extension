@@ -3,8 +3,6 @@ function Upload-ChefPkgToAzure($publishSettingsFile, $storageAccount, $storageCo
 
   write-host "Upload-ChefPkgToAzure called with: $publishSettingsFile, $storageAccount, $storageContainer, $extensionPackageFile"
 
-  Import-AzurePublishSettingsFile -PublishSettingsFile $publishSettingsFile
-
   # If storageAccount does not exists, create it.
   Get-AzureStorageAccount -StorageAccountName $storageAccount
   if ($? -eq $false) {

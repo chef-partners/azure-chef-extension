@@ -14,9 +14,7 @@ function Publish-ChefPkg($publishSettingsFile, $subscriptionName, $publishUri, $
 
   write-host "Publish-ChefPkg called with: $publishSettingsFile, `'$subscriptionName`', $publishUri, $definitionXmlFile, $postOrPut"
 
-  Import-AzurePublishSettingsFile -PublishSettingsFile $publishSettingsFile
-
-  $subscription = Get-AzureSubscription -SubscriptionName $subscriptionName
+  $subscription = Get-AzureSubscription -SubscriptionName $subscriptionName -ExtendedDetails
 
   $bodyxml = Get-Content $definitionXmlFile
 

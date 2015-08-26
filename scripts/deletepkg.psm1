@@ -14,9 +14,7 @@ function Delete-ChefPkg($publishSettingsFile, $subscriptionName, $deleteUri) {
 
   write-host "Delete-ChefPkg called with: $publishSettingsFile, `'$subscriptionName`', $deleteUri"
 
-  Import-AzurePublishSettingsFile -PublishSettingsFile $publishSettingsFile
-
-  $subscription = Get-AzureSubscription -SubscriptionName $subscriptionName
+  $subscription = Get-AzureSubscription -SubscriptionName $subscriptionName -ExtendedDetails
 
   $req = Invoke-WebRequest -Method DELETE -Uri $deleteUri -Certificate $subscription.Certificate -Headers @{'x-ms-version'='2014-04-01'} -Body $bodyxml -ContentType application/xml;
 
