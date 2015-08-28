@@ -147,32 +147,34 @@ install_from_repo(){
 }
 
 get_linux_distributor(){
-  if command -v lsb_release > /dev/null; then
-    lsb_release -i | awk '{print tolower($3)}'
-  else
-    echo "Installing redhat lsb package ..."
+  if ! command -v lsb_release > /dev/null; then
     yum install -d0 -e0 -y redhat-lsb-core
-    lsb_release -i | awk '{print tolower($3)}'
   fi
+  lsb_release -i | awk '{print tolower($3)}'
 }
 
 ########### Script starts from here ##################
+echo "*** Inside chef-install sh bfr get_linux_distributor call"
 linux_distributor=$(get_linux_distributor)
-
+echo "*** Inside chef-install sh aftr get_linux_distributor call"
 auto_update_false=/etc/chef/.auto_update_false
 
 if [ -f $auto_update_false ]; then
   echo "[$(date)] Not doing install, as auto update is false"
 else
+  echo "**** Inside else for auto_update_false"
   # get chef installer
   case $linux_distributor in
     "ubuntu")
+      echo "***** Inside ubuntu install_from_package call"
       install_from_local_package
       ;;
     "centos")
+      echo "***** Inside centos install_from_repo call"
       install_from_repo
       ;;
     *)
+      echo "***** Inside * calling exit 1"
       exit 1
       ;;
   esac
