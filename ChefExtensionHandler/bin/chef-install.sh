@@ -146,35 +146,38 @@ install_from_repo(){
   echo "Package Installed successfully ..."
 }
 
+ 
 get_linux_distributor(){
+#### for centos if lsb_release package not available calling yum install #####  
   if ! command -v lsb_release > /dev/null; then
-    yum install -d0 -e0 -y redhat-lsb-core
+    if python -mplatform | grep centos > /dev/null; then
+      yum install -d0 -e0 -y redhat-lsb-core
+    fi
   fi
   lsb_release -i | awk '{print tolower($3)}'
 }
 
 ########### Script starts from here ##################
-echo "*** Inside chef-install sh bfr get_linux_distributor call"
+echo "Call for Checking linux distributor"
 linux_distributor=$(get_linux_distributor)
-echo "*** Inside chef-install sh aftr get_linux_distributor call"
 auto_update_false=/etc/chef/.auto_update_false
 
 if [ -f $auto_update_false ]; then
   echo "[$(date)] Not doing install, as auto update is false"
 else
-  echo "**** Inside else for auto_update_false"
+  echo "After linux distributor check .... "
   # get chef installer
   case $linux_distributor in
     "ubuntu")
-      echo "***** Inside ubuntu install_from_package call"
+      echo "Linux Distributor: ${linux_distributor}"
       install_from_local_package
       ;;
     "centos")
-      echo "***** Inside centos install_from_repo call"
+      echo "Linux Distributor: ${linux_distributor}"
       install_from_repo
       ;;
     *)
-      echo "***** Inside * calling exit 1"
+      echo "No Linux Distributor detected ... exiting..."
       exit 1
       ;;
   esac
