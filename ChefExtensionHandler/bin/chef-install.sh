@@ -145,7 +145,6 @@ install_from_repo(){
   yum -y install chef
   echo "Package Installed successfully ..."
 }
-
  
 get_linux_distributor(){
 #### Using python -mplatform command to get distributor name #####

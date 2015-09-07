@@ -1,5 +1,11 @@
 # azure-chef-extension Change Log
-## Release: 1210.12.4.1 (2015/07/22)
+## Release: 1210.12.4.1000 (2015/08/21)
+* [azure-chef-extension #53](https://github.com/chef-partners/azure-chef-extension/pull/53) Fix for bootstrap_options Chef environment name setting
+* [azure-chef-extension #52](https://github.com/chef-partners/azure-chef-extension/pull/52) Extension update happens for Linux even if AutoUpdateClient=false
+* [azure-chef-extension #55](https://github.com/chef-partners/azure-chef-extension/pull/55) Updated version scheme for 1210.12.4.1000
+* [azure-chef-extension #59](https://github.com/chef-partners/azure-chef-extension/pull/59) Update readme for unavailability of old extensions
+
+## Last release: 1210.12.4.1 (2015/07/22)
 * [azure-chef-extension #25](https://github.com/chef-partners/azure-chef-extension/pull/25) Functional testcases for basic commands of azure chef extension
 * [azure-chef-extension #39](https://github.com/chef-partners/azure-chef-extension/pull/39) Azure extension handler issue
 * [azure-chef-extension #40](https://github.com/chef-partners/azure-chef-extension/pull/40) Fixed issue related to preserve runlist if first chef client run fails
