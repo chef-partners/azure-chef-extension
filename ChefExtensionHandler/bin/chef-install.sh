@@ -145,16 +145,15 @@ install_from_repo(){
   yum -y install chef
   echo "Package Installed successfully ..."
 }
-
  
 get_linux_distributor(){
-#### for centos if lsb_release package not available calling yum install #####  
-  if ! command -v lsb_release > /dev/null; then
-    if python -mplatform | grep centos > /dev/null; then
-      yum install -d0 -e0 -y redhat-lsb-core
-    fi
+#### Using python -mplatform command to get distributor name #####
+  if python -mplatform | grep centos > /dev/null; then
+    linux_distributor='centos'
+  elif python -mplatform | grep Ubuntu > /dev/null; then
+    linux_distributor='ubuntu'
   fi
-  lsb_release -i | awk '{print tolower($3)}'
+  echo "${linux_distributor}"
 }
 
 ########### Script starts from here ##################
