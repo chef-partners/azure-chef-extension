@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #funtions to delete ubuntu chef configuration files i.e. /etc/chef
-remove_ubuntu_chef_config(){
+remove_chef_config(){
   if [ ! -z $delete_chef_config ] && [ $delete_chef_config = "true" ] ; then
     echo "Deleteing chef configurations directory /etc/chef."
     rm -rf /etc/chef || true
@@ -46,9 +46,14 @@ check_uninstallation_status(){
 
 #function to retrieve the linux distributor
 get_linux_distributor(){
-  lsb_release -i | awk '{print tolower($3)}'
+  #### Using python -mplatform command to get distributor name #####
+  if python -mplatform | grep centos > /dev/null; then
+    linux_distributor='centos'
+  elif python -mplatform | grep Ubuntu > /dev/null; then
+    linux_distributor='ubuntu'
+  fi
+  echo "${linux_distributor}"
 }
-
 
 ########### Script starts from here ###################
 linux_distributor=$(get_linux_distributor)
@@ -108,10 +113,13 @@ else
 
   case $linux_distributor in
     "ubuntu")
-      remove_ubuntu_chef_config
+      echo "Linux Distributor: ${linux_distributor}"
+      remove_chef_config
       uninstall_ubuntu_chef_package
       ;;
     "centos")
+      echo "Linux Distributor: ${linux_distributor}"
+      remove_chef_config
       uninstall_centos_chef_package
       ;;
     *)
