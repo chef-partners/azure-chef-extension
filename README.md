@@ -115,6 +115,30 @@ $vmOb = Set-AzureVMExtension -VM $vmm -ExtensionName 'ChefClient' -Publisher ‘
 Update-AzureVM -VM $vmOb.VM -Name "<vm-name>" -ServiceName "<cloud-service-name>
 ```
 
+**ARM commands for Azure Chef Extension**
+
+1. For windows, create ARM template file referring https://github.com/Azure/azure-quickstart-templates/blob/master/chef-extension-windows-vm/azuredeploy.json. Create ARM parameter file referring https://github.com/Azure/azure-quickstart-templates/blob/master/chef-extension-windows-vm/azuredeploy.parameters.json
+
+2. For linux, create ARM template file referring https://github.com/Azure/azure-quickstart-templates/blob/master/chef-json-parameters-ubuntu-vm/azuredeploy.json. Create ARM parameter file referring https://github.com/Azure/azure-quickstart-templates/blob/master/chef-json-parameters-ubuntu-vm/azuredeploy.parameters.json
+
+3. Refer code written below
+
+```javascript
+Switch-AzureMode -Name AzureResourceManager
+Select-AzureSubscription -SubscriptionName <subscription_name>
+Add-AzureAccount
+
+$pathtemp='path/to/azuredeploy.json' # Refer above mentioned #1 and #2
+$pathtempfile='path/to/azuredeploy.parameters.json' # Refer above #1 and #2
+
+New-AzureResourceGroup -Name '<resource_group_name>' -Location '<location>'
+New-AzureResourceGroupDeployment -Name <deployment_name> -TemplateParameterFile $pathtempfile -TemplateFile $pathtemp -ResourceGroupName '<resource_group_name>'
+```
+
+**References:**
+http://azure.microsoft.com/en-us/documentation/templates/chef-json-parameters-ubuntu-vm/
+http://azure.microsoft.com/en-us/documentation/templates/multi-vm-chef-template-ubuntu-vm/
+
 ##Azure Chef Extension Version Scheme
 
 **Description:**
