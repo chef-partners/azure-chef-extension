@@ -96,7 +96,7 @@ $vmObj1 = Add-AzureProvisioningConfig -VM $vmObj1 -Password $password -AdminUser
 
 # use the shared config files
 # ExtensionName = ChefClient(for windows), LinuxChefClient (for ubuntu)
-$vObj1 = Set-AzureVMExtension -VM $vmObj1 -ExtensionName ‘ChefClient’ -Publisher ‘Chef.Bootstrap.WindowsAzure’ -Version 11.12 -PublicConfigPath '<your path to publiconfig.config>' -PrivateConfigPath '<your path to privateconfig.config>'
+$vObj1 = Set-AzureVMExtension -VM $vmObj1 -ExtensionName ‘ChefClient’ -Publisher ‘Chef.Bootstrap.WindowsAzure’ -Version 1210.12 -PublicConfigPath '<your path to publiconfig.config>' -PrivateConfigPath '<your path to privateconfig.config>'
 
 New-AzureVM -Location 'West US' -ServiceName $svc -VM $vObj1
 
@@ -178,5 +178,82 @@ Chef-Client versions are specified in 4 digit format: `<MajorVersion.MinorVersio
 
     # After applying patch to Extension increase extension's RevisionNumber by 1
     New Extension Version will be 1210.12.4.1001
+
+##Build and Packaging
+You can use rake tasks to build and publish the new builds to Azure subscription.
+
+**Note:** The arguments have fixed order and recommended to specify all for readability and avoiding confusion.
+
+#####Build
+    rake build[:target_type, :extension_version, :confirmation_required]
+
+:target_type = [windows/ubuntu/centos] default is windows
+
+:extension_version = Chef extension version, say 1210.12 [pattern major.minor governed by Azure team]
+
+:confirmation_required = [true/false] defaults to true to generate prompt.
+
+    rake 'build[ubuntu,1210.12]'
+
+#####Publish
+Rake task to generate a build and publish the generated zip package to Azure.
+
+    rake publish[:deploy_type, :target_type, :extension_version, :chef_deploy_namespace, :operation, :internal_or_public, :confirmation_required]
+
+The task depends on:
+  * cli parameters listed below.
+  * entries in Publish.json.
+  * environment variable "publishsettings" set pointing to the publish setting file.
+  [Environment]::SetEnvironmentVariable("publishsettings", 'C:\myaccount.publishsettings', "Process")
+
+
+:deploy_type = [deploy_to_preview/deploy_to_prod] default is preview
+
+:target_type = [windows/ubuntu/centos] default is windows
+
+:extension_version = Chef extension version, say 1210.12 [pattern major.minor governed by Azure team]
+
+:chef_deploy_namespace = "Chef.Bootstrap.WindowsAzure.Test".
+
+:operation = [new/update]
+
+:internal_or_public = [confirm_public_deployment/confirm_internal_deployment]
+
+:confirmation_required = [true/false] defaults to true to generate prompt.
+
+
+    rake 'publish[deploy_to_production,ubuntu,1210.12,Chef.Bootstrap.WindowsAzure.Test,update,confirm_internal_deployment]'
+
+#####Delete
+Rake task to delete a published package to Azure.
+**Note:**
+Only internal packages can be deleted.
+
+    rake delete[:deploy_type, :target_type, :chef_deploy_namespace, :full_extension_version, :confirmation_required]
+
+The task depends on:
+  * cli parameters listed below.
+  * environment variable "publishsettings" set pointing to the publish setting file.
+
+  :deploy_type = [delete_from_preview/delete_from_prod] default is preview
+
+  :full_extension_version = Chef extension version, say 1210.12.4.1000 [Version as specified during the publish call]
+
+  :target_type, :chef_deploy_namespace and :confirmation_required = same as for publish task.
+
+    rake 'delete[delete_from_production,ubuntu,Chef.Bootstrap.WindowsAzure.Test,1210.12.4.1000]'
+
+#####Update
+Rake task to udpate a published package to Azure. Used to switch published versions from "internal" to "public" and vice versa. You need to know the build date.
+
+    rake update[:deploy_type, :target_type, :extension_version, :build_date_yyyymmdd, :chef_deploy_namespace, :internal_or_public, :confirmation_required]
+
+The task depends on:
+  * cli parameters listed below. All params definition as same as publish task except build date.
+  * environment variable "publishsettings" set pointing to the publish setting file.
+
+  :build_date_yyyymmdd = The build date when package was published, in format yyyymmdd
+
+    rake 'update[deploy_to_production,windows,1210.12.4.1000,20140530,Chef.Bootstrap.WindowsAzure.Test,confirm_internal_deployment]'
 
 **Note:** Old extensions will not be available as there is a limit on the number of published extensions.
