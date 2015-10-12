@@ -97,9 +97,7 @@ def load_build_environment(platform, version)
     version = major_minor_version.join('.')
   end
 
-  if platform == "windows"
-    url = URI.parse('http://opscode.com/chef/metadata?v=' + version + "&prerelease=false&nightlies=false&p=windows&pv=7&m=x86_64")
-  elsif platform == "ubuntu"
+  if platform == "ubuntu"
     url = URI.parse('http://opscode.com/chef/metadata?v=' + version + '&prerelease=false&nightlies=false&p=ubuntu&pv=14.04&m=x86_64')
   elsif platform == "centos"
     url = URI.parse('http://opscode.com/chef/metadata?v=' + version + '&prerelease=false&nightlies=false&p=centos&pv=7&m=x86_64')
@@ -304,8 +302,6 @@ task :build, [:target_type, :extension_version, :confirmation_required] => [:gem
                       "#{CHEF_BUILD_DIR}/installer/chef-client-latest.deb"
                     when "centos"
                       "#{CHEF_BUILD_DIR}/installer/chef-client-latest.rpm"
-                    else
-                      "#{CHEF_BUILD_DIR}/installer/chef-client-latest.msi"
                     end
 
   date_tag = Date.today.strftime("%Y%m%d")

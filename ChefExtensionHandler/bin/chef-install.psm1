@@ -81,7 +81,14 @@ function Download-ChefClient {
   $localPath = "$chefExtensionRoot\\installer\chef-client-latest.msi"
   $webClient = new-object System.Net.WebClient
   echo "Downloading Chef Client ..."
-  $webClient.DownloadFile($remoteUrl, $localPath)
+  Try {
+    $webClient.DownloadFile($remoteUrl, $localPath)
+  }
+  Catch{
+    $ErrorMessage = $_.Exception.Message
+    # log to CommandExecution log:
+    echo "Error running install: $ErrorMessage"
+  }
 }
 
 Export-ModuleMember -Function Install-ChefClient
