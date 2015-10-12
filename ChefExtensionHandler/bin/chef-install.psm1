@@ -65,6 +65,8 @@ function Install-ChefClient {
     Archive-ChefClientLog $chefClientMsiLogPath
   }
 
+  Download-ChefClient
+
   $localDestinationMsiPath = Get-LocalDestinationMsiPath $chefExtensionRoot
 
   Run-ChefInstaller $localDestinationMsiPath $chefClientMsiLogPath
@@ -72,7 +74,14 @@ function Install-ChefClient {
   $env:Path += ";C:\\opscode\\chef\\bin;C:\\opscode\\chef\\embedded\\bin"
 
   Install-AzureChefExtensionGem $chefExtensionRoot
+}
 
+function Download-ChefClient {
+  $remoteUrl = "http://www.chef.io/chef/download?p=windows&pv=2012&m=x86_64&v=latest&prerelease=false"
+  $localPath = "$chefExtensionRoot\\installer\chef-client-latest.msi"
+  $webClient = new-object System.Net.WebClient
+  echo "Downloading Chef Client ..."
+  $webClient.DownloadFile($remoteUrl, $localPath)
 }
 
 Export-ModuleMember -Function Install-ChefClient
