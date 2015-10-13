@@ -48,7 +48,7 @@ function Get-SharedHelper {
 }
 
 function Get-LocalDestinationMsiPath($chefExtensionRoot) {
-  [System.IO.Path]::GetFullPath("$chefExtensionRoot\\installer\\chef-client-latest.msi")
+  [System.IO.Path]::GetFullPath("$env:temp\\chef-client-latest.msi")
 }
 
 function Install-ChefClient {
@@ -78,7 +78,7 @@ function Install-ChefClient {
 
 function Download-ChefClient {
   $remoteUrl = "http://www.chef.io/chef/download?p=windows&pv=2012&m=x86_64&v=latest&prerelease=false"
-  $localPath = "$chefExtensionRoot\\installer\chef-client-latest.msi"
+  $localPath = "$env:temp\\chef-client-latest.msi"
   $webClient = new-object System.Net.WebClient
   echo "Downloading Chef Client ..."
   Try {

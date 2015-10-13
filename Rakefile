@@ -102,15 +102,18 @@ def load_build_environment(platform, version)
   elsif platform == "centos"
     url = URI.parse('http://opscode.com/chef/metadata?v=' + version + '&prerelease=false&nightlies=false&p=centos&pv=7&m=x86_64')
   end
-  request = Net::HTTP::Get.new(url.to_s)
-  response = Net::HTTP.start(url.host, url.port) {|http|
-    http.request(request)
-  }
-  if response.kind_of? Net::HTTPOK
-    download_url = response.body.split(' ')[1]
-    download_url
-  else
-    error_and_exit! "ERROR: Invalid chef-client version"
+
+  if url
+    request = Net::HTTP::Get.new(url.to_s)
+    response = Net::HTTP.start(url.host, url.port) {|http|
+      http.request(request)
+    }
+    if response.kind_of? Net::HTTPOK
+      download_url = response.body.split(' ')[1]
+      download_url
+    else
+      error_and_exit! "ERROR: Invalid chef-client version"
+    end
   end
 end
 
@@ -265,9 +268,10 @@ task :build, [:target_type, :extension_version, :confirmation_required] => [:gem
     **********************************************
     CONFIRMATION
 
-  # Get user confirmation if we are downloading correct version.
-  if args.confirmation_required == "true"
-    confirm!("build")
+    # Get user confirmation if we are downloading correct version.
+    if args.confirmation_required == "true"
+      confirm!("build")
+    end
   end
 
   puts "Building #{args.target_type} package..."
@@ -310,7 +314,9 @@ task :build, [:target_type, :extension_version, :confirmation_required] => [:gem
   # to check if package was synced in PIR.
   FileUtils.touch "#{CHEF_BUILD_DIR}/version_#{args.extension_version}_#{date_tag}_#{args.target_type}"
 
-  download_chef(download_url, target_chef_pkg)
+  unless args.target_type == "windows"
+    download_chef(download_url, target_chef_pkg)
+  end
 
   puts "\nCreating a zip package..."
   puts "#{PACKAGE_NAME}_#{args.extension_version}_#{date_tag}_#{args.target_type}.zip\n\n"
@@ -319,7 +325,6 @@ task :build, [:target_type, :extension_version, :confirmation_required] => [:gem
     Dir[File.join("#{CHEF_BUILD_DIR}/", '**', '**')].each do |file|
       zipfile.add(file.sub("#{CHEF_BUILD_DIR}/", ''), file)
     end
-  end
   end
 end
 
