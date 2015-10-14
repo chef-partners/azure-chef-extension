@@ -9,43 +9,6 @@ get_script_dir(){
 
 chef_extension_root=$(get_script_dir)/../
 
-# returns chef-client bebian installer
-get_deb_installer(){
-  pkg_file="$chef_extension_root/installer/chef-client-latest.deb"
-  echo "${pkg_file}"
-}
-
-get_rpm_installer(){
-  pkg_file="$chef_extension_root/installer/chef-client-latest.rpm"
-  echo "${pkg_file}"
-}
-
-# install_file TYPE FILENAME
-# TYPE is "deb"
-install_file() {
-  echo "Installing Chef $version"
-  case "$1" in
-    "deb")
-      echo "[$(date)] Installing with dpkg...$2"
-      dpkg -i "$2"
-      ;;
-    "rpm")
-      echo "[$(date)] Installing with rpm...$2"
-      rpm -i "$2"
-      ;;
-    *)
-      echo "Unknown filetype: $1"
-      exit 1
-      ;;
-  esac
-  if test $? -ne 0; then
-    echo "[$(date)] Chef Client installation failed"
-    exit 1
-  else
-    echo "[$(date)] Chef Client Package installation succeeded!"
-  fi
-}
-
 # install azure chef extension gem
 install_chef_extension_gem(){
  echo "[$(date)] Installing Azure Chef Extension gem"
@@ -94,13 +57,6 @@ curl_check (){
 			apt-get install -q -y curl
 		fi
   fi
-}
-
-install_from_local_package(){
-  # install chef
-  chef_client_installer=$(get_deb_installer)
-  installer_type="deb"
-  install_file $installer_type "$chef_client_installer"
 }
 
 install_from_repo_centos(){
@@ -154,9 +110,8 @@ install_from_repo_centos(){
 install_from_repo_ubuntu() {
 	platform="ubuntu"
 	curl_check $platform
-	
-	# Need to first run apt-get update so that apt-transport-https can be
-	# installed
+
+	# Need to first run apt-get update so that apt-transport-https can be installed
 	echo -n "Running apt-get update... "
 	apt-get update &> /dev/null
 	echo "done."
@@ -217,7 +172,7 @@ install_from_repo_ubuntu() {
 	apt-get install chef
 	echo "Package Installed successfully ..."
 }
- 
+
 get_linux_distributor(){
 #### Using python -mplatform command to get distributor name #####
   if python -mplatform | grep centos > /dev/null; then
