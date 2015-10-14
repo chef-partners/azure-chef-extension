@@ -88,7 +88,11 @@ curl_check (){
     echo "Detected curl..."
   else
     echo "Installing curl..."
-    yum install -d0 -e0 -y curl
+		if [ "$1" == "centos" ]; then
+    	yum install -d0 -e0 -y curl
+		else
+			apt-get install -q -y curl
+		fi
   fi
 }
 
@@ -99,8 +103,9 @@ install_from_local_package(){
   install_file $installer_type "$chef_client_installer"
 }
 
-install_from_repo(){
-  curl_check
+install_from_repo_centos(){
+	platform="centos"
+  curl_check $platform
   get_hostname
   yum_repo_path=/etc/yum.repos.d/chef_stable.repo
   yum_repo_config_url="https://packagecloud.io/install/repositories/chef/stable/config_file.repo?os=el&dist=5&name=${host}"
@@ -145,6 +150,73 @@ install_from_repo(){
   yum -y install chef
   echo "Package Installed successfully ..."
 }
+
+install_from_repo_ubuntu() {
+	platform="ubuntu"
+	curl_check $platform
+	
+	# Need to first run apt-get update so that apt-transport-https can be
+	# installed
+	echo -n "Running apt-get update... "
+	apt-get update &> /dev/null
+	echo "done."
+
+	echo -n "Installing apt-transport-https... "
+	apt-get install -y apt-transport-https &> /dev/null
+	echo "done."
+
+	apt_config_url="https://packagecloud.io/install/repositories/chef/stable/config_file.list?os=${os}&dist=${dist}&source=script"
+	apt_source_path="/etc/apt/sources.list.d/chef_stable.list"
+
+	echo -n "Installing $apt_source_path..."
+
+	# create an apt config file for this repository
+	curl -sSf "${apt_config_url}" > $apt_source_path
+	curl_exit_code=$?
+
+	if [ "$curl_exit_code" = "22" ]; then
+  	echo -n "Unable to download repo config from: "
+	  echo "${apt_config_url}"
+	  echo
+	  echo "Please contact support@packagecloud.io and report this."
+	  [ -e $apt_source_path ] && rm $apt_source_path
+  	exit 1
+	elif [ "$curl_exit_code" = "35" ]; then
+  	echo "curl is unable to connect to packagecloud.io over TLS when running: "
+	  echo "    curl ${apt_config_url}"
+	  echo "This is usually due to one of two things:"
+	  echo
+	  echo " 1.) Missing CA root certificates (make sure the ca-certificates package is installed)"
+  	echo " 2.) An old version of libssl. Try upgrading libssl on your system to a more recent version"
+	  echo
+  	echo "Contact support@packagecloud.io with information about your system for help."
+	  [ -e $apt_source_path ] && rm $apt_source_path
+  	exit 1
+	elif [ "$curl_exit_code" -gt "0" ]; then
+  	echo
+	  echo "Unable to run: "
+  	echo "    curl ${apt_config_url}"
+	  echo
+  	echo "Double check your curl installation and try again."
+	  [ -e $apt_source_path ] && rm $apt_source_path
+  	exit 1
+	else
+  	echo "done."
+	fi
+
+	echo -n "Importing packagecloud gpg key... "
+	# import the gpg key
+	curl https://packagecloud.io/gpg.key 2> /dev/null | apt-key add - &>/dev/null
+	echo "done."
+
+	echo -n "Running apt-get update... "
+	# update apt on this system
+	apt-get update &> /dev/null
+	echo "done."
+
+	apt-get install chef
+	echo "Package Installed successfully ..."
+}
  
 get_linux_distributor(){
 #### Using python -mplatform command to get distributor name #####
@@ -169,11 +241,11 @@ else
   case $linux_distributor in
     "ubuntu")
       echo "Linux Distributor: ${linux_distributor}"
-      install_from_local_package
+      install_from_repo_ubuntu
       ;;
     "centos")
       echo "Linux Distributor: ${linux_distributor}"
-      install_from_repo
+      install_from_repo_centos
       ;;
     *)
       echo "No Linux Distributor detected ... exiting..."
