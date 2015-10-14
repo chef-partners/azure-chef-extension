@@ -14,6 +14,7 @@ Azure resource extension to enable Chef on Azure virtual machine instances.
 |----------|------------|
 | Ubuntu   | 12.04, 14+  |
 | Windows  | 2008r2, 2012, 2012r2 |
+| Centos   | 6.5+                 |
 
 
 ##Azure Chef Extension usage:
@@ -95,7 +96,7 @@ $vmObj1 = New-AzureVMConfig -Name $vm1 -InstanceSize Small -ImageName $img
 $vmObj1 = Add-AzureProvisioningConfig -VM $vmObj1 -Password $password -AdminUsername $username –Windows
 
 # use the shared config files
-# ExtensionName = ChefClient(for windows), LinuxChefClient (for ubuntu)
+# ExtensionName = ChefClient(for windows), LinuxChefClient (for ubuntu and centos)
 $vObj1 = Set-AzureVMExtension -VM $vmObj1 -ExtensionName ‘ChefClient’ -Publisher ‘Chef.Bootstrap.WindowsAzure’ -Version 1210.12 -PublicConfigPath '<your path to publiconfig.config>' -PrivateConfigPath '<your path to privateconfig.config>'
 
 New-AzureVM -Location 'West US' -ServiceName $svc -VM $vObj1
