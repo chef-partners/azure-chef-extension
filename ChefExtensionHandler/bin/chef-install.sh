@@ -113,14 +113,14 @@ install_from_repo_ubuntu() {
 
 	# Need to first run apt-get update so that apt-transport-https can be installed
 	echo -n "Running apt-get update... "
-	apt-get update &> /dev/null
+	apt-get update
 	echo "done."
 
 	echo -n "Installing apt-transport-https... "
-	apt-get install -y apt-transport-https &> /dev/null
+	apt-get install -y apt-transport-https
 	echo "done."
 
-	apt_config_url="https://packagecloud.io/install/repositories/chef/stable/config_file.list?os=${os}&dist=${dist}&source=script"
+	apt_config_url="https://packagecloud.io/install/repositories/chef/stable/config_file.list?os=ubuntu&dist=trusty&source=script"
 	apt_source_path="/etc/apt/sources.list.d/chef_stable.list"
 
 	echo -n "Installing $apt_source_path..."
@@ -161,14 +161,15 @@ install_from_repo_ubuntu() {
 
 	echo -n "Importing packagecloud gpg key... "
 	# import the gpg key
-	curl https://packagecloud.io/gpg.key 2> /dev/null | apt-key add - &>/dev/null
+	curl https://packagecloud.io/gpg.key | sudo apt-key add -
 	echo "done."
 
 	echo -n "Running apt-get update... "
 	# update apt on this system
-	apt-get update &> /dev/null
+	apt-get update
 	echo "done."
 
+  echo "Installing chef-client package"
 	apt-get install chef
 	echo "Package Installed successfully ..."
 }
