@@ -16,7 +16,7 @@ uninstall_ubuntu_chef_package(){
 
   if test "$install_status" = "$dpkg_installed" ; then
     echo "[$(date)] Uninstalling package $pkg_name ..."
-    dpkg -P $pkg_name
+    apt-get purge $pkg_name
     check_uninstallation_status
   else
     echo "No Package found to uninstall!!!"
