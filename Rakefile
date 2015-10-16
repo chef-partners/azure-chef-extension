@@ -60,62 +60,6 @@ def windows?
   end
 end
 
-def download_chef(download_url, target)
-  puts "Downloading from url [#{download_url}]"
-  uri = URI(download_url)
-  Net::HTTP.start(uri.host) do |http|
-    begin
-        file = open(target, 'wb')
-        http.request_get(uri.request_uri) do |response|
-          case response
-          when Net::HTTPSuccess then
-            file = open(target, 'wb')
-            response.read_body do |segment|
-              file.write(segment)
-            end
-          when Net::HTTPRedirection then
-            location = response['location']
-            puts "WARNING: Redirected to #{location}"
-            download_chef(location, target)
-          else
-            puts "ERROR: Download failed. Http response code: #{response.code}"
-          end
-        end
-    ensure
-      file.close if file
-    end
-  end
-end
-
-def load_build_environment(platform, version)
-  # Parse the version to form the correct string
-  major_minor_version = version.split(/[.-]/)
-
-  if major_minor_version.length == 4 && major_minor_version[0].to_i >= 1100
-    version = major_minor_version[1] + '.' + major_minor_version[2] + '.' + (major_minor_version[3].to_i / 1000).to_s
-  else
-    version = major_minor_version.join('.')
-  end
-
-  if platform == "windows"
-    url = URI.parse('http://opscode.com/chef/metadata?v=' + version + "&prerelease=false&nightlies=false&p=windows&pv=7&m=x86_64")
-  elsif platform == "ubuntu"
-    url = URI.parse('http://opscode.com/chef/metadata?v=' + version + '&prerelease=false&nightlies=false&p=ubuntu&pv=14.04&m=x86_64')
-  elsif platform == "centos"
-    url = URI.parse('http://opscode.com/chef/metadata?v=' + version + '&prerelease=false&nightlies=false&p=centos&pv=7&m=x86_64')
-  end
-  request = Net::HTTP::Get.new(url.to_s)
-  response = Net::HTTP.start(url.host, url.port) {|http|
-    http.request(request)
-  }
-  if response.kind_of? Net::HTTPOK
-    download_url = response.body.split(' ')[1]
-    download_url
-  else
-    error_and_exit! "ERROR: Invalid chef-client version"
-  end
-end
-
 def error_and_exit!(message)
   puts "\nERROR: #{message}\n"
   exit
@@ -256,17 +200,6 @@ task :build, [:target_type, :extension_version, :confirmation_required] => [:gem
 
   assert_git_state
 
-  download_url = load_build_environment(args.target_type,args.extension_version)
-  unless download_url.nil?
-    puts <<-CONFIRMATION
-
-    **********************************************
-    Downloading specific chef-client version using
-    #{download_url}.
-    Please confirm the correct chef-client version in url.
-    **********************************************
-    CONFIRMATION
-
   # Get user confirmation if we are downloading correct version.
   if args.confirmation_required == "true"
     confirm!("build")
@@ -277,7 +210,6 @@ task :build, [:target_type, :extension_version, :confirmation_required] => [:gem
   FileUtils.mkdir_p CHEF_BUILD_DIR
   FileUtils.mkdir_p "#{CHEF_BUILD_DIR}/bin"
   FileUtils.mkdir_p "#{CHEF_BUILD_DIR}/gems"
-  FileUtils.mkdir_p "#{CHEF_BUILD_DIR}/installer"
 
   # Copy platform specific files to package dir
   puts "Copying #{args.target_type} scripts to package directory..."
@@ -298,23 +230,11 @@ task :build, [:target_type, :extension_version, :confirmation_required] => [:gem
     end
   end
 
-  puts "\nDownloading chef installer..."
-  target_chef_pkg = case args.target_type
-                    when "ubuntu"
-                      "#{CHEF_BUILD_DIR}/installer/chef-client-latest.deb"
-                    when "centos"
-                      "#{CHEF_BUILD_DIR}/installer/chef-client-latest.rpm"
-                    else
-                      "#{CHEF_BUILD_DIR}/installer/chef-client-latest.msi"
-                    end
-
   date_tag = Date.today.strftime("%Y%m%d")
 
   # Write a release tag file to zip. This will help during testing
   # to check if package was synced in PIR.
   FileUtils.touch "#{CHEF_BUILD_DIR}/version_#{args.extension_version}_#{date_tag}_#{args.target_type}"
-
-  download_chef(download_url, target_chef_pkg)
 
   puts "\nCreating a zip package..."
   puts "#{PACKAGE_NAME}_#{args.extension_version}_#{date_tag}_#{args.target_type}.zip\n\n"
@@ -324,8 +244,8 @@ task :build, [:target_type, :extension_version, :confirmation_required] => [:gem
       zipfile.add(file.sub("#{CHEF_BUILD_DIR}/", ''), file)
     end
   end
-  end
 end
+
 
 desc "Cleans up the package sandbox"
 task :clean do
