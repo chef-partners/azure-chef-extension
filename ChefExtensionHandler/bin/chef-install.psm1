@@ -47,7 +47,7 @@ function Get-SharedHelper {
   "$chefExtensionRoot\\bin\\shared.ps1"
 }
 
-function Get-LocalDestinationMsiPath($chefExtensionRoot) {
+function Get-LocalDestinationMsiPath {
   [System.IO.Path]::GetFullPath("$env:temp\\chef-client-latest.msi")
 }
 
@@ -67,7 +67,7 @@ function Install-ChefClient {
 
   Download-ChefClient
 
-  $localDestinationMsiPath = Get-LocalDestinationMsiPath $chefExtensionRoot
+  $localDestinationMsiPath = Get-LocalDestinationMsiPath
 
   Run-ChefInstaller $localDestinationMsiPath $chefClientMsiLogPath
 
@@ -77,6 +77,7 @@ function Install-ChefClient {
 }
 
 function Download-ChefClient {
+  # TODO: Add functionality to accept version for chef-client from user and update $remoteUrl accordingly
   $remoteUrl = "http://www.chef.io/chef/download?p=windows&pv=2012&m=x86_64&v=latest&prerelease=false"
   $localPath = "$env:temp\\chef-client-latest.msi"
   $webClient = new-object System.Net.WebClient
