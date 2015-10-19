@@ -47,8 +47,8 @@ function Get-SharedHelper {
   "$chefExtensionRoot\\bin\\shared.ps1"
 }
 
-function Get-LocalDestinationMsiPath($chefExtensionRoot) {
-  [System.IO.Path]::GetFullPath("$chefExtensionRoot\\installer\\chef-client-latest.msi")
+function Get-LocalDestinationMsiPath {
+  [System.IO.Path]::GetFullPath("$env:temp\\chef-client-latest.msi")
 }
 
 function Install-ChefClient {
@@ -65,14 +65,31 @@ function Install-ChefClient {
     Archive-ChefClientLog $chefClientMsiLogPath
   }
 
-  $localDestinationMsiPath = Get-LocalDestinationMsiPath $chefExtensionRoot
+  Download-ChefClient
+
+  $localDestinationMsiPath = Get-LocalDestinationMsiPath
 
   Run-ChefInstaller $localDestinationMsiPath $chefClientMsiLogPath
 
   $env:Path += ";C:\\opscode\\chef\\bin;C:\\opscode\\chef\\embedded\\bin"
 
   Install-AzureChefExtensionGem $chefExtensionRoot
+}
 
+function Download-ChefClient {
+  # TODO: Add functionality to accept version for chef-client from user and update $remoteUrl accordingly
+  $remoteUrl = "http://www.chef.io/chef/download?p=windows&pv=2012&m=x86_64&v=latest&prerelease=false"
+  $localPath = "$env:temp\\chef-client-latest.msi"
+  $webClient = new-object System.Net.WebClient
+  echo "Downloading Chef Client ..."
+  Try {
+    $webClient.DownloadFile($remoteUrl, $localPath)
+  }
+  Catch{
+    $ErrorMessage = $_.Exception.Message
+    # log to CommandExecution log:
+    echo "Error running install: $ErrorMessage"
+  }
 }
 
 Export-ModuleMember -Function Install-ChefClient

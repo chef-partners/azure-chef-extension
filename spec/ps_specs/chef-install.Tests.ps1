@@ -28,7 +28,10 @@ describe "#Install-ChefClient" {
     $extensionRoot = "C:\Packages\Plugin\ChefExtensionHandler"
     mock Chef-GetExtensionRoot {return $extensionRoot}
 
-    $localMsiPath = "C:\Packages\Plugin\ChefExtensionHandler\installer\chef-client-latest.msi"
+    mock Download-ChefClient
+
+    $env:temp = "C:\AppData\Temp"
+    $localMsiPath = "$env:temp\\chef-client-latest.msi"
     mock Get-LocalDestinationMsiPath {return $localMsiPath}
 
     $chefMsiLogPath = $env:tmp
@@ -45,10 +48,13 @@ describe "#Install-ChefClient" {
     # Delete temp file created for Get-SharedHelper
     Remove-Item $tempPS
 
+    # Download-ChefClient should called atleast 1 time
+    Assert-MockCalled Download-ChefClient -Times 1
+
     # Archive-ChefClientLog should called with $chefMsiLogPath params atleast 1 time
     Assert-MockCalled Archive-ChefClientLog -Times 1 -ParameterFilter{$chefClientMsiLogPath -eq $chefMsiLogPath}
 
-    Assert-MockCalled Get-LocalDestinationMsiPath -Times 1 -ParameterFilter{$chefExtensionRoot -eq $extensionRoot}
+    Assert-MockCalled Get-LocalDestinationMsiPath -Times 1
 
     Assert-MockCalled Run-ChefInstaller -Times 1 -ParameterFilter{$localDestinationMsiPath -eq $localMsiPath -and $chefClientMsiLogPath -eq $chefMsiLogPath}
 
@@ -89,10 +95,9 @@ describe "#Get-SharedHelper" {
 
 describe "#Get-LocalDestinationMsiPath" {
   it "contains chef-client-latest.msi path" {
-    $extensionRoot = "C:\Users\azure\azure-chef-extension\ChefExtensionHandler"
-    $result = Get-LocalDestinationMsiPath($extensionRoot)
-
-    $result | should Match("\\installer\\chef-client-latest.msi")
+    $env:temp = "C:\AppData\Temp"
+    $result = Get-LocalDestinationMsiPath
+    $result | should Match("\\chef-client-latest.msi")
   }
 }
 
