@@ -45,7 +45,7 @@ get_hostname (){
   echo "Found hostname: ${host}"
 }
 
-curl_check (){
+curl_check(){
   echo "Checking for curl..."
   if command -v curl > /dev/null; then
     echo "Detected curl..."
@@ -59,8 +59,43 @@ curl_check (){
   fi
 }
 
+curl_status(){
+  if [ "$1" = "22" ]; then
+    echo
+    echo -n "Unable to download repo config from: "
+    echo "${2}"
+    echo
+    echo "Please contact support@packagecloud.io and report this."
+    [ -e $3 ] && rm $3
+    exit 1
+  elif [ "$1" = "35" ]; then
+    echo
+    echo "curl is unable to connect to packagecloud.io over TLS when running: "
+    echo "curl ${2}"
+    echo
+    echo "This is usually due to one of two things:"
+    echo
+    echo " 1.) Missing CA root certificates (make sure the ca-certificates package is installed)"
+    echo " 2.) An old version of libssl. Try upgrading libssl on your system to a more recent version"
+    echo
+    echo "Contact support@packagecloud.io with information about your system for help."
+    [ -e $3 ] && rm $3
+    exit 1
+  elif [ "$1" -gt "0" ]; then
+    echo
+    echo "Unable to run: "
+    echo "curl ${2}"
+    echo
+    echo "Double check your curl installation and try again."
+    [ -e $3 ] && rm $3
+    exit 1
+  else
+    echo "done."
+  fi
+}
+
 install_from_repo_centos(){
-	platform="centos"
+  platform="centos"
   curl_check $platform
   get_hostname
   yum_repo_path=/etc/yum.repos.d/chef_stable.repo
@@ -69,42 +104,10 @@ install_from_repo_centos(){
   echo "Downloading repository file: ${yum_repo_config_url}"
   curl -f "${yum_repo_config_url}" > $yum_repo_path
   curl_exit_code=$?
-
-  if [ "$curl_exit_code" = "22" ]; then
-    echo
-    echo -n "Unable to download repo config from: "
-    echo "${yum_repo_config_url}"
-    echo
-    echo "Please contact support@packagecloud.io and report this."
-    [ -e $yum_repo_path ] && rm $yum_repo_path
-    exit 1
-  elif [ "$curl_exit_code" = "35" ]; then
-    echo
-    echo "curl is unable to connect to packagecloud.io over TLS when running: "
-    echo "curl ${yum_repo_config_url}"
-    echo
-    echo "This is usually due to one of two things:"
-    echo
-    echo " 1.) Missing CA root certificates (make sure the ca-certificates package is installed)"
-    echo " 2.) An old version of libssl. Try upgrading libssl on your system to a more recent version"
-    echo
-    echo "Contact support@packagecloud.io with information about your system for help."
-    [ -e $yum_repo_path ] && rm $yum_repo_path
-    exit 1
-  elif [ "$curl_exit_code" -gt "0" ]; then
-    echo
-    echo "Unable to run: "
-    echo "curl ${yum_repo_config_url}"
-    echo
-    echo "Double check your curl installation and try again."
-    [ -e $yum_repo_path ] && rm $yum_repo_path
-    exit 1
-  else
-    echo "done."
-  fi
+  curl_status $curl_exit_code $yum_repo_config_url $yum_repo_path
 
   yum -y install chef
-  echo "Package Installed successfully ..."
+  check_installation_status
 }
 
 install_from_repo_ubuntu() {
@@ -128,36 +131,7 @@ install_from_repo_ubuntu() {
 	# create an apt config file for this repository
 	curl -sSf "${apt_config_url}" > $apt_source_path
 	curl_exit_code=$?
-
-	if [ "$curl_exit_code" = "22" ]; then
-  	echo -n "Unable to download repo config from: "
-	  echo "${apt_config_url}"
-	  echo
-	  echo "Please contact support@packagecloud.io and report this."
-	  [ -e $apt_source_path ] && rm $apt_source_path
-  	exit 1
-	elif [ "$curl_exit_code" = "35" ]; then
-  	echo "curl is unable to connect to packagecloud.io over TLS when running: "
-	  echo "    curl ${apt_config_url}"
-	  echo "This is usually due to one of two things:"
-	  echo
-	  echo " 1.) Missing CA root certificates (make sure the ca-certificates package is installed)"
-  	echo " 2.) An old version of libssl. Try upgrading libssl on your system to a more recent version"
-	  echo
-  	echo "Contact support@packagecloud.io with information about your system for help."
-	  [ -e $apt_source_path ] && rm $apt_source_path
-  	exit 1
-	elif [ "$curl_exit_code" -gt "0" ]; then
-  	echo
-	  echo "Unable to run: "
-  	echo "    curl ${apt_config_url}"
-	  echo
-  	echo "Double check your curl installation and try again."
-	  [ -e $apt_source_path ] && rm $apt_source_path
-  	exit 1
-	else
-  	echo "done."
-	fi
+  curl_status $curl_exit_code $apt_config_url $apt_source_path
 
 	echo -n "Importing packagecloud gpg key... "
 	# import the gpg key
@@ -171,7 +145,15 @@ install_from_repo_ubuntu() {
 
   echo "Installing chef-client package"
 	apt-get install chef
-	echo "Package Installed successfully ..."
+	check_installation_status
+}
+
+check_installation_status(){
+  if [ $? -eq 0 ]; then
+    echo "[$(date)] Package Chef installed successfully."
+  else
+    echo "[$(date)] Unable to uninstall package Chef."
+  fi
 }
 
 get_linux_distributor(){
