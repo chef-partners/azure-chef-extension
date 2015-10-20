@@ -60,6 +60,11 @@ def windows?
   end
 end
 
+def error_and_exit!(message)
+  puts "\nERROR: #{message}\n"
+  exit
+end
+
 def confirm!(type)
   print "Do you wish to proceed? (y/n)"
   proceed = STDIN.gets.chomp() == 'y'
