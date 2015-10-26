@@ -9,43 +9,6 @@ get_script_dir(){
 
 chef_extension_root=$(get_script_dir)/../
 
-# returns chef-client bebian installer
-get_deb_installer(){
-  pkg_file="$chef_extension_root/installer/chef-client-latest.deb"
-  echo "${pkg_file}"
-}
-
-get_rpm_installer(){
-  pkg_file="$chef_extension_root/installer/chef-client-latest.rpm"
-  echo "${pkg_file}"
-}
-
-# install_file TYPE FILENAME
-# TYPE is "deb"
-install_file() {
-  echo "Installing Chef $version"
-  case "$1" in
-    "deb")
-      echo "[$(date)] Installing with dpkg...$2"
-      dpkg -i "$2"
-      ;;
-    "rpm")
-      echo "[$(date)] Installing with rpm...$2"
-      rpm -i "$2"
-      ;;
-    *)
-      echo "Unknown filetype: $1"
-      exit 1
-      ;;
-  esac
-  if test $? -ne 0; then
-    echo "[$(date)] Chef Client installation failed"
-    exit 1
-  else
-    echo "[$(date)] Chef Client Package installation succeeded!"
-  fi
-}
-
 # install azure chef extension gem
 install_chef_extension_gem(){
  echo "[$(date)] Installing Azure Chef Extension gem"
@@ -82,45 +45,33 @@ get_hostname (){
   echo "Found hostname: ${host}"
 }
 
-curl_check (){
+curl_check(){
   echo "Checking for curl..."
   if command -v curl > /dev/null; then
     echo "Detected curl..."
   else
     echo "Installing curl..."
-    yum install -d0 -e0 -y curl
+		if [ "$1" == "centos" ]; then
+    	yum install -d0 -e0 -y curl
+		else
+			apt-get install -q -y curl
+		fi
   fi
 }
 
-install_from_local_package(){
-  # install chef
-  chef_client_installer=$(get_deb_installer)
-  installer_type="deb"
-  install_file $installer_type "$chef_client_installer"
-}
-
-install_from_repo(){
-  curl_check
-  get_hostname
-  yum_repo_path=/etc/yum.repos.d/chef_stable.repo
-  yum_repo_config_url="https://packagecloud.io/install/repositories/chef/stable/config_file.repo?os=el&dist=5&name=${host}"
-
-  echo "Downloading repository file: ${yum_repo_config_url}"
-  curl -f "${yum_repo_config_url}" > $yum_repo_path
-  curl_exit_code=$?
-
-  if [ "$curl_exit_code" = "22" ]; then
+curl_status(){
+  if [ "$1" = "22" ]; then
     echo
     echo -n "Unable to download repo config from: "
-    echo "${yum_repo_config_url}"
+    echo "${2}"
     echo
     echo "Please contact support@packagecloud.io and report this."
-    [ -e $yum_repo_path ] && rm $yum_repo_path
+    [ -e $3 ] && rm $3
     exit 1
-  elif [ "$curl_exit_code" = "35" ]; then
+  elif [ "$1" = "35" ]; then
     echo
     echo "curl is unable to connect to packagecloud.io over TLS when running: "
-    echo "curl ${yum_repo_config_url}"
+    echo "curl ${2}"
     echo
     echo "This is usually due to one of two things:"
     echo
@@ -128,24 +79,83 @@ install_from_repo(){
     echo " 2.) An old version of libssl. Try upgrading libssl on your system to a more recent version"
     echo
     echo "Contact support@packagecloud.io with information about your system for help."
-    [ -e $yum_repo_path ] && rm $yum_repo_path
+    [ -e $3 ] && rm $3
     exit 1
-  elif [ "$curl_exit_code" -gt "0" ]; then
+  elif [ "$1" -gt "0" ]; then
     echo
     echo "Unable to run: "
-    echo "curl ${yum_repo_config_url}"
+    echo "curl ${2}"
     echo
     echo "Double check your curl installation and try again."
-    [ -e $yum_repo_path ] && rm $yum_repo_path
+    [ -e $3 ] && rm $3
     exit 1
   else
     echo "done."
   fi
+}
+
+install_from_repo_centos(){
+  platform="centos"
+  curl_check $platform
+  get_hostname
+  yum_repo_path=/etc/yum.repos.d/chef_stable.repo
+  yum_repo_config_url="https://packagecloud.io/install/repositories/chef/stable/config_file.repo?os=el&dist=5&name=${host}"
+
+  echo "Downloading repository file: ${yum_repo_config_url}"
+  curl -f "${yum_repo_config_url}" > $yum_repo_path
+  curl_exit_code=$?
+  curl_status $curl_exit_code $yum_repo_config_url $yum_repo_path
 
   yum -y install chef
-  echo "Package Installed successfully ..."
+  check_installation_status
 }
- 
+
+install_from_repo_ubuntu() {
+	platform="ubuntu"
+	curl_check $platform
+
+	# Need to first run apt-get update so that apt-transport-https can be installed
+	echo -n "Running apt-get update... "
+	apt-get update
+	echo "done."
+
+	echo -n "Installing apt-transport-https... "
+	apt-get install -y apt-transport-https
+	echo "done."
+
+	apt_config_url="https://packagecloud.io/install/repositories/chef/stable/config_file.list?os=ubuntu&dist=trusty&source=script"
+	apt_source_path="/etc/apt/sources.list.d/chef_stable.list"
+
+	echo -n "Installing $apt_source_path..."
+
+	# create an apt config file for this repository
+	curl -sSf "${apt_config_url}" > $apt_source_path
+	curl_exit_code=$?
+  curl_status $curl_exit_code $apt_config_url $apt_source_path
+
+	echo -n "Importing packagecloud gpg key... "
+	# import the gpg key
+	curl https://packagecloud.io/gpg.key | sudo apt-key add -
+	echo "done."
+
+	echo -n "Running apt-get update... "
+	# update apt on this system
+	apt-get update
+	echo "done."
+
+  echo "Installing chef-client package"
+	apt-get install chef
+	check_installation_status
+}
+
+check_installation_status(){
+  if [ $? -eq 0 ]; then
+    echo "[$(date)] Package Chef installed successfully."
+  else
+    echo "[$(date)] Unable to uninstall package Chef."
+  fi
+}
+
 get_linux_distributor(){
 #### Using python -mplatform command to get distributor name #####
   if python -mplatform | grep centos > /dev/null; then
@@ -169,11 +179,11 @@ else
   case $linux_distributor in
     "ubuntu")
       echo "Linux Distributor: ${linux_distributor}"
-      install_from_local_package
+      install_from_repo_ubuntu
       ;;
     "centos")
       echo "Linux Distributor: ${linux_distributor}"
-      install_from_repo
+      install_from_repo_centos
       ;;
     *)
       echo "No Linux Distributor detected ... exiting..."

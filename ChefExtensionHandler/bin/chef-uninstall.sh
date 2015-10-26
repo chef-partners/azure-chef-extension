@@ -11,25 +11,17 @@ remove_chef_config(){
 # Function to uninstall ubuntu chef_pkg
 uninstall_ubuntu_chef_package(){
   pkg_name=`dpkg -l | grep chef | awk '{print $2}'`
-  dpkg_installed="Status: install ok installed"
-  install_status=`dpkg -s "$pkg_name" | grep "$dpkg_installed"`
-
-  if test "$install_status" = "$dpkg_installed" ; then
-    echo "[$(date)] Uninstalling package $pkg_name ..."
-    dpkg -P $pkg_name
-    check_uninstallation_status
-  else
-    echo "No Package found to uninstall!!!"
-  fi
+  echo "[$(date)] Uninstalling package $pkg_name ..."
+  apt-get remove --purge $pkg_name -y
+  check_uninstallation_status
 }
 
 # Function to Uninstall centOS chef_pkg
 uninstall_centos_chef_package(){
   pkg_name=`rpm -qi chef | grep Name | awk '{print $3}'`
-
   if test "$pkg_name" = "chef" ; then
     echo "[$(date)] Uninstalling package $pkg_name ..."
-    rpm -ev $pkg_name
+    yum remove $pkg_name -y
     check_uninstallation_status
   else
     echo "[$(date)] No Package found to uninstall!!!"
