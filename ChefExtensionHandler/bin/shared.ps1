@@ -46,8 +46,8 @@ function Get-HandlerSettings {
   $runtimeSettingsJson.runtimeSettings[0].handlerSettings
 }
 
-# returns the Prevoius Extension Versions HandlerSettings read from the latest settings file
-function Get-PrevoiusVersionHandlerSettings {
+# returns the Previous Extension Versions HandlerSettings read from the latest settings file
+function Get-PreviousVersionHandlerSettings {
   $extensionPreviousVersion = Get-PreviousExtensionVersion
   $latestSettingFile = Get-HandlerSettingsFileName "$chefExtensionParent\\$extensionPreviousVersion"
   $runtimeSettingsJson = Read-JsonFromFile "$chefExtensionParent\\$extensionPreviousVersion\\RuntimeSettings\\$latestSettingFile"

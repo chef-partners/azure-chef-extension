@@ -88,7 +88,7 @@ function Uninstall-ChefClient {
 
     $deleteChefConfig = Get-deleteChefConfigSetting $calledFromUpdate
 
-    Uninstall-ChefService    
+    Uninstall-ChefService
 
     Uninstall-AzureChefExtensionGem
 

@@ -43,7 +43,7 @@ function Update-ChefClient {
   $powershellVersion = Get-PowershellVersion
 
   if ($powershellVersion -ge 3) {
-    $json_handlerSettings = Get-PrevoiusVersionHandlerSettings
+    $json_handlerSettings = Get-PreviousVersionHandlerSettings
     $autoUpdateClient = $json_handlerSettings.publicSettings.autoUpdateClient
   } else {
     $autoUpdateClient = Get-autoUpdateClientSetting
