@@ -17,6 +17,8 @@ class EnableChef
   include ChefAzure::Config
   include ChefAzure::Reporting
 
+  LINUX_CERT_PATH = "/var/lib/waagent"
+
   def initialize(extension_root, *enable_args)
     @chef_extension_root = extension_root
     @enable_args = enable_args
@@ -257,8 +259,8 @@ class EnableChef
       decrypted_text = result.stdout
       result.error!
     else
-      cert_path = "/var/lib/waagent/#{thumbprint}.crt"
-      private_key_path = "/var/lib/waagent/#{thumbprint}.prv"
+      cert_path = "#{LINUX_CERT_PATH}/#{thumbprint}.crt"
+      private_key_path = "#{LINUX_CERT_PATH}/#{thumbprint}.prv"
 
       # read cert & get key from the certificate
       if File.exists?(cert_path) && File.exists?(private_key_path)
