@@ -17,8 +17,6 @@ class EnableChef
   include ChefAzure::Config
   include ChefAzure::Reporting
 
-  LINUX_CERT_PATH = "/var/lib/waagent/Certificates.pem"
-
   def initialize(extension_root, *enable_args)
     @chef_extension_root = extension_root
     @enable_args = enable_args
@@ -250,25 +248,27 @@ class EnableChef
   end
 
   def get_decrypted_key(encrypted_text)
+    thumbprint = value_from_json_file(handler_settings_file,'runtimeSettings','0','handlerSettings', 'protectedSettingsCertThumbprint')
     if windows?
       decrypt_content_file_path = File.expand_path(File.dirname(File.dirname(__FILE__)))
       decrypt_content_file_path += "\\helpers\\powershell\\decrypt_content_on_windows.ps1"
-      thumb_print = value_from_json_file(handler_settings_file,'runtimeSettings','0','handlerSettings', 'protectedSettingsCertThumbprint')
       shell_out!('mode con:cols=300 lines=600')
-      result= shell_out("powershell.exe -nologo -noprofile -executionpolicy \"unrestricted\" -file #{decrypt_content_file_path} #{thumb_print} #{encrypted_text}")
+      result= shell_out("powershell.exe -nologo -noprofile -executionpolicy \"unrestricted\" -file #{decrypt_content_file_path} #{thumbprint} #{encrypted_text}")
       decrypted_text = result.stdout
       result.error!
     else
-      certificate_path = LINUX_CERT_PATH
+      cert_path = "/var/lib/waagent/#{thumbprint}.crt"
+      private_key_path = "/var/lib/waagent/#{thumbprint}.prv"
 
       # read cert & get key from the certificate
-      certificate = OpenSSL::X509::Certificate.new File.read(certificate_path)
-      private_key = OpenSSL::PKey::RSA.new File.read(certificate_path)
-
-      # decrypt text
-      encrypted_text = Base64.decode64(encrypted_text)
-      encrypted_text = OpenSSL::PKCS7.new(encrypted_text)
-      decrypted_text = encrypted_text.decrypt(private_key, certificate)
+      if File.exists?(cert_path) && File.exists?(private_key_path)
+        certificate = OpenSSL::X509::Certificate.new File.read(cert_path)
+        private_key = OpenSSL::PKey::RSA.new File.read(private_key_path)
+        # decrypt text
+        encrypted_text = Base64.decode64(encrypted_text)
+        encrypted_text = OpenSSL::PKCS7.new(encrypted_text)
+        decrypted_text = encrypted_text.decrypt(private_key, certificate)
+      end
     end
     decrypted_text
   end
