@@ -145,40 +145,7 @@ http://azure.microsoft.com/en-us/documentation/templates/multi-vm-chef-template-
 **Description:**
 
 Extensions versions are specified in 4 digit format : `<MajorVersion.MinorVersion.BuildNumber.RevisionNumber>`, where major version is freezed as `1210`.
-
-Chef Extension package includes released Chef-Client package. Currently Extension version depends on Chef-Client version. So whenever new Chef Client is releases, we have to publish new Extension as well.
-
-Chef-Client versions are specified in 4 digit format: `<MajorVersion.MinorVersion.PatchVersion-RevisionNumber>`. Example: chef-client 12.4.1-1
-
-**Use Following Extension Version Scheme:**
-* We are using Extension Major version from `1210.*.*.*`
-* Set Extension Minor Version = Chef-Client's Major Version
-* Set Extension BuildNumber = Chef-Client's Minor Version
-* Set Extension RevisionNumber = Chef-Client's PatchVersion * 1000
-* When a patch is applied to extension, extension's RevisionNumber is increased by 1.
-
-**Example**
-
-    1. When Chef-Client Version Changes-
-    Consider,
-    Current Chef-Client Version is 12.4.1
-
-    # Extension's RevisionNumber is Chef-Client's PatchVersion * 1000
-    Current Extension Version is 1210.12.4.1000
-
-    # Chef-Client version changes
-    After new Client-Client Version 12.4.2 is released
-
-    New Extension Version will be 1210.12.4.2000
-
-    2. When a patch is applied to extension while Chef-Client's version is same-
-    Current Chef-Client Version is 12.4.1
-
-    # Extension's RevisionNumber is Chef-Client's PatchVersion * 1000
-    Current Extension Version is 1210.12.4.1000
-
-    # After applying patch to Extension increase extension's RevisionNumber by 1
-    New Extension Version will be 1210.12.4.1001
+If a patch is applied, then extension's RevisionNumber is increased by 1.
 
 ##Build and Packaging
 You can use rake tasks to build and publish the new builds to Azure subscription.
