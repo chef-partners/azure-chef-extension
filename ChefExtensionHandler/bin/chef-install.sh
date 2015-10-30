@@ -94,6 +94,23 @@ curl_status(){
   fi
 }
 
+get_config_settings_file() {
+  config_files_path="$chef_extension_root/config/*.settings"
+  config_file_name=`ls $config_files_path 2>/dev/null | sort -V | tail -1`
+
+  echo $config_file_name
+}
+
+get_chef_version() {
+  config_file_name=$(get_config_settings_file)
+  if [[ -z "$config_file_name" ]]; then
+    echo "No config file found !!"
+  else
+    chef_version=`sed 's/.*bootstrap_version":"\(.*\)".*/\1/' $config_file_name 2>/dev/null`
+    echo $chef_version
+  fi
+}
+
 install_from_repo_centos(){
   platform="centos"
   curl_check $platform
@@ -106,7 +123,16 @@ install_from_repo_centos(){
   curl_exit_code=$?
   curl_status $curl_exit_code $yum_repo_config_url $yum_repo_path
 
-  yum -y install chef
+  echo "Installing chef-client package"
+  chef_version=$(get_chef_version)
+  if [ "$chef_version" = "No config file found !!" ]; then
+    echo "Configuration error. Azure chef extension Settings file missing."
+    exit 1
+  elif [[ -z "$chef_version" ]]; then
+    yum -y install chef
+  else
+    yum -y install chef-$chef_version
+  fi
   check_installation_status
 }
 
@@ -144,7 +170,16 @@ install_from_repo_ubuntu() {
 	echo "done."
 
   echo "Installing chef-client package"
-	apt-get install chef
+  chef_version=$(get_chef_version)
+  if [ "$chef_version" = "No config file found !!" ]; then
+    echo "Configuration error. Azure chef extension Settings file missing."
+    exit 1
+  elif [[ -z "$chef_version" ]]; then
+    apt-get install chef
+  else
+    apt-get install chef=$chef_version
+  fi
+
 	check_installation_status
 }
 
