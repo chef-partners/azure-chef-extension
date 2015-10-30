@@ -145,7 +145,9 @@ http://azure.microsoft.com/en-us/documentation/templates/multi-vm-chef-template-
 **Description:**
 
 Extensions versions are specified in 4 digit format : `<MajorVersion.MinorVersion.BuildNumber.RevisionNumber>`, where major version is freezed as `1210`.
-If a patch is applied, then extension's RevisionNumber is increased by 1.
+If backward incompatible changes are made, MinorVersion is increased by 1.
+If a backward compatible functionaly is added, BuildNumber is increased by 1.
+If bug fixes are done, then extension's RevisionNumber is increased by 1.
 
 ##Build and Packaging
 You can use rake tasks to build and publish the new builds to Azure subscription.
