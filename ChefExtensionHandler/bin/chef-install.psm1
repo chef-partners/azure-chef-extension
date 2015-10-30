@@ -51,6 +51,28 @@ function Get-LocalDestinationMsiPath {
   [System.IO.Path]::GetFullPath("$env:temp\\chef-client-latest.msi")
 }
 
+function Get-Settings-File {
+  $configRootPath = Chef-GetExtensionRoot + "\\config"
+  $configFilesPath = "$configRootPath\\*.settings"
+  $configFile = ls $configFilesPath | Sort-Object { [Int] ($_.basename -Replace '\D') } | Select -Last 1 | Select -ExpandProperty Name
+  if (!$configFile)
+  {
+    Write-Host("[$(Get-Date)] No config file found !!")
+    exit 1
+  }
+  $configFilePath = $configRootPath + "\\" + $configFile
+  
+  $configFilePath
+}
+
+function Get-Chef-Version {
+  $settingsFile = Get-Settings-File
+  $settingsData = Get-Content $settingsFile -Raw | ConvertFrom-Json
+  $chefVersion = $settingsData.runtimesettings.handlersettings.publicsettings.bootstrap_options.bootstrap_version
+  
+  $chefVersion
+}
+
 function Install-ChefClient {
   trap [Exception] {echo $_.Exception.Message;exit 1}
 
@@ -77,8 +99,13 @@ function Install-ChefClient {
 }
 
 function Download-ChefClient {
-  # TODO: Add functionality to accept version for chef-client from user and update $remoteUrl accordingly
-  $remoteUrl = "http://www.chef.io/chef/download?p=windows&pv=2012&m=x86_64&v=latest&prerelease=false"
+  $remoteUrl accordingly
+  $chefVersion = Get-Chef-Version
+  if ($chefVersion) {
+    $remoteUrl = "http://www.chef.io/chef/download?p=windows&pv=2012&m=x86_64&v=$chefVersion&prerelease=false"
+  } else {
+    $remoteUrl = "http://www.chef.io/chef/download?p=windows&pv=2012&m=x86_64&v=latest&prerelease=false"
+  }
   $localPath = "$env:temp\\chef-client-latest.msi"
   $webClient = new-object System.Net.WebClient
   echo "Downloading Chef Client ..."
