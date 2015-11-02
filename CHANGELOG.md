@@ -1,5 +1,11 @@
 # azure-chef-extension Change Log
-## Release: 1210.12.4.1000 (2015/08/21)
+## Release: 1210.12.5.1000 (2015/10/27)
+* [azure-chef-extension #71](https://github.com/chef-partners/azure-chef-extension/pull/71) Added chef.io url
+* [azure-chef-extension #78](https://github.com/chef-partners/azure-chef-extension/pull/78) Readme update for centos support
+* [azure-chef-extension #76](https://github.com/chef-partners/azure-chef-extension/pull/76) Decouple chef-client installation for windows - using omnitruck API
+* [azure-chef-extension #79](https://github.com/chef-partners/azure-chef-extension/pull/79) Install chef via apt repo on ubuntu
+
+## Last release: 1210.12.4.1000 (2015/08/21)
 * [azure-chef-extension #53](https://github.com/chef-partners/azure-chef-extension/pull/53) Fix for bootstrap_options Chef environment name setting
 * [azure-chef-extension #52](https://github.com/chef-partners/azure-chef-extension/pull/52) Extension update happens for Linux even if AutoUpdateClient=false
 * [azure-chef-extension #55](https://github.com/chef-partners/azure-chef-extension/pull/55) Updated version scheme for 1210.12.4.1000

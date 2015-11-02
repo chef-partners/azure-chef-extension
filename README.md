@@ -145,16 +145,24 @@ http://azure.microsoft.com/en-us/documentation/templates/multi-vm-chef-template-
 **Description:**
 
 Extensions versions are specified in 4 digit format : `<MajorVersion.MinorVersion.BuildNumber.RevisionNumber>`, where major version is freezed as `1210`.
+If backward incompatible changes are made, MinorVersion is increased by 1.
+If a backward compatible functionaly is added, BuildNumber is increased by 1.
+If bug fixes are done, then extension's RevisionNumber is increased by 1.
 
-Chef Extension package includes released Chef-Client package. Currently Extension version depends on Chef-Client version. So whenever new Chef Client is releases, we have to publish new Extension as well.
+##Old Version Scheme
+
+**Description:**
+
+Previously the extension version was coupled with the `chef-client` version.
+Extension versions were specified in 4 digit format : `<MajorVersion.MinorVersion.BuildNumber.RevisionNumber>`, where major version was freezed as `1210`.
 
 Chef-Client versions are specified in 4 digit format: `<MajorVersion.MinorVersion.PatchVersion-RevisionNumber>`. Example: chef-client 12.4.1-1
 
-**Use Following Extension Version Scheme:**
-* We are using Extension Major version from `1210.*.*.*`
-* Set Extension Minor Version = Chef-Client's Major Version
-* Set Extension BuildNumber = Chef-Client's Minor Version
-* Set Extension RevisionNumber = Chef-Client's PatchVersion * 1000
+**The Extension Version Scheme was as follows:**
+* Extension Major version is freezed as `1210.*.*.*`
+* Extension Minor Version = Chef-Client's Major Version
+* Extension BuildNumber = Chef-Client's Minor Version
+* Extension RevisionNumber = Chef-Client's PatchVersion * 1000
 * When a patch is applied to extension, extension's RevisionNumber is increased by 1.
 
 **Example**
