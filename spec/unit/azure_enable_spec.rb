@@ -193,14 +193,16 @@ describe EnableChef do
     it "extracts and returns the validation_key from encrypted text." do
       @object = Object.new
       allow(File).to receive(:read)
+      allow(File).to receive(:exists?).and_return(true)
       allow(OpenSSL::X509::Certificate).to receive(:new)
       allow(OpenSSL::PKey::RSA).to receive(:new).and_return(@object)
       allow(Base64).to receive(:decode64)
       allow(OpenSSL::PKCS7).to receive(:new).and_return(@object)
+      expect(instance).to receive(:handler_settings_file)
+      expect(instance).to receive(:value_from_json_file).twice.and_return('')
       expect(@object).to receive(:decrypt)
       expect(@object).to receive(:to_pem)
-      expect(instance).to receive(:value_from_json_file).once.and_return("")
-      instance.send(:get_validation_key, "encrypted_text")
+      instance.send(:get_validation_key, 'encrypted_text')
     end
   end
 
