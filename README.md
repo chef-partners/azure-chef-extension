@@ -149,6 +149,45 @@ If backward incompatible changes are made, MinorVersion is increased by 1.
 If a backward compatible functionaly is added, BuildNumber is increased by 1.
 If bug fixes are done, then extension's RevisionNumber is increased by 1.
 
+##Old Version Scheme
+
+**Description:**
+
+Previously the extension version was coupled with the `chef-client` version.
+Extension versions were specified in 4 digit format : `<MajorVersion.MinorVersion.BuildNumber.RevisionNumber>`, where major version was freezed as `1210`.
+
+Chef-Client versions are specified in 4 digit format: `<MajorVersion.MinorVersion.PatchVersion-RevisionNumber>`. Example: chef-client 12.4.1-1
+
+**The Extension Version Scheme was as follows:**
+* Extension Major version is freezed as `1210.*.*.*`
+* Extension Minor Version = Chef-Client's Major Version
+* Extension BuildNumber = Chef-Client's Minor Version
+* Extension RevisionNumber = Chef-Client's PatchVersion * 1000
+* When a patch is applied to extension, extension's RevisionNumber is increased by 1.
+
+**Example**
+
+    1. When Chef-Client Version Changes-
+    Consider,
+    Current Chef-Client Version is 12.4.1
+
+    # Extension's RevisionNumber is Chef-Client's PatchVersion * 1000
+    Current Extension Version is 1210.12.4.1000
+
+    # Chef-Client version changes
+    After new Client-Client Version 12.4.2 is released
+
+    New Extension Version will be 1210.12.4.2000
+
+    2. When a patch is applied to extension while Chef-Client's version is same-
+    Current Chef-Client Version is 12.4.1
+
+    # Extension's RevisionNumber is Chef-Client's PatchVersion * 1000
+    Current Extension Version is 1210.12.4.1000
+
+    # After applying patch to Extension increase extension's RevisionNumber by 1
+    New Extension Version will be 1210.12.4.1001
+
 ##Build and Packaging
 You can use rake tasks to build and publish the new builds to Azure subscription.
 
