@@ -106,8 +106,12 @@ get_chef_version() {
   if [[ -z "$config_file_name" ]]; then
     echo "No config file found !!"
   else
-    chef_version=`sed 's/.*bootstrap_version":"\(.*\)".*/\1/' $config_file_name 2>/dev/null`
-    echo $chef_version
+    if cat $config_file_name 2>/dev/null | grep -q "bootstrap_version"; then
+      chef_version=`sed 's/.*bootstrap_version":"\(.*\)".*/\1/' $config_file_name 2>/dev/null`
+      echo $chef_version
+    else
+      echo ""
+    fi
   fi
 }
 

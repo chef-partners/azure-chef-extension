@@ -19,6 +19,55 @@ Invoke-Expression $code
 $sharedHelper = $here.Replace("\spec\ps_specs", "\ChefExtensionHandler\bin\shared.ps1")
 . $sharedHelper
 
+describe "#Get-Settings-File" {
+  it "finds no config file and so exits with error message" {
+    $configRootPath = "C:\Packages\Plugin\ChefExtensionHandler\RuntimeSettings"
+    mock Chef-GetExtensionRoot { return $configRootPath }
+    $configFile = ""
+    Get-Settings-File | should Be("[$(Get-Date)] No config file found !!")
+    ## write about exit 1 ##
+    Remove-Item $configRootPath
+    Remove-Item $configFile
+  }
+  
+  it "returns runtime config/settings file path" {
+    $configRootPath = "C:\Packages\Plugin\ChefExtensionHandler\RuntimeSettings"
+    mock Chef-GetExtensionRoot { return $configRootPath }
+    $configFile = "0.settings"
+    $configFilePath = Get-Settings-File
+    $configFilePath | should Match("C:\Packages\Plugin\ChefExtensionHandler\RuntimeSettings\0.settings")
+    Remove-Item $configRootPath
+    Remove-Item $configFile
+    Remove-Item $configFilePath
+  }
+}
+
+describe "#Get-Chef-Version" {
+  it "returns empty string" {
+    $settingsFile = "C:\Packages\Plugin\ChefExtensionHandler\RuntimeSettings\0.settings"
+    mock Get-Settings-File { return $settingsFile }
+    $config_data = '{"runtimeSettings":[{"handlerSettings":{"protectedSettingsCertThumbprint":"some_thumbprint","protectedSettings":"some_key","publicSettings":{"client_rb":"chef_server_url \t \"https://api.opscode.com/organizations/some_org\"\nvalidation_client_name\t\"some_org-validator\"","runlist":"","autoUpdateClient":"false","deleteChefConfig":"false","custom_json_attr":{},"bootstrap_options":{"chef_server_url":"https://api.opscode.com/organizations/some_org","validation_client_name":"some_org-validator"}}}}]}'
+    $config_data | Set-Content $settingsFile
+    $chefVersion = Get-Chef-Version
+    $chefVersion | should Match("")
+    Remove-Item $settingsFile
+    Remove-Item $config_data
+    Remove-Item $chefVersion
+  }
+  
+  it "returns chef-version to be installed" {
+    $settingsFile = "C:\Packages\Plugin\ChefExtensionHandler\RuntimeSettings\0.settings"
+    mock Get-Settings-File { return $settingsFile }
+    $config_data = '{"runtimeSettings":[{"handlerSettings":{"protectedSettingsCertThumbprint":"some_thumbprint","protectedSettings":"some_key","publicSettings":{"client_rb":"chef_server_url \t \"https://api.opscode.com/organizations/some_org\"\nvalidation_client_name\t\"some_org-validator\"","runlist":"","autoUpdateClient":"false","deleteChefConfig":"false","custom_json_attr":{},"bootstrap_options":{"chef_server_url":"https://api.opscode.com/organizations/some_org","validation_client_name":"some_org-validator","bootstrap_version":"12.3.2"}}}}]}'
+    $config_data | Set-Content $settingsFile
+    $chefVersion = Get-Chef-Version
+    $chefVersion | should Match("12.3.2")
+    Remove-Item $settingsFile
+    Remove-Item $config_data
+    Remove-Item $chefVersion
+  }
+}
+
 describe "#Install-ChefClient" {
   it "install chef and azure chef extension gem successfully" {
     # create temp powershell file for mock Get-SharedHelper

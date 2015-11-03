@@ -52,7 +52,7 @@ function Get-LocalDestinationMsiPath {
 }
 
 function Get-Settings-File {
-  $configRootPath = Chef-GetExtensionRoot + "\\config"
+  $configRootPath = Chef-GetExtensionRoot + "\\RuntimeSettings"
   $configFilesPath = "$configRootPath\\*.settings"
   $configFile = ls $configFilesPath | Sort-Object { [Int] ($_.basename -Replace '\D') } | Select -Last 1 | Select -ExpandProperty Name
   if (!$configFile)
@@ -99,7 +99,6 @@ function Install-ChefClient {
 }
 
 function Download-ChefClient {
-  $remoteUrl accordingly
   $chefVersion = Get-Chef-Version
   if ($chefVersion) {
     $remoteUrl = "http://www.chef.io/chef/download?p=windows&pv=2012&m=x86_64&v=$chefVersion&prerelease=false"
