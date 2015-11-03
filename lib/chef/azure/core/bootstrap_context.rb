@@ -50,6 +50,29 @@ class Chef
             client_rb << %Q{verify_api_cert #{value}\n}
           end
 
+          # We configure :ssl_verify_mode only when it's overridden on the CLI
+          # or when specified in the knife config.
+          if @config[:node_ssl_verify_mode] || knife_config.has_key?(:ssl_verify_mode)
+            value = case @config[:node_ssl_verify_mode]
+            when "peer"
+              :verify_peer
+            when "none"
+              :verify_none
+            when nil
+              knife_config[:ssl_verify_mode]
+            else
+              nil
+            end
+
+            if value
+              client_rb << %Q{ssl_verify_mode :#{value}\n}
+            end
+          end
+
+          if @config[:ssl_verify_mode]
+            client_rb << %Q{ssl_verify_mode :#{knife_config[:ssl_verify_mode]}\n}
+          end
+
           client_rb <<  %Q{log_location       "#{@config[:log_location]}/chef-client.log"\n}
           client_rb <<  %Q{chef_server_url       "#{@config[:chef_server_url]}"\n} if @config[:chef_server_url]
           client_rb <<  %Q{validation_client_name       "#{@config[:validation_client_name]}"\n} if @config[:validation_client_name]
