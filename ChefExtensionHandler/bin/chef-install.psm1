@@ -81,7 +81,8 @@ function Install-ChefClient {
 function Copy-SettingsFile($chefExtesnsionRoot) {
   Write-Host("[$(Get-Date)] Copying settings file ...")
   $bootstrapDirectory = Get-BootstrapDirectory
-  Copy-Item "$chefExtensionRoot\\RuntimeSettings\\*.settings" "$$bootstrapDirectory"
+  Write-Host("[$(Get-Date) Bootstrap directory: $bootstrapDirectory]")
+  Copy-Item "$chefExtensionRoot\\RuntimeSettings\\*.settings" "$bootstrapDirectory"
   Write-Host("[$(Get-Date)] Copied settings file ...")
 }
 
