@@ -173,16 +173,16 @@ install_from_repo_ubuntu() {
 	apt-get update
 	echo "done."
 
-  echo "Installing chef-client package"
-  chef_version=$(get_chef_version)
-  if [ "$chef_version" = "No config file found !!" ]; then
-    echo "Configuration error. Azure chef extension Settings file missing."
-    exit 1
-  elif [[ -z "$chef_version" ]]; then
-    apt-get install chef
-  else
-    apt-get install chef=$chef_version
-  fi
+        echo "Installing chef-client package"
+        chef_version=$(get_chef_version)
+        if [ "$chef_version" = "No config file found !!" ]; then
+          echo "Configuration error. Azure chef extension Settings file missing."
+          exit 1
+        elif [[ -z "$chef_version" ]]; then
+          apt-get install chef
+        else
+          apt-get install chef=$chef_version\*
+        fi
 
 	check_installation_status
 }
