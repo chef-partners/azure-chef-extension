@@ -74,16 +74,6 @@ function Install-ChefClient {
   $env:Path += ";C:\\opscode\\chef\\bin;C:\\opscode\\chef\\embedded\\bin"
 
   Install-AzureChefExtensionGem $chefExtensionRoot
-
-  Copy-SettingsFile $chefExtensionRoot
-}
-
-function Copy-SettingsFile($chefExtensionRoot) {
-  Write-Host("[$(Get-Date)] Copying settings file ...")
-  $bootstrapDirectory = Get-BootstrapDirectory
-  Write-Host("[$(Get-Date) Bootstrap directory: $bootstrapDirectory]")
-  Copy-Item "$chefExtensionRoot\\RuntimeSettings\\*.settings" "$bootstrapDirectory"
-  Write-Host("[$(Get-Date)] Copied settings file ...")
 }
 
 function Download-ChefClient {

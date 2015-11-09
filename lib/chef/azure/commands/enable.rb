@@ -103,6 +103,9 @@ class EnableChef
   def configure_chef_only_once
     # "node-registered" file also indicates that enabled was called once and
     # configs are already generated.
+
+    copy_settings_file
+
     if not File.exists?("#{bootstrap_directory}/node-registered")
       if File.directory?("#{bootstrap_directory}")
         puts "Bootstrap directory [#{bootstrap_directory}] already exists, skipping creation..."
@@ -275,4 +278,12 @@ class EnableChef
     decrypted_text
   end
 
+  def copy_settings_file
+    settings_file = handler_settings_file
+    Chef::Log.info "Settigs file ...#{settings_file}"
+    if File.exists?(handler_settings_file)
+      Chef::Log.info "Copying setting file to #{bootstrap_directory}"
+      FileUtils.cp(settings_file, bootstrap_directory)
+    end
+  end
 end
