@@ -84,8 +84,10 @@ publicconfig.config example:
 **Powershell script to try Azure Chef Extension by using Set-AzureVMExtension cmdlet:**
 
 ```javascript
+I. Script for Windows platform
+
 $vm1 = "<VM name>"
-$svc = "<VM name>"
+$svc = "<CloudService name>"
 $username = "<username>"
 $password = "<password>"
 
@@ -96,10 +98,31 @@ $vmObj1 = New-AzureVMConfig -Name $vm1 -InstanceSize Small -ImageName $img
 $vmObj1 = Add-AzureProvisioningConfig -VM $vmObj1 -Password $password -AdminUsername $username –Windows
 
 # use the shared config files
-# ExtensionName = ChefClient(for windows), LinuxChefClient (for ubuntu and centos)
-$vObj1 = Set-AzureVMExtension -VM $vmObj1 -ExtensionName ‘ChefClient’ -Publisher ‘Chef.Bootstrap.WindowsAzure’ -Version 1210.12 -PublicConfigPath '<your path to publiconfig.config>' -PrivateConfigPath '<your path to privateconfig.config>'
+# ExtensionName = ChefClient
+$vObj1 = Set-AzureVMExtension -VM $vmObj1 -ExtensionName 'ChefClient' -Publisher 'Chef.Bootstrap.WindowsAzure' -Version '1210.12' -PublicConfigPath '<your path to publiconfig.config>' -PrivateConfigPath '<your path to privateconfig.config>'
 
 New-AzureVM -Location 'West US' -ServiceName $svc -VM $vObj1
+
+
+II. Script for Linux platform
+
+$vm1 = "<VM name>"
+$svc = "<CloudService name>"
+$username = "<username>"
+$password = "<password>"
+
+$img = "<your ubuntu/centos image>"
+
+$vmObj1 = New-AzureVMConfig -Name $vm1 -InstanceSize Small -ImageName $img
+
+$vmObj1 = Add-AzureProvisioningConfig -VM $vmObj1 -Password $password -LinuxUser $username –Linux
+
+# use the shared config files
+# ExtensionName = LinuxChefClient
+$vObj1 = Set-AzureVMExtension -VM $vmObj1 -ExtensionName 'LinuxChefClient' -Publisher 'Chef.Bootstrap.WindowsAzure' -Version '1210.12' -PublicConfigPath '<your path to publiconfig.config>' -PrivateConfigPath '<your path to privateconfig.config>'
+
+New-AzureVM -Location 'West US' -ServiceName $svc -VM $vObj1
+
 
 # Look into your hosted chef account to verify the registerd node(VM)
 ```
