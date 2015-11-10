@@ -40,19 +40,22 @@ function Update-ChefClient {
   # Source the shared PS
   . $(Get-SharedHelper)
 
+  $env:Path += ";C:\\opscode\\chef\\bin;C:\\opscode\\chef\\embedded\\bin"
+
   $powershellVersion = Get-PowershellVersion
 
   if ($powershellVersion -ge 3) {
-    $json_handlerSettings = Get-PrevoiusVersionHandlerSettings
+    $json_handlerSettings = Get-PreviousVersionHandlerSettings
     $autoUpdateClient = $json_handlerSettings.publicSettings.autoUpdateClient
   } else {
     $autoUpdateClient = Get-autoUpdateClientSetting
   }
 
+  Write-Host "[$(Get-Date)] AutoUpdateClient: $autoUpdateClient"
   # Auto update flag in Runtime Settings allows the user to opt for automatic chef-client update.
   # Default value is false
   if($autoUpdateClient -ne "true"){
-    Write-host "Auto update disabled"
+    Write-Host "[$(Get-Date)] Auto update disabled"
     return
   }
 
@@ -62,19 +65,19 @@ function Update-ChefClient {
 
   Try
   {
-    echo "Running update process"
+    Write-Host "[$(Get-Date)] Running update process"
 
     $bootstrapDirectory = Get-BootstrapDirectory
     $backupLocation = Get-TempBackupDir
     $calledFromUpdate = $True
     # Save chef configuration.
     Copy-Item $bootstrapDirectory $backupLocation -recurse
-    echo "Configuration saved to $backupLocation"
+    Write-Host "[$(Get-Date)] Configuration saved to $backupLocation"
 
     # uninstall chef. this will work since the uninstall script is idempotent.
     echo "Calling Uninstall-ChefClient from $scriptDir\chef-uninstall.psm1"
     Uninstall-ChefClient $calledFromUpdate
-    echo "Uninstall completed"
+    Write-Host "[$(Get-Date)] Uninstall completed"
 
     # Restore Chef Configuration
     Copy-Item $backupLocation $bootstrapDirectory -recurse
@@ -82,20 +85,20 @@ function Update-ChefClient {
     # install new version of chef extension
     echo "Calling Install-ChefClient from $scriptDir\chef-install.psm1 on new version"
     Install-ChefClient
-    echo "Install completed"
+    Write-Host "[$(Get-Date)] Install completed"
 
     # we dont want GA to run uninstall again, after this update.ps1 completes.
     # we pass this message to uninstall script through windows registry
-    echo "Updating chef registry to 'updated'"
+    Write-Host "[$(Get-Date)] Updating chef registry to 'updated'"
     Update-ChefExtensionRegistry "updated"
-    echo "Updated chef registry"
+    Write-Host "[$(Get-Date)] Updated chef registry"
   }
   Catch
   {
     $ErrorMessage = $_.Exception.Message
     Write-ChefStatus "updating-chef-extension" "error" "$ErrorMessage"
     # log to CommandExecution log:
-    echo "Error running update: $ErrorMessage"
+    Write-Host "[$(Get-Date)] Error running update: $ErrorMessage"
   }
 }
 

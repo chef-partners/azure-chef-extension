@@ -46,8 +46,8 @@ function Get-HandlerSettings {
   $runtimeSettingsJson.runtimeSettings[0].handlerSettings
 }
 
-# returns the Prevoius Extension Versions HandlerSettings read from the latest settings file
-function Get-PrevoiusVersionHandlerSettings {
+# returns the Previous Extension Versions HandlerSettings read from the latest settings file
+function Get-PreviousVersionHandlerSettings {
   $extensionPreviousVersion = Get-PreviousExtensionVersion
   $latestSettingFile = Get-HandlerSettingsFileName "$chefExtensionParent\\$extensionPreviousVersion"
   $runtimeSettingsJson = Read-JsonFromFile "$chefExtensionParent\\$extensionPreviousVersion\\RuntimeSettings\\$latestSettingFile"
@@ -177,10 +177,20 @@ function Get-autoUpdateClientSetting{
   Get-JsonValueUsingRuby "$chefExtensionParent\\$extensionPreviousVersion\\RuntimeSettings\\$latestSettingFile" "runtimeSettings" 0 "handlerSettings" "publicSettings" "autoUpdateClient"
 }
 
-# Get the uninstall settings for powershell 2
-function Get-deleteChefConfigSetting{
-  $extensionPreviousVersion = Get-PreviousExtensionVersion
-  $latestSettingFile = Get-HandlerSettingsFileName "$chefExtensionParent\\$extensionPreviousVersion"
-
-  Get-JsonValueUsingRuby "$chefExtensionParent\\$extensionPreviousVersion\\$latestSettingFile" "runtimeSettings" 0 "handlerSettings" "publicSettings" "deleteChefConfig"
+# Get the deleteChefConfig value
+function Get-deleteChefConfigSetting {
+  param([boolean]$calledFromUpdate = $False)
+  $powershellVersion = Get-PowershellVersion
+  if ($powershellVersion -ge 3) {
+    if ($calledFromUpdate) {
+      $json_handlerSettings = Get-PreviousVersionHandlerSettings
+    } else {
+      $json_handlerSettings = Get-HandlerSettings
+    }
+    $deleteChefConfig = $json_handlerSettings.publicSettings.deleteChefConfig
+  } else {
+    $latestSettingFile = (Get-ChildItem "C:\\chef" -Filter *.settings | Sort-Object Name -descending | Select-Object -First 1 ).Name
+    $deleteChefConfig = Get-JsonValueUsingRuby "C:\\chef\\$latestSettingFile" "runtimeSettings" 0 "handlerSettings" "publicSettings" "deleteChefConfig"
+  }
+  return $deleteChefConfig
 }

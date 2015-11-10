@@ -39,8 +39,7 @@ function Get-ChefPackage {
 }
 
 function Uninstall-ChefClientPackage {
-  param([boolean]$calledFromUpdate = $False)
-  $bootstrapDirectory = Get-BootstrapDirectory
+  param([boolean]$calledFromUpdate = $False)  
   $chefInstallDirectory = Get-ChefInstallDirectory
 
   # Actual uninstall functionality
@@ -50,29 +49,19 @@ function Uninstall-ChefClientPackage {
   Write-Host("[$(Get-Date)] Removing chef client and configuration files")
   # Uninstall chef_pkg
   $result = $chef_pkg.Uninstall()
-  Write-Host("[$(Get-Date)] $result")
-
-  $powershellVersion = Get-PowershellVersion
-
-  if ($powershellVersion -ge 3) {
-    if ($calledFromUpdate) {
-      $json_handlerSettings = Get-PrevoiusVersionHandlerSettings
-    } else {
-      $json_handlerSettings = Get-HandlerSettings
-    }
-
-    $deleteChefConfig = $json_handlerSettings.publicSettings.deleteChefConfig
-  } else {
-    $deleteChefConfig = Get-deleteChefConfigSetting
-  }
-
-  # clean up config files and install folder only if deleteChefConfig is true
-  if ((Test-Path $bootstrapDirectory) -And ($deleteChefConfig -eq "true")) {
-    Remove-Item -Recurse -Force $bootstrapDirectory
-  }
-
+  Write-Host("[$(Get-Date)] $result")  
+  
   if (Test-Path $chefInstallDirectory) {
     Remove-Item -Recurse -Force $chefInstallDirectory
+  }
+}
+
+function Delete-ChefConfig($deleteChefConfig) {
+  $bootstrapDirectory = Get-BootstrapDirectory
+  # clean up config files and install folder only if deleteChefConfig is true
+  if ((Test-Path $bootstrapDirectory) -And ($deleteChefConfig -eq "true")) {
+    Write-Host("[$(Get-Date)] Removing C:/chef ..")
+    Remove-Item -Recurse -Force $bootstrapDirectory
   }
 }
 
@@ -95,11 +84,15 @@ function Uninstall-ChefClient {
   }
 
   if (!(Test-ChefExtensionRegistry)) {
-    if ($logStatus) {  Write-ChefStatus "uninstalling-chef" "transitioning" "Uninstalling Chef" }
+    if ($logStatus) {  Write-ChefStatus "uninstalling-chef" "transitioning" "Uninstalling Chef" }    
+
+    $deleteChefConfig = Get-deleteChefConfigSetting $calledFromUpdate
 
     Uninstall-ChefService
 
     Uninstall-AzureChefExtensionGem
+
+    Delete-ChefConfig $deleteChefConfig
 
     Uninstall-ChefClientPackage $calledFromUpdate
 
