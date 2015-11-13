@@ -104,8 +104,6 @@ class EnableChef
     # "node-registered" file also indicates that enabled was called once and
     # configs are already generated.
 
-    copy_settings_file
-
     if not File.exists?("#{bootstrap_directory}/node-registered")
       if File.directory?("#{bootstrap_directory}")
         puts "Bootstrap directory [#{bootstrap_directory}] already exists, skipping creation..."
@@ -115,6 +113,8 @@ class EnableChef
       end
 
       puts "#{Time.now} Creating chef configuration files"
+
+      copy_settings_file
 
       load_settings
 
