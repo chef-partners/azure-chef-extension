@@ -141,8 +141,13 @@ install_from_repo_centos(){
 }
 
 install_from_repo_ubuntu() {
+  echo "Starting installation:"
+  date +"%T"
 	platform="ubuntu"
-	curl_check $platform
+	curl_check $platform &
+
+  # Starting forked subshell to read chef-client version from runtimesettings file
+  chef_version=$(get_chef_version &)
 
 	# Need to first run apt-get update so that apt-transport-https can be installed
 	echo -n "Running apt-get update... "
@@ -174,7 +179,6 @@ install_from_repo_ubuntu() {
 	echo "done."
 
         echo "Installing chef-client package"
-        chef_version=$(get_chef_version)
         if [ "$chef_version" = "No config file found !!" ]; then
           echo "Configuration error. Azure chef extension Settings file missing."
           exit 1
@@ -185,6 +189,8 @@ install_from_repo_ubuntu() {
         fi
 
 	check_installation_status
+  echo "End of installation:"
+  date +"%T"
 }
 
 check_installation_status(){
