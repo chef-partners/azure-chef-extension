@@ -17,6 +17,10 @@ class Chef
           @chef_config[:client_key_content]
         end
 
+        def chef_server_ssl_cert
+          @chef_config[:chef_server_ssl_cert_content]
+        end
+
         def config_content
           client_rb = ""
           # Add user provided client_rb to the beginning of a file.

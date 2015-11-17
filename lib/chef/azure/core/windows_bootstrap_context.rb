@@ -54,12 +54,12 @@ class Chef
           escape_and_echo(super)
         end
 
-        def secret
-          escape_and_echo(@config[:secret])
+        def chef_server_ssl_cert
+          escape_and_echo(super)
         end
 
-        def trusted_certs_script
-          @trusted_certs_script ||= trusted_certs_content
+        def secret
+          escape_and_echo(@config[:secret])
         end
 
         def config_content
@@ -120,7 +120,7 @@ CONFIG
           end
 
           if(Gem::Specification.find_by_name('chef').version.version.to_f >= 12)
-            unless trusted_certs.empty?
+            if ! chef_server_ssl_cert.empty?
               client_rb << %Q{trusted_certs_dir 'c:/chef/trusted_certs'\n}
             end
           end
@@ -164,19 +164,6 @@ CONFIG
         end
 
         private
-
-        # Returns a string for copying the trusted certificates on the workstation to the system being bootstrapped
-        # This string should contain both the commands necessary to both create the files, as well as their content
-        def trusted_certs_content
-          content = ""
-          if @chef_config[:trusted_certs_dir]
-            Dir.glob(File.join(PathHelper.escape_glob(@chef_config[:trusted_certs_dir]), "*.{crt,pem}")).each do |cert|
-              content << "> #{bootstrap_directory}/trusted_certs/#{File.basename(cert)} (\n" +
-                        escape_and_echo(IO.read(File.expand_path(cert))) + "\n)\n"
-            end
-          end
-          content
-        end
       end
     end
   end

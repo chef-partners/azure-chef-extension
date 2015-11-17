@@ -56,6 +56,18 @@ echo Writing client key...
 
 echo client key written.
 <% end -%>
+
+<% if @chef_config[:chef_server_ssl_cert_content] and ! @chef_config[:chef_server_ssl_cert_content].empty? -%>
+echo Writing ChefServer SSL certificate...
+
+mkdir <%= bootstrap_directory %>\trusted_certs
+> <%= bootstrap_directory %>\trusted_certs\chefserver_cert.crt (
+ <%= chef_server_ssl_cert %>
+)
+
+
+echo ChefServer SSL certificate written.
+<% end -%>
 @echo on
 
 <% if @config[:secret] -%>
@@ -64,11 +76,6 @@ echo client key written.
 )
 <% end -%>
 
-
-<% unless trusted_certs_script.empty? -%>
-mkdir <%= bootstrap_directory %>\trusted_certs
-<%= trusted_certs_script %>
-<% end -%>
 
 <%# Generate Ohai Hints -%>
 <% unless @chef_config[:knife][:hints].nil? || @chef_config[:knife][:hints].empty? -%>
