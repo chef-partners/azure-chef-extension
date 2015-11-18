@@ -238,8 +238,8 @@ class EnableChef
       validation_key = OpenSSL::PKey::RSA.new(validation_key.squeeze("\n")).to_pem
     rescue OpenSSL::PKey::RSAError => e
       Chef::Log.error "Chef validation key parsing error. #{e.inspect}"
-      validation_key
     end
+    validation_key
   end
 
   def get_client_key(encrypted_text)
@@ -251,8 +251,8 @@ class EnableChef
       client_key = OpenSSL::PKey::RSA.new(client_key.squeeze("\n")).to_pem
     rescue OpenSSL::PKey::RSAError => e
       Chef::Log.error "Chef client key parsing error. #{e.inspect}"
-      client_key
     end
+    client_key
   end
 
   def get_chef_server_ssl_cert(encrypted_text)
@@ -261,11 +261,11 @@ class EnableChef
     #extract chef_server_ssl_cert from decrypted hash
     chef_server_ssl_cert = value_from_json_file(decrypted_text, "chef_server_crt")
     begin
-      chef_server_ssl_cert = OpenSSL::X509::Certificate.new(chef_server_ssl_cert.squeeze("\n"))
+      chef_server_ssl_cert = OpenSSL::X509::Certificate.new(chef_server_ssl_cert.squeeze("\n")).to_pem
     rescue OpenSSL::X509::CertificateError => e
       Chef::Log.error "Chef Server SSL certificate parsing error. #{e.inspect}"
-      chef_server_ssl_cert
     end
+    chef_server_ssl_cert
   end
 
   def get_decrypted_key(encrypted_text)

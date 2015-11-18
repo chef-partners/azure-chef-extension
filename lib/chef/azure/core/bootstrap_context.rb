@@ -49,7 +49,7 @@ class Chef
 
           if(Gem::Specification.find_by_name('chef').version.version.to_f >= 12)
             if ! chef_server_ssl_cert.empty?
-              client_rb << %Q{trusted_certs_dir '/etc/chef/trusted_certs'\n}
+              client_rb << %Q{trusted_certs_dir       "/etc/chef/trusted_certs"\n}
             end
           end
 
