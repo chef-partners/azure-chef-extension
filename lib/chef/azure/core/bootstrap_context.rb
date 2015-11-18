@@ -47,6 +47,12 @@ class Chef
             client_rb << %Q{encrypted_data_bag_secret "/etc/chef/encrypted_data_bag_secret"\n}
           end
 
+          if(Gem::Specification.find_by_name('chef').version.version.to_f >= 12)
+            if ! chef_server_ssl_cert.empty?
+              client_rb << %Q{trusted_certs_dir '/etc/chef/trusted_certs'\n}
+            end
+          end
+
           # We configure :verify_api_cert only when it's overridden on the CLI
           # or when specified in the knife config.
           if !@config[:node_verify_api_cert].nil? || knife_config.has_key?(:verify_api_cert)
