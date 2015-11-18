@@ -73,13 +73,10 @@ publicconfig.config example:
 
 **Following are the References to doc for different Azure command line tools**
 
-| Client                    | How to use                                                   |
-|---------------------------|--------------------------------------------------------------|
-| Azure portal              | https://docs.chef.io/azure_portal.html                       |
-| Azure Powershell cmdlets  | https://msdn.microsoft.com/en-us/library/azure/dn874067.aspx |
-| Knife cloud api bootstrap | https://docs.chef.io/plugin_knife_azure.html                 |
-| Azure Xplat CLI           | https://gist.github.com/siddheshwar-more/9f3e412d773ef57780fc |
-
+1. [Azure portal](https://docs.chef.io/azure_portal.html)
+2. [Azure Powershell cmdlets](examples/azure-powershell-examples.md)
+3. [Azure Xplat CLI](examples/azure-xplat-cli-examples.md)
+4. [Knife Azure Plugin](examples/knife-azure-plugin-examples.md)
 
 **Powershell script to try Azure Chef Extension by using Set-AzureVMExtension cmdlet:**
 
