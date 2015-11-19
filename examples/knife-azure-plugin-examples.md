@@ -20,6 +20,8 @@ Optional. Path to client.rb file that gets copied over the azure-chef-extension.
 Set this flag to enable auto chef client update in azure chef extension. This flag should be used with cloud-api bootstrap protocol only.
 * --delete-chef-extension-config
 Determines whether Chef configuration files removed when Azure removes the Chef resource extension from the VM. This option is only valid for the 'cloud-api' bootstrap protocol. The default is false.
+* --bootstrap-version
+Applicable for only ubuntu and centos. Chef-client's version to be installed on the VM can be specified with this option. By default chef-client's latest version gets installed.
 
 Supported bootstrap_options from knife azure:
   * --environment

@@ -33,3 +33,9 @@
   [20151029, windows, 11.18.6, 11.18.6.2, master, 89d4a47773648dd07b8c54cc21cd993a04a22dbe]
   [20151029, ubuntu, 11.18.6, 11.18.6.2, master, 89d4a47773648dd07b8c54cc21cd993a04a22dbe]
   [20151102, ubuntu, 12.5.1, 1210.12.5.1001, master, 872753013fb512de6a0965ccd0d67f789539cd9e]
+
+# Format after decoupling extension version and chef-client version
+# [date-yyyymmdd,platform,chef-extension-version,git-branch,git-revision]
+
+  [20151119, windows, 1210.12.100, master, a79a9de63485fe2bc0e14425e94861247af69679]
+  [20151119, ubuntu, 1210.12.100, master, a79a9de63485fe2bc0e14425e94861247af69679]

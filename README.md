@@ -141,10 +141,29 @@ http://azure.microsoft.com/en-us/documentation/templates/multi-vm-chef-template-
 
 **Description:**
 
+The version scheme is moved to 1210.12.100 after the version 1210.12.5.1.
+This is done since extension version and `chef-client` version are decoupled.
+
 Extensions versions are specified in 4 digit format : `<MajorVersion.MinorVersion.BuildNumber.RevisionNumber>`, where major version is freezed as `1210`.
 If backward incompatible changes are made, MinorVersion is increased by 1.
 If a backward compatible functionaly is added, BuildNumber is increased by 1.
-If bug fixes are done, then extension's RevisionNumber is increased by 1.
+If there is no patch applied, then RevisionNumber is not set. On applying patch, initial RevisionNumber is set to 1000. After that extension's RevisionNumber is increased by 1 for consequent patches.
+
+**Example**
+
+    1. When a patch is applied to extension-
+    Consider,
+    Current Extension Version is 1210.12.100
+
+    # After applying patch, RevisionNumber is set to 1000
+    RevisionNumber = 1000
+
+    New Extension Version will be 1210.12.100.1000
+
+    # If another patch is applied, RevisionNumber is incremented by 1
+    RevisionNumber = 1001
+
+    Hence Extension Version will be 1210.12.100.1001
 
 ##Old Version Scheme
 
