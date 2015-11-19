@@ -17,6 +17,10 @@ class Chef
           @chef_config[:client_key_content]
         end
 
+        def chef_server_ssl_cert
+          @chef_config[:chef_server_ssl_cert_content]
+        end
+
         def config_content
           client_rb = ""
           # Add user provided client_rb to the beginning of a file.
@@ -41,6 +45,12 @@ class Chef
 
           if encrypted_data_bag_secret
             client_rb << %Q{encrypted_data_bag_secret "/etc/chef/encrypted_data_bag_secret"\n}
+          end
+
+          if(Gem::Specification.find_by_name('chef').version.version.to_f >= 12)
+            if ! chef_server_ssl_cert.empty?
+              client_rb << %Q{trusted_certs_dir       "/etc/chef/trusted_certs"\n}
+            end
           end
 
           # We configure :verify_api_cert only when it's overridden on the CLI

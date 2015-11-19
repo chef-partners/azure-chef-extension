@@ -131,6 +131,7 @@ class EnableChef
         config[:log_location] = @azure_plugin_log_location
         Chef::Config[:validation_key_content] = @validation_key
         Chef::Config[:client_key_content] = @client_key
+        Chef::Config[:chef_server_ssl_cert_content] = @chef_server_ssl_cert
         config[:chef_server_url] = bootstrap_options['chef_server_url'] if bootstrap_options['chef_server_url']
         config[:validation_client_name] =  bootstrap_options['validation_client_name'] if bootstrap_options['validation_client_name']
         template_file = File.expand_path(File.dirname(File.dirname(__FILE__)))
@@ -191,6 +192,7 @@ class EnableChef
     protected_settings = value_from_json_file(handler_settings_file,'runtimeSettings','0','handlerSettings', 'protectedSettings')
     @validation_key = get_validation_key(protected_settings)
     @client_key = get_client_key(protected_settings)
+    @chef_server_ssl_cert = get_chef_server_ssl_cert(protected_settings)
     @client_rb = value_from_json_file(handler_settings_file, 'runtimeSettings', '0', 'handlerSettings', 'publicSettings', 'client_rb')
     @run_list = value_from_json_file(handler_settings_file, 'runtimeSettings', '0', 'handlerSettings', 'publicSettings', 'runlist')
   end
@@ -236,8 +238,8 @@ class EnableChef
       validation_key = OpenSSL::PKey::RSA.new(validation_key.squeeze("\n")).to_pem
     rescue OpenSSL::PKey::RSAError => e
       Chef::Log.error "Chef validation key parsing error. #{e.inspect}"
-      validation_key
     end
+    validation_key
   end
 
   def get_client_key(encrypted_text)
@@ -249,8 +251,21 @@ class EnableChef
       client_key = OpenSSL::PKey::RSA.new(client_key.squeeze("\n")).to_pem
     rescue OpenSSL::PKey::RSAError => e
       Chef::Log.error "Chef client key parsing error. #{e.inspect}"
-      client_key
     end
+    client_key
+  end
+
+  def get_chef_server_ssl_cert(encrypted_text)
+    decrypted_text = get_decrypted_key(encrypted_text)
+
+    #extract chef_server_ssl_cert from decrypted hash
+    chef_server_ssl_cert = value_from_json_file(decrypted_text, "chef_server_crt")
+    begin
+      chef_server_ssl_cert = OpenSSL::X509::Certificate.new(chef_server_ssl_cert.squeeze("\n")).to_pem
+    rescue OpenSSL::X509::CertificateError => e
+      Chef::Log.error "Chef Server SSL certificate parsing error. #{e.inspect}"
+    end
+    chef_server_ssl_cert
   end
 
   def get_decrypted_key(encrypted_text)
