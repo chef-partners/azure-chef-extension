@@ -32,3 +32,4 @@ By default chef-client's latest version gets installed.
 
 ## Known Issues
 * When update is done for extension on windows and linux with autoUpdateClient=false, update doesn't happen(which is correct) but user doesn't get the actual error message. WAagent starts enable command and error logs show that enable command has failed.
+* On disabling the extension for `ubuntu`, the azure portal shows "Installing" status.
