@@ -13,6 +13,13 @@
 
 # We cannot Write-ChefStatus from this script.
 
+# delete .auto_update_false file if it exists
+$ChkFile = "C:\chef\.auto_update_false"
+$FileExists = Test-Path $ChkFile
+If ($FileExists -eq $True) {
+  Remove-Item $ChkFile
+}
+
 function Chef-GetScriptDirectory
 {
   $Invocation = (Get-Variable MyInvocation -Scope 1).Value
@@ -56,6 +63,13 @@ function Update-ChefClient {
   # Default value is false
   if($autoUpdateClient -ne "true"){
     Write-Host "[$(Get-Date)] Auto update disabled"
+
+    # create the auto_update_false file
+    # We refer this file inside uninstall.sh, install.sh and enable.sh so that waagent doesn't update
+    # even if autoUpdateClient=false.
+    # Waagent itself spawns processes for uninstall, install and enable otherwise.
+    New-Item c:/chef/.auto_update_false -type file
+
     return
   }
 

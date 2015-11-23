@@ -39,7 +39,7 @@ function Get-ChefPackage {
 }
 
 function Uninstall-ChefClientPackage {
-  param([boolean]$calledFromUpdate = $False)  
+  param([boolean]$calledFromUpdate = $False)
   $chefInstallDirectory = Get-ChefInstallDirectory
 
   # Actual uninstall functionality
@@ -49,8 +49,8 @@ function Uninstall-ChefClientPackage {
   Write-Host("[$(Get-Date)] Removing chef client and configuration files")
   # Uninstall chef_pkg
   $result = $chef_pkg.Uninstall()
-  Write-Host("[$(Get-Date)] $result")  
-  
+  Write-Host("[$(Get-Date)] $result")
+
   if (Test-Path $chefInstallDirectory) {
     Remove-Item -Recurse -Force $chefInstallDirectory
   }
@@ -66,6 +66,13 @@ function Delete-ChefConfig($deleteChefConfig) {
 }
 
 function Uninstall-ChefClient {
+  $ChkFile = "C:\chef\.auto_update_false"
+  $FileExists = Test-Path $ChkFile
+  If ($FileExists -eq $True) {
+    Write-Host "[$(Get-Date)] Not doing uninstall as auto update disabled"
+    return
+  }
+
   param([boolean]$calledFromUpdate = $False)
   trap [Exception] {echo $_.Exception.Message;exit 1}
 
@@ -84,7 +91,7 @@ function Uninstall-ChefClient {
   }
 
   if (!(Test-ChefExtensionRegistry)) {
-    if ($logStatus) {  Write-ChefStatus "uninstalling-chef" "transitioning" "Uninstalling Chef" }    
+    if ($logStatus) {  Write-ChefStatus "uninstalling-chef" "transitioning" "Uninstalling Chef" }
 
     $deleteChefConfig = Get-deleteChefConfigSetting $calledFromUpdate
 
