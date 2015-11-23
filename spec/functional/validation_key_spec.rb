@@ -39,15 +39,15 @@ describe "EnableChef get_validation_key generates correct validation.pem file" d
 
   context "for linux" do
     before do
-      @cert = mock_data('linux_cert.txt')
       @encrypted_settings = mock_data('linux_encrypted_settings.settings')
       validation_key = mock_data('linux_validation_key.txt')
       @key = OpenSSL::PKey::RSA.new(validation_key.squeeze("\n")).to_pem
       allow(instance).to receive(:windows?).and_return(false)
+      allow(instance).to receive(:handler_settings_file).and_return(mock_data("handler_settings.settings"))
     end
 
     it "returns correct validation key" do
-      allow(File).to receive(:read).and_return(@cert)
+      EnableChef::LINUX_CERT_PATH = File.expand_path(File.dirname("spec/assets/*"))
       validation_key_cmd = instance.send(:get_validation_key,@encrypted_settings)
       expect(validation_key_cmd).to eq(@key)
     end
