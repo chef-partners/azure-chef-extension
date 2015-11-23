@@ -204,6 +204,10 @@ Chef-Client versions are specified in 4 digit format: `<MajorVersion.MinorVersio
     # After applying patch to Extension increase extension's RevisionNumber by 1
     New Extension Version will be 1210.12.4.1001
 
+##Tagging
+We tag the extension with every extension publish. We have started tagging from extension 1206.12.3.0. Prior to that tags are not available.
+Before tagging we update the README(if required), CHANGELOG and RELEASE_NOTES.
+
 ##Build and Packaging
 You can use rake tasks to build and publish the new builds to Azure subscription.
 
