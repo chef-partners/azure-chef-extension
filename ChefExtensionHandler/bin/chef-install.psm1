@@ -54,6 +54,13 @@ function Get-LocalDestinationMsiPath {
 function Install-ChefClient {
   trap [Exception] {echo $_.Exception.Message;exit 1}
 
+  $ChkFile = "C:\chef\.auto_update_false"
+  $FileExists = Test-Path $ChkFile
+  If ($FileExists -eq $True) {
+    Write-Host "[$(Get-Date)] Not doing install as auto update disabled"
+    return
+  }
+
   # Source the shared PS
   . $(Get-SharedHelper)
 
