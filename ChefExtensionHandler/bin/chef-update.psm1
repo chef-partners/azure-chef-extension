@@ -54,6 +54,8 @@ function Update-ChefClient {
   Write-Host "[$(Get-Date)] AutoUpdateClient: $autoUpdateClient"
   # Auto update flag in Runtime Settings allows the user to opt for automatic chef-client update.
   # Default value is false
+  #Setting autoUpdateClient=true as autoUpdateClient=false isn't working. This is a temporary fix
+  $autoUpdateClient = "true"
   if($autoUpdateClient -ne "true"){
     Write-Host "[$(Get-Date)] Auto update disabled"
     return

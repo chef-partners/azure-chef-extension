@@ -33,6 +33,8 @@ previous_extension="$waagentdir/$previous_extension"
 handler_settings_file=`ls $previous_extension/config/*.settings -S -r | head -1`
 
 auto_update_client=`ruby -e "require 'chef/azure/helpers/parse_json';value_from_json_file_for_ps '$handler_settings_file','runtimeSettings','0','handlerSettings','publicSettings','autoUpdateClient'"`
+#Setting autoUpdateClient=true as autoUpdateClient=false isn't working. This is a temporary fix
+auto_update_client="true"
 if [ "$auto_update_client" != "true" ]
 then
   # touch the auto_update_false
