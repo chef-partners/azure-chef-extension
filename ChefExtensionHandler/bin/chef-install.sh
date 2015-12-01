@@ -116,81 +116,91 @@ get_chef_version() {
 }
 
 install_from_repo_centos(){
-  platform="centos"
-  curl_check $platform
-  get_hostname
-  yum_repo_path=/etc/yum.repos.d/chef_stable.repo
-  yum_repo_config_url="https://packagecloud.io/install/repositories/chef/stable/config_file.repo?os=el&dist=5&name=${host}"
+  #check if chef-client is already installed
+  yum list installed | grep -w "chef"
 
-  echo "Downloading repository file: ${yum_repo_config_url}"
-  curl -f "${yum_repo_config_url}" > $yum_repo_path
-  curl_exit_code=$?
-  curl_status $curl_exit_code $yum_repo_config_url $yum_repo_path
+  if [ $? -ne 0 ]; then
+    platform="centos"
+    curl_check $platform
+    get_hostname
+    yum_repo_path=/etc/yum.repos.d/chef_stable.repo
+    yum_repo_config_url="https://packagecloud.io/install/repositories/chef/stable/config_file.repo?os=el&dist=5&name=${host}"
 
-  echo "Installing chef-client package"
-  chef_version=$(get_chef_version)
-  if [ "$chef_version" = "No config file found !!" ]; then
-    echo "Configuration error. Azure chef extension Settings file missing."
-    exit 1
-  elif [[ -z "$chef_version" ]]; then
-    yum -y install chef
-  else
-    yum -y install chef-$chef_version
+    echo "Downloading repository file: ${yum_repo_config_url}"
+    curl -f "${yum_repo_config_url}" > $yum_repo_path
+    curl_exit_code=$?
+    curl_status $curl_exit_code $yum_repo_config_url $yum_repo_path
+
+    echo "Installing chef-client package"
+    chef_version=$(get_chef_version)
+    if [ "$chef_version" = "No config file found !!" ]; then
+      echo "Configuration error. Azure chef extension Settings file missing."
+      exit 1
+    elif [[ -z "$chef_version" ]]; then
+      yum -y install chef
+    else
+      yum -y install chef-$chef_version
+    fi
+    check_installation_status
   fi
-  check_installation_status
 }
 
 install_from_repo_ubuntu() {
-  echo "Starting installation:"
-  date +"%T"
-	platform="ubuntu"
-	curl_check $platform &
+  #check if chef-client is already installed
+  dpkg-query -l chef
 
-  # Starting forked subshell to read chef-client version from runtimesettings file
-  chef_version=$(get_chef_version &)
+  if [ $? -ne 0 ]; then
+    echo "Starting installation:"
+    date +"%T"
+  	platform="ubuntu"
+  	curl_check $platform &
 
-	# Need to first run apt-get update so that apt-transport-https can be installed
-	echo -n "Running apt-get update... "
-	apt-get update
-	echo "done."
+    # Starting forked subshell to read chef-client version from runtimesettings file
+    chef_version=$(get_chef_version &)
 
-	echo -n "Installing apt-transport-https... "
-	apt-get install -y apt-transport-https
-	echo "done."
+  	# Need to first run apt-get update so that apt-transport-https can be installed
+  	echo -n "Running apt-get update... "
+  	apt-get update
+  	echo "done."
 
-	apt_config_url="https://packagecloud.io/install/repositories/chef/stable/config_file.list?os=ubuntu&dist=trusty&source=script"
-	apt_source_path="/etc/apt/sources.list.d/chef_stable.list"
+  	echo -n "Installing apt-transport-https... "
+  	apt-get install -y apt-transport-https
+  	echo "done."
 
-	echo -n "Installing $apt_source_path..."
+  	apt_config_url="https://packagecloud.io/install/repositories/chef/stable/config_file.list?os=ubuntu&dist=trusty&source=script"
+  	apt_source_path="/etc/apt/sources.list.d/chef_stable.list"
 
-	# create an apt config file for this repository
-	curl -sSf "${apt_config_url}" > $apt_source_path
-	curl_exit_code=$?
-  curl_status $curl_exit_code $apt_config_url $apt_source_path
+  	echo -n "Installing $apt_source_path..."
 
-	echo -n "Importing packagecloud gpg key... "
-	# import the gpg key
-	curl https://packagecloud.io/gpg.key | sudo apt-key add -
-	echo "done."
+  	# create an apt config file for this repository
+  	curl -sSf "${apt_config_url}" > $apt_source_path
+  	curl_exit_code=$?
+    curl_status $curl_exit_code $apt_config_url $apt_source_path
 
-	echo -n "Running apt-get update... "
-	# update apt on this system
-	apt-get update
-	echo "done."
+  	echo -n "Importing packagecloud gpg key... "
+  	# import the gpg key
+  	curl https://packagecloud.io/gpg.key | sudo apt-key add -
+  	echo "done."
 
-        echo "Installing chef-client package"
-        if [ "$chef_version" = "No config file found !!" ]; then
-          echo "Configuration error. Azure chef extension Settings file missing."
-          exit 1
-        elif [[ -z "$chef_version" ]]; then
-          apt-get install chef
-        else
-          apt-get install chef=$chef_version\*
-        fi
+  	echo -n "Running apt-get update... "
+  	# update apt on this system
+  	apt-get update
+  	echo "done."
 
-	check_installation_status
-  echo "End of installation:"
-  date +"%T"
+          echo "Installing chef-client package"
+          if [ "$chef_version" = "No config file found !!" ]; then
+            echo "Configuration error. Azure chef extension Settings file missing."
+            exit 1
+          elif [[ -z "$chef_version" ]]; then
+            apt-get install chef
+          else
+            apt-get install chef=$chef_version\*
+          fi
+
+  	check_installation_status
+    echo "End of installation:"
+    date +"%T"
+  fi
 }
 
 check_installation_status(){
@@ -238,6 +248,13 @@ else
 
   export PATH=$PATH:/opt/chef/bin/:/opt/chef/embedded/bin
 
-  # install azure chef extension gem
-  install_chef_extension_gem "$chef_extension_root/gems/*.gem"
+  # check if azure-chef-extension is installed
+  azure_chef_extn_gem=`gem list azure-chef-extension | grep azure-chef-extension | awk '{print $1}'`
+
+  if test "$azure_chef_extn_gem" = "azure-chef-extension" ; then
+    echo "azure-chef-extension is already installed."
+  else
+    # install azure chef extension gem
+    install_chef_extension_gem "$chef_extension_root/gems/*.gem"
+  fi
 fi
