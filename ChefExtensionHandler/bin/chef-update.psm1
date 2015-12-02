@@ -61,7 +61,7 @@ function Update-ChefClient {
 
   # Import Chef Install and Chef Uninstall PS modules
   Import-Module "$(Chef-GetExtensionRoot)\\bin\\chef-install.psm1"
-  Import-Module "$(Chef-GetExtensionRoot)\\bin\\chef-uninstall.psm1"
+  #Import-Module "$(Chef-GetExtensionRoot)\\bin\\chef-uninstall.psm1"
 
   Try
   {
@@ -75,9 +75,9 @@ function Update-ChefClient {
     Write-Host "[$(Get-Date)] Configuration saved to $backupLocation"
 
     # uninstall chef. this will work since the uninstall script is idempotent.
-    echo "Calling Uninstall-ChefClient from $scriptDir\chef-uninstall.psm1"
-    Uninstall-ChefClient $calledFromUpdate
-    Write-Host "[$(Get-Date)] Uninstall completed"
+    #echo "Calling Uninstall-ChefClient from $scriptDir\chef-uninstall.psm1"
+    #Uninstall-ChefClient $calledFromUpdate
+    #Write-Host "[$(Get-Date)] Uninstall completed"
 
     # Restore Chef Configuration
     Copy-Item $backupLocation $bootstrapDirectory -recurse

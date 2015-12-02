@@ -51,7 +51,7 @@ called_from_update="update"
 # Save chef configuration.
 mv /etc/chef /tmp/$BACKUP_FOLDER
 # uninstall chef.
-sh $commands_script_path/chef-uninstall.sh "$called_from_update"
+#sh $commands_script_path/chef-uninstall.sh "$called_from_update"
 # Restore Chef Configuration
 mv /tmp/$BACKUP_FOLDER /etc/chef
 
