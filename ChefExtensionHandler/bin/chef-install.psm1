@@ -51,29 +51,38 @@ function Get-LocalDestinationMsiPath {
   [System.IO.Path]::GetFullPath("$env:temp\\chef-client-latest.msi")
 }
 
+function Get-ChefPackage {
+  Get-WmiObject -Class Win32_Product | Where-Object { $_.Name.contains("Chef Client") }
+}
+
 function Install-ChefClient {
   trap [Exception] {echo $_.Exception.Message;exit 1}
 
-  # Source the shared PS
-  . $(Get-SharedHelper)
+  # Get chef_pkg by matching "chef client " string with $_.Name
+  $chef_pkg = Get-ChefPackage
 
-  $chefExtensionRoot = Chef-GetExtensionRoot
+  if (-Not $chef_pkg) {
+    # Source the shared PS
+    . $(Get-SharedHelper)
 
-  $chefClientMsiLogPath = Get-ChefClientMsiLogPath
+    $chefExtensionRoot = Chef-GetExtensionRoot
 
-  if (Test-Path $chefClientMsiLogPath) {
-    Archive-ChefClientLog $chefClientMsiLogPath
+    $chefClientMsiLogPath = Get-ChefClientMsiLogPath
+
+    if (Test-Path $chefClientMsiLogPath) {
+      Archive-ChefClientLog $chefClientMsiLogPath
+    }
+
+    Download-ChefClient
+
+    $localDestinationMsiPath = Get-LocalDestinationMsiPath
+
+    Run-ChefInstaller $localDestinationMsiPath $chefClientMsiLogPath
+
+    $env:Path += ";C:\\opscode\\chef\\bin;C:\\opscode\\chef\\embedded\\bin"
+
+    Install-AzureChefExtensionGem $chefExtensionRoot
   }
-
-  Download-ChefClient
-
-  $localDestinationMsiPath = Get-LocalDestinationMsiPath
-
-  Run-ChefInstaller $localDestinationMsiPath $chefClientMsiLogPath
-
-  $env:Path += ";C:\\opscode\\chef\\bin;C:\\opscode\\chef\\embedded\\bin"
-
-  Install-AzureChefExtensionGem $chefExtensionRoot
 }
 
 function Download-ChefClient {

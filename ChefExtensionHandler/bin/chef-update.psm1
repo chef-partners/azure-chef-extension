@@ -54,8 +54,6 @@ function Update-ChefClient {
   Write-Host "[$(Get-Date)] AutoUpdateClient: $autoUpdateClient"
   # Auto update flag in Runtime Settings allows the user to opt for automatic chef-client update.
   # Default value is false
-  #Setting autoUpdateClient=true as autoUpdateClient=false isn't working. This is a temporary fix
-  $autoUpdateClient = "true"
   if($autoUpdateClient -ne "true"){
     Write-Host "[$(Get-Date)] Auto update disabled"
     return
@@ -63,7 +61,7 @@ function Update-ChefClient {
 
   # Import Chef Install and Chef Uninstall PS modules
   Import-Module "$(Chef-GetExtensionRoot)\\bin\\chef-install.psm1"
-  Import-Module "$(Chef-GetExtensionRoot)\\bin\\chef-uninstall.psm1"
+  #Import-Module "$(Chef-GetExtensionRoot)\\bin\\chef-uninstall.psm1"
 
   Try
   {
@@ -77,9 +75,9 @@ function Update-ChefClient {
     Write-Host "[$(Get-Date)] Configuration saved to $backupLocation"
 
     # uninstall chef. this will work since the uninstall script is idempotent.
-    echo "Calling Uninstall-ChefClient from $scriptDir\chef-uninstall.psm1"
-    Uninstall-ChefClient $calledFromUpdate
-    Write-Host "[$(Get-Date)] Uninstall completed"
+    #echo "Calling Uninstall-ChefClient from $scriptDir\chef-uninstall.psm1"
+    #Uninstall-ChefClient $calledFromUpdate
+    #Write-Host "[$(Get-Date)] Uninstall completed"
 
     # Restore Chef Configuration
     Copy-Item $backupLocation $bootstrapDirectory -recurse
