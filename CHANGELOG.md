@@ -1,5 +1,10 @@
 # azure-chef-extension Change Log
-## Latest Release: 1210.12.100 (2015/11/19)
+## Latest Release: 1210.12.100.1000 (2015/12/07)
+* [azure-chef-extension #95](https://github.com/chef-partners/azure-chef-extension/pull/95) Tagging policy
+* [azure-chef-extension #94](https://github.com/chef-partners/azure-chef-extension/pull/94) Functional RSpecs for ssl cert support under bootstrap protocol cloud-api
+* [azure-chef-extension #99](https://github.com/chef-partners/azure-chef-extension/pull/99) Not removing chef-client on extension uninstall
+
+## Release: 1210.12.100 (2015/11/19)
 * [azure-chef-extension #80](https://github.com/chef-partners/azure-chef-extension/pull/80) Fix uninstall for deleteChefConfig flag
 * [azure-chef-extension #86](https://github.com/chef-partners/azure-chef-extension/pull/86) Added code for Ubuntu and CentOS to accept version of Chef to download and install
 * [azure-chef-extension #87](https://github.com/chef-partners/azure-chef-extension/pull/87) Passing bootstrap options to client.rb
