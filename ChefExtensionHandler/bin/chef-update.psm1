@@ -61,7 +61,17 @@ function Update-ChefClient {
 
   # Import Chef Install and Chef Uninstall PS modules
   Import-Module "$(Chef-GetExtensionRoot)\\bin\\chef-install.psm1"
-  #Import-Module "$(Chef-GetExtensionRoot)\\bin\\chef-uninstall.psm1"
+
+  if ($powershellVersion -ge 3) {
+    $json_handlerSettings = Get-PreviousVersionHandlerSettings
+    $uninstallChefClient = $json_handlerSettings.publicSettings.uninstallChefClient
+  } else {
+    $uninstallChefClient = Get-uninstallChefClientSetting
+  }
+
+  if ($uninstallChefClient -eq "true"){
+    Import-Module "$(Chef-GetExtensionRoot)\\bin\\chef-uninstall.psm1"
+  }
 
   Try
   {

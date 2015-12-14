@@ -51,7 +51,10 @@ called_from_update="update"
 # Save chef configuration.
 mv /etc/chef /tmp/$BACKUP_FOLDER
 # uninstall chef.
-#sh $commands_script_path/chef-uninstall.sh "$called_from_update"
+uninstall_chef_client=`ruby -e "require 'chef/azure/helpers/parse_json';value_from_json_file_for_ps '$handler_settings_file','runtimeSettings','0','handlerSettings','publicSettings','uninstallChefClient'"`
+if [ "$uninstall_chef_client" = "true" ]; then
+  sh $commands_script_path/chef-uninstall.sh "$called_from_update"
+fi
 # Restore Chef Configuration
 mv /tmp/$BACKUP_FOLDER /etc/chef
 
