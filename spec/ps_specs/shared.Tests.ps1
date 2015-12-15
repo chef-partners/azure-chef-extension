@@ -173,3 +173,37 @@ describe "#Test-ChefExtensionRegistry" {
     }
   }
 }
+
+describe "#Get-deleteChefConfigSetting" {
+  context "when deleteChefConfig is set to false and powershell version is 3 and call from update is false" {
+    it "returns deleteChefConfig false " {
+    mock Get-PowershellVersion { return 3 }
+    $calledFromUpdate = false
+
+    $json_handlerSettings = @{"protectedSettings" = "testprotectedSettings"; "protectedSettingsCertThumbprint" = "testprotectedSettingsCertThumbprint"; "publicSettings" = @{"client_rb"= "testclientrb"; "runList" = "testrunlist"; "deleteChefConfig" = "false"}}
+    mock Get-HandlerSettings {return $json_handlerSettings}
+
+    $result = Get-deleteChefConfigSetting
+
+    $result | Should Be "false"
+
+    Assert-MockCalled Get-HandlerSettings -Times 1
+    }
+  }
+
+  context "when deleteChefConfig is set to true and powershell version is 3 and call from update is false" {
+    it "returns deleteChefConfig true " {
+    mock Get-PowershellVersion { return 3 }
+    $calledFromUpdate = false
+
+    $json_handlerSettings = @{"protectedSettings" = "testprotectedSettings"; "protectedSettingsCertThumbprint" = "testprotectedSettingsCertThumbprint"; "publicSettings" = @{"client_rb"= "testclientrb"; "runList" = "testrunlist"; "deleteChefConfig" = "true"}}
+    mock Get-HandlerSettings {return $json_handlerSettings}
+
+    $result = Get-deleteChefConfigSetting
+
+    $result | Should Be "true"
+
+    Assert-MockCalled Get-HandlerSettings -Times 1
+    }
+  }
+}
