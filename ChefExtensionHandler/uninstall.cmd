@@ -27,11 +27,11 @@ GOTO:EOF
       set ps_version_cmd=powershell -nologo -noprofile -executionpolicy unrestricted -Command "$PSVersionTable.PSVersion.Major"
       for /f "delims=" %%I in ('%ps_version_cmd%') do set "ps_version=%%I"
       if [%ps_version%] leq [2] (
-        set uninstall_chef_client_ps2_cmd=powershell -nologo -noprofile -executionpolicy unrestricted -Command "[System.Reflection.Assembly]::LoadWithPartialName(\"System.Web.Extensions\") > $null;$config_json_contents = Get-Content %config_file_path% -Raw;$serObj = New-Object System.Web.Script.Serialization.JavaScriptSerializer;$psObj = New-Object PSObject -Property $serObj.DeserializeObject($config_json_contents);$uninstall_chef_client_ps2 = $psObj.runtimeSettings.handlerSettings.publicSettings.uninstallChefClient;$uninstall_chef_client_ps2"
+        set uninstall_chef_client_ps2_cmd=powershell -nologo -noprofile -executionpolicy unrestricted -Command ". %CHEF_EXT_DIR%bin\shared.ps1;Get-uninstallChefClientSetting"
 
         for /f "delims=" %%J in ('%uninstall_chef_client_ps2_cmd%') do set "uninstall_chef_client_flag=%%J"
       ) else if [%ps_version%] gtr [2] (
-          set uninstall_chef_client_ps3_cmd=powershell -nologo -noprofile -executionpolicy unrestricted -Command "$settingsData = Get-Content %config_file_path% -Raw | ConvertFrom-Json;$uninstall_chef_client_ps3 = $settingsData.runtimesettings.handlersettings.publicsettings.uninstallChefClient;$uninstall_chef_client_ps3"
+          set uninstall_chef_client_ps3_cmd=powershell -nologo -noprofile -executionpolicy unrestricted -Command "$settingsData = Get-Content %config_file_path% -Raw | ConvertFrom-Json;$uninstall_chef_client_value = $settingsData.runtimesettings.handlersettings.publicsettings.uninstallChefClient;$uninstall_chef_client_value"
 
           for /f "delims=" %%K in ('%uninstall_chef_client_ps3_cmd%') do set "uninstall_chef_client_flag=%%K"
         )
