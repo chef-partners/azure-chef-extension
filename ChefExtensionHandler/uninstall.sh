@@ -8,10 +8,11 @@ get_config_settings_file() {
 }
 
 get_uninstall_chef_client_flag() {
-  if [[ -z "$1" ]]; then
+  if [ -z "$1" ]; then
     echo "false"
   else
-    uninstall_chef_client_flag=`sed 's/.*uninstallChefClient":"\(.*\)".*/\1/' $1 2>/dev/null`
+    export PATH=$PATH:/opt/chef/bin/:/opt/chef/embedded/bin
+    uninstall_chef_client_flag=`ruby -e "require 'chef/azure/helpers/parse_json';value_from_json_file_for_ps '$1','runtimeSettings','0','handlerSettings','publicSettings','uninstallChefClient'"`
     echo $uninstall_chef_client_flag
   fi
 }
