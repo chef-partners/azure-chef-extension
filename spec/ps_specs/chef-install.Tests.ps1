@@ -23,6 +23,8 @@ describe "#Install-ChefClient" {
   it "install chef and azure chef extension gem successfully" {
     # create temp powershell file for mock Get-SharedHelper
     $tempPS = ([System.IO.Path]::GetTempFileName() | Rename-Item -NewName { $_ -replace 'tmp$', 'ps1' } -PassThru)
+
+    mock Get-ChefPackage {return ''}
     mock Get-SharedHelper {return $tempPS}
 
     $extensionRoot = "C:\Packages\Plugin\ChefExtensionHandler"
