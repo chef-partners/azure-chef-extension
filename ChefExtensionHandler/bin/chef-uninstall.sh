@@ -3,13 +3,13 @@
 #funtions to delete ubuntu chef configuration files i.e. /etc/chef
 remove_chef_config(){
   if [ ! -z $delete_chef_config ] && [ $delete_chef_config = "true" ] ; then
-    echo "Deleteing chef configurations directory /etc/chef."
+    echo "Deleting chef configurations directory /etc/chef."
     rm -rf /etc/chef || true
   fi
 }
 
-# Function to uninstall ubuntu chef_pkg
-uninstall_ubuntu_chef_package(){
+# Function to uninstall ubuntu or debian chef_pkg
+uninstall_deb_chef_package(){
   pkg_name=`dpkg -l | grep chef | awk '{print $2}'`
   echo "[$(date)] Uninstalling package $pkg_name ..."
   apt-get remove --purge $pkg_name -y
@@ -43,6 +43,8 @@ get_linux_distributor(){
     linux_distributor='centos'
   elif python -mplatform | grep Ubuntu > /dev/null; then
     linux_distributor='ubuntu'
+  elif python -mplatform | grep -i Debian > /dev/null; then
+    linux_distributor='debian'  
   fi
   echo "${linux_distributor}"
 }
@@ -107,13 +109,18 @@ else
     "ubuntu")
       echo "Linux Distributor: ${linux_distributor}"
       remove_chef_config
-      uninstall_ubuntu_chef_package
+      uninstall_deb_chef_package
       ;;
     "centos")
       echo "Linux Distributor: ${linux_distributor}"
       remove_chef_config
       uninstall_centos_chef_package
       ;;
+    "debian")
+      echo "Linux Distributor: ${linux_distributor}"
+      remove_chef_config
+      uninstall_deb_chef_package
+      ;;  
     *)
       echo "Unknown Distributor: $linux_distributor"
       exit 1
