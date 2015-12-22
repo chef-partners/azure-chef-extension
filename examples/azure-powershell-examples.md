@@ -90,3 +90,50 @@ This cmdlets is used to Get Chef Extension details from given azure VM.
 Get-AzureVM -ServiceName cloudservice1 -Name azurevm1 | Get-AzureVMExtension
 
 ```
+
+**ARM commands for Azure Chef Extension**
+
+1. For windows, create ARM template file referring https://github.com/Azure/azure-quickstart-templates/blob/master/chef-extension-windows-vm/azuredeploy.json. Create ARM parameter file referring https://github.com/Azure/azure-quickstart-templates/blob/master/chef-extension-windows-vm/azuredeploy.parameters.json
+
+2. For linux, create ARM template file referring https://github.com/Azure/azure-quickstart-templates/blob/master/chef-json-parameters-ubuntu-vm/azuredeploy.json. Create ARM parameter file referring https://github.com/Azure/azure-quickstart-templates/blob/master/chef-json-parameters-ubuntu-vm/azuredeploy.parameters.json
+
+3. Use code given below as per your platform in the given sequence to encode validation key in your ARM's parameters Json template:
+
+```javascript
+
+A. Windows
+
+$validation_key = sed ':a;N;$!ba;s/\n/\\n/g' <path_to_validator_pem_file>
+
+$validation_key
+
+
+B. Linux
+
+validation_key=$(sed ':a;N;$!ba;s/\n/\\n/g' <path_to_validator_pem_file>)
+
+echo $validation_key
+
+```
+**Note:** 
+-- For both the platforms, copy the output of 2nd command and paste as it is into `validation_key` attribute of your ARM's parameters Json template.
+-- Make the necessary validator_pem_file_path changes in the above commands as per your configuration.
+
+4. Refer code written below
+
+```javascript
+Switch-AzureMode -Name AzureResourceManager
+Select-AzureSubscription -SubscriptionName <subscription_name>
+Add-AzureAccount
+
+$pathtemp='path/to/azuredeploy.json' # Refer above mentioned #1 and #2
+$pathtempfile='path/to/azuredeploy.parameters.json' # Refer above #1 and #2
+
+New-AzureResourceGroup -Name '<resource_group_name>' -Location '<location>'
+New-AzureResourceGroupDeployment -Name <deployment_name> -TemplateParameterFile $pathtempfile -TemplateFile $pathtemp -ResourceGroupName '<resource_group_name>'
+```
+
+**References:**
+http://azure.microsoft.com/en-us/documentation/templates/chef-json-parameters-ubuntu-vm/
+http://azure.microsoft.com/en-us/documentation/templates/multi-vm-chef-template-ubuntu-vm/
+
