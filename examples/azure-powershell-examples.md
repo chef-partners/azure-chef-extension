@@ -91,7 +91,8 @@ Get-AzureVM -ServiceName cloudservice1 -Name azurevm1 | Get-AzureVMExtension
 
 ```
 
-**ARM commands for Azure Chef Extension**
+
+## ARM commands for Azure Chef Extension
 
 1. For windows, create ARM template file referring https://github.com/Azure/azure-quickstart-templates/blob/master/chef-extension-windows-vm/azuredeploy.json. Create ARM parameter file referring https://github.com/Azure/azure-quickstart-templates/blob/master/chef-extension-windows-vm/azuredeploy.parameters.json
 
@@ -101,14 +102,14 @@ Get-AzureVM -ServiceName cloudservice1 -Name azurevm1 | Get-AzureVMExtension
 
 ```javascript
 
-A. Windows
+**A. Windows**
 
 $validation_key = sed ':a;N;$!ba;s/\n/\\n/g' <path_to_validator_pem_file>
 
 $validation_key
 
 
-B. Linux
+**B. Linux**
 
 validation_key=$(sed ':a;N;$!ba;s/\n/\\n/g' <path_to_validator_pem_file>)
 
@@ -116,8 +117,8 @@ echo $validation_key
 
 ```
 **Note:** 
--- For both the platforms, copy the output of 2nd command and paste as it is into `validation_key` attribute of your ARM's parameters Json template.
--- Make the necessary validator_pem_file_path changes in the above commands as per your configuration.
+For both the platforms, copy the output of 2nd command and paste as it is into `validation_key` attribute of your ARM's parameters Json template.
+Make the necessary validator_pem_file_path changes in the above commands as per your configuration.
 
 4. Refer code written below
 
