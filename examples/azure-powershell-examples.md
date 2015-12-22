@@ -100,16 +100,19 @@ Get-AzureVM -ServiceName cloudservice1 -Name azurevm1 | Get-AzureVMExtension
 
 3. Use code given below as per your platform in the given sequence to encode validation key in your ARM's parameters Json template:
 
-```javascript
-
 **A. Windows**
+
+```javascript
 
 $validation_key = sed ':a;N;$!ba;s/\n/\\n/g' <path_to_validator_pem_file>
 
 $validation_key
 
+```
 
 **B. Linux**
+
+```javascript
 
 validation_key=$(sed ':a;N;$!ba;s/\n/\\n/g' <path_to_validator_pem_file>)
 
@@ -117,8 +120,8 @@ echo $validation_key
 
 ```
 **Note:** 
-For both the platforms, copy the output of 2nd command and paste as it is into `validation_key` attribute of your ARM's parameters Json template.
-Make the necessary validator_pem_file_path changes in the above commands as per your configuration.
+  * For both the platforms, copy the output of 2nd command and paste as it is into `validation_key` attribute of your ARM's parameters Json template.
+  * Make the necessary validator_pem_file_path changes in the above commands as per your configuration.
 
 4. Refer code written below
 
