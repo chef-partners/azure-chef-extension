@@ -33,6 +33,7 @@ previous_extension="$waagentdir/$previous_extension"
 handler_settings_file=`ls $previous_extension/config/*.settings -S -r | head -1`
 
 auto_update_client=`ruby -e "require 'chef/azure/helpers/parse_json';value_from_json_file_for_ps '$handler_settings_file','runtimeSettings','0','handlerSettings','publicSettings','autoUpdateClient'"`
+uninstall_chef_client=`ruby -e "require 'chef/azure/helpers/parse_json';value_from_json_file_for_ps '$handler_settings_file','runtimeSettings','0','handlerSettings','publicSettings','uninstallChefClient'"`
 if [ "$auto_update_client" != "true" ]
 then
   # touch the auto_update_false
@@ -40,7 +41,10 @@ then
   # even if autoUpdateClient=false.
   # Waagent itself spawns processes for uninstall, install and enable otherwise.
   touch /etc/chef/.auto_update_false
-  return
+  if [ "$uninstall_chef_client" = "true" ]; then
+    echo "Invalid config specified...uninstallChefClient flag cannot be true when autoUpdateClient flag is false." >> /var/log/azure/custom.log
+  fi
+  exit 1
 fi
 
 BACKUP_FOLDER="etc_chef_extn_update_`date +%s`"
@@ -51,7 +55,6 @@ called_from_update="update"
 # Save chef configuration.
 mv /etc/chef /tmp/$BACKUP_FOLDER
 # uninstall chef.
-uninstall_chef_client=`ruby -e "require 'chef/azure/helpers/parse_json';value_from_json_file_for_ps '$handler_settings_file','runtimeSettings','0','handlerSettings','publicSettings','uninstallChefClient'"`
 if [ "$uninstall_chef_client" = "true" ]; then
   sh $commands_script_path/chef-uninstall.sh "$called_from_update"
 fi

@@ -52,8 +52,14 @@ linux_distributor=$(get_linux_distributor)
 
 auto_update_false=/etc/chef/.auto_update_false
 
+export PATH=$PATH:/opt/chef/embedded/bin:/opt/chef/bin
+
 if [ -f $auto_update_false ]; then
-  return
+  uninstall_chef_client=`ruby -e "require 'chef/azure/helpers/parse_json';value_from_json_file_for_ps '$handler_settings_file','runtimeSettings','0','handlerSettings','publicSettings','uninstallChefClient'"`
+  if [ "$uninstall_chef_client" = "true" ]; then
+    echo "Invalid config specified...uninstallChefClient flag cannot be true when autoUpdateClient flag is false." >> /var/log/azure/custom.log
+  fi
+  exit 1
 fi
 
 update_process_descriptor=/etc/chef/.updating_chef_extension
@@ -64,7 +70,6 @@ if [ -f $update_process_descriptor ]; then
   echo "[$(date)] Not doing uninstall, as the update process is running"
   rm $update_process_descriptor
 else
-  export PATH=$PATH:/opt/chef/embedded/bin:/opt/chef/bin
 
   get_script_dir(){
     SCRIPT=$(readlink -f "$0")

@@ -147,7 +147,7 @@ install_from_repo_centos(){
 
 install_from_repo_ubuntu() {
   #check if chef-client is already installed
-  dpkg-query -l chef
+  dpkg-query -s chef
 
   if [ $? -ne 0 ]; then
     echo "Starting installation:"
