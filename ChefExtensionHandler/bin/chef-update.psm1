@@ -51,14 +51,6 @@ function Update-ChefClient {
     $autoUpdateClient = Get-autoUpdateClientSetting
   }
 
-  Write-Host "[$(Get-Date)] AutoUpdateClient: $autoUpdateClient"
-  # Auto update flag in Runtime Settings allows the user to opt for automatic chef-client update.
-  # Default value is false
-  if($autoUpdateClient -ne "true"){
-    Write-Host "[$(Get-Date)] Auto update disabled"
-    return
-  }
-
   # Import Chef Install and Chef Uninstall PS modules
   Import-Module "$(Chef-GetExtensionRoot)\\bin\\chef-install.psm1"
 
@@ -67,6 +59,17 @@ function Update-ChefClient {
     $uninstallChefClient = $json_handlerSettings.publicSettings.uninstallChefClient
   } else {
     $uninstallChefClient = Get-uninstallChefClientSetting
+  }
+
+  Write-Host "[$(Get-Date)] AutoUpdateClient: $autoUpdateClient"
+  # Auto update flag in Runtime Settings allows the user to opt for automatic chef-client update.
+  # Default value is false
+  if($autoUpdateClient -ne "true"){
+    Write-Host "[$(Get-Date)] Auto update disabled"
+    if ($uninstallChefClient -eq "true"){
+      Write-Host "Invalid config specified...uninstallChefClient flag cannot be true when autoUpdateClient flag is false."
+    }
+    return
   }
 
   if ($uninstallChefClient -eq "true"){
@@ -85,9 +88,11 @@ function Update-ChefClient {
     Write-Host "[$(Get-Date)] Configuration saved to $backupLocation"
 
     # uninstall chef. this will work since the uninstall script is idempotent.
-    #echo "Calling Uninstall-ChefClient from $scriptDir\chef-uninstall.psm1"
-    #Uninstall-ChefClient $calledFromUpdate
-    #Write-Host "[$(Get-Date)] Uninstall completed"
+    if ($uninstallChefClient -eq "true"){
+      echo "Calling Uninstall-ChefClient from $scriptDir\chef-uninstall.psm1"
+      Uninstall-ChefClient $calledFromUpdate
+      Write-Host "[$(Get-Date)] Uninstall completed"
+    }
 
     # Restore Chef Configuration
     Copy-Item $backupLocation $bootstrapDirectory -recurse

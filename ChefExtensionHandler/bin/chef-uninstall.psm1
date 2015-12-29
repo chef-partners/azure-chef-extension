@@ -65,14 +65,46 @@ function Delete-ChefConfig($deleteChefConfig) {
   }
 }
 
+function Chef-GetScriptDirectory
+{
+  $Invocation = (Get-Variable MyInvocation -Scope 1).Value
+  Split-Path $Invocation.MyCommand.Path
+}
+
+$scriptDir = Chef-GetScriptDirectory
+
+function Chef-GetExtensionRoot {
+  $chefExtensionRoot = [System.IO.Path]::GetFullPath("$scriptDir\\..")
+  $chefExtensionRoot
+}
+
+function Get-SharedHelper {
+  $chefExtensionRoot = Chef-GetExtensionRoot
+  "$chefExtensionRoot\\bin\\shared.ps1"
+}
+
 function Uninstall-ChefClient {
   param([boolean]$calledFromUpdate = $False)
   trap [Exception] {echo $_.Exception.Message;exit 1}
 
-  $env:Path += ";C:\opscode\chef\bin;C:\opscode\chef\embedded\bin"
-
   # Source the shared PS
   . $(Get-SharedHelper)
+
+  $env:Path += ";C:\opscode\chef\bin;C:\opscode\chef\embedded\bin"
+
+  $powershellVersion = Get-PowershellVersion
+
+  if ($powershellVersion -ge 3) {
+    $json_handlerSettings = Get-PreviousVersionHandlerSettings
+    $uninstallChefClient = $json_handlerSettings.publicSettings.uninstallChefClient
+  } else {
+    $uninstallChefClient = Get-uninstallChefClientSetting
+  }
+
+  if ($uninstallChefClient -eq "false"){
+    Write-Host("[$(Get-Date)] Not uninstalling Chef, as the uninstall_chef_client flag is false.")
+    exit 1
+  }
 
   # powershell has in built cmdlets: ConvertFrom-Json and ConvertTo-Json which are supported above PS v 3.0
   # so the hack - use ruby json parsing for versions lower than 3.0
