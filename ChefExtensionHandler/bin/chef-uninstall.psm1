@@ -84,7 +84,7 @@ function Get-SharedHelper {
 }
 
 function Uninstall-ChefClient {
-  param([boolean]$calledFromUpdate = $False)
+  param([boolean]$calledFromUpdate = $False, [string]$configFilePath)
   trap [Exception] {echo $_.Exception.Message;exit 1}
 
   # Source the shared PS
@@ -94,16 +94,21 @@ function Uninstall-ChefClient {
 
   $powershellVersion = Get-PowershellVersion
 
-  if ($powershellVersion -ge 3) {
-    $json_handlerSettings = Get-PreviousVersionHandlerSettings
-    $uninstallChefClient = $json_handlerSettings.publicSettings.uninstallChefClient
-  } else {
-    $uninstallChefClient = Get-uninstallChefClientSetting
-  }
+  if ($calledFromUpdate -eq $False) {
+    if ($powershellVersion -ge 3) {
+      $settingsData = Get-Content $configFilePath -Raw | ConvertFrom-Json
+      $uninstallChefClientFlag = $settingsData.runtimesettings.handlersettings.publicsettings.uninstallChefClient
+    } else {
+      # $calledFromUninstall = $True
+      # $uninstallChefClientFlag = Get-uninstallChefClientSetting $calledFromUninstall #$configFilePath
 
-  if ($uninstallChefClient -eq "false"){
-    Write-Host("[$(Get-Date)] Not uninstalling Chef, as the uninstall_chef_client flag is false.")
-    exit 1
+        $uninstallChefClientFlag = Get-JsonValueUsingRuby "$configFilePath" "runtimeSettings" 0 "handlerSettings" "publicSettings" "uninstallChefClient"
+    }
+
+    if ($uninstallChefClientFlag -eq "false") {
+      Write-Host("[$(Get-Date)] Not doing Chef uninstall, as the uninstall_chef_client flag is false.")
+      exit 1
+    }
   }
 
   # powershell has in built cmdlets: ConvertFrom-Json and ConvertTo-Json which are supported above PS v 3.0
