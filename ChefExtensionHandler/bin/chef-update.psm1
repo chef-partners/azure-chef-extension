@@ -69,7 +69,7 @@ function Update-ChefClient {
     if ($uninstallChefClient -eq "true"){
       Write-Host "Invalid config specified...uninstallChefClient flag cannot be true when autoUpdateClient flag is false."
     }
-    return
+    exit 1
   }
 
   if ($uninstallChefClient -eq "true"){

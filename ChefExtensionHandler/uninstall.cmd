@@ -3,6 +3,8 @@ set CHEF_EXT_DIR=%~dp0
 
 echo %CHEF_EXT_DIR%
 
+mode con:cols=150 lines=70
+
 set get_config_file_path_cmd=powershell -nologo -noprofile -executionpolicy unrestricted -Command ". %CHEF_EXT_DIR%bin\shared.ps1;Get-HandlerSettingsFilePath"
 
 for /f "delims=" %%I in ('%get_config_file_path_cmd%') do set "config_file_path=%%I"
