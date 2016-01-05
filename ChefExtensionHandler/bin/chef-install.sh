@@ -107,7 +107,7 @@ get_chef_version() {
     echo "No config file found !!"
   else
     if cat $config_file_name 2>/dev/null | grep -q "bootstrap_version"; then
-      chef_version=`sed 's/.*bootstrap_version":"\(.*\)".*/\1/' $config_file_name 2>/dev/null`
+      chef_version=`sed 's/.*bootstrap_version" *: *"\(.*\)/\1/' $config_file_name 2>/dev/null | awk -F\" '{ print $1 }'`
       echo $chef_version
     else
       echo ""
@@ -147,7 +147,7 @@ install_from_repo_centos(){
 
 install_from_repo_ubuntu() {
   #check if chef-client is already installed
-  dpkg-query -l chef
+  dpkg-query -s chef
 
   if [ $? -ne 0 ]; then
     echo "Starting installation:"

@@ -194,3 +194,11 @@ function Get-deleteChefConfigSetting {
   }
   return $deleteChefConfig
 }
+
+# Get the uninstall chef client setting for powershell 2
+function Get-uninstallChefClientSetting{
+  $extensionPreviousVersion = Get-PreviousExtensionVersion
+  $latestSettingFile = Get-HandlerSettingsFileName "$chefExtensionParent\\$extensionPreviousVersion"
+
+  Get-JsonValueUsingRuby "$chefExtensionParent\\$extensionPreviousVersion\\RuntimeSettings\\$latestSettingFile" "runtimeSettings" 0 "handlerSettings" "publicSettings" "uninstallChefClient"
+}
