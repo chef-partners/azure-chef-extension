@@ -45,6 +45,23 @@ get_hostname (){
   echo "Found hostname: ${host}"
 }
 
+get_debian_version(){
+  ver=`cat /etc/debian_version | cut -c 1`
+  case $ver in
+    "7")
+      debian_version="wheezy"
+      ;;
+    "8")
+      debian_version="jessie"
+      ;;  
+    *)
+      echo "No supported version ... exiting"
+      exit 1
+      ;;
+  esac  
+  echo "${debian_version}"
+}
+
 curl_check(){
   echo "Checking for curl..."
   if command -v curl > /dev/null; then
@@ -145,16 +162,15 @@ install_from_repo_centos(){
   fi
 }
 
-install_from_repo_ubuntu() {
+install_from_repo_deb_package(){
   #check if chef-client is already installed
   dpkg-query -s chef
 
   if [ $? -ne 0 ]; then
     echo "Starting installation:"
     date +"%T"
-  	platform="ubuntu"
   	curl_check $platform &
-
+    linux_distributor=${1}
     # Starting forked subshell to read chef-client version from runtimesettings file
     chef_version=$(get_chef_version &)
 
@@ -167,7 +183,13 @@ install_from_repo_ubuntu() {
   	apt-get install -y apt-transport-https
   	echo "done."
 
-  	apt_config_url="https://packagecloud.io/install/repositories/chef/stable/config_file.list?os=ubuntu&dist=trusty&source=script"
+    if [ "$linux_distributor" = "debian" ]; then
+      distver=$(get_debian_version)
+    elif [ "$linux_distributor" = "ubuntu" ]; then
+      distver="trusty"    
+    fi 
+    
+  	apt_config_url="https://packagecloud.io/install/repositories/chef/stable/config_file.list?os=$linux_distributor&dist=$distver&source=script"
   	apt_source_path="/etc/apt/sources.list.d/chef_stable.list"
 
   	echo -n "Installing $apt_source_path..."
@@ -217,6 +239,8 @@ get_linux_distributor(){
     linux_distributor='centos'
   elif python -mplatform | grep Ubuntu > /dev/null; then
     linux_distributor='ubuntu'
+  elif python -mplatform | grep -i Debian > /dev/null; then
+    linux_distributor='debian'  
   fi
   echo "${linux_distributor}"
 }
@@ -234,12 +258,16 @@ else
   case $linux_distributor in
     "ubuntu")
       echo "Linux Distributor: ${linux_distributor}"
-      install_from_repo_ubuntu
+      install_from_repo_deb_package $linux_distributor
       ;;
     "centos")
       echo "Linux Distributor: ${linux_distributor}"
       install_from_repo_centos
       ;;
+    "debian")
+      echo "Linux Distributor: ${linux_distributor}"
+      install_from_repo_deb_package $linux_distributor
+      ;;  
     *)
       echo "No Linux Distributor detected ... exiting..."
       exit 1
