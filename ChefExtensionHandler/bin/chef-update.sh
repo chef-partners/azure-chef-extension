@@ -22,6 +22,13 @@ auto_update_false=/etc/chef/.auto_update_false
 if [ -f $auto_update_false ]; then
   rm $auto_update_false
 fi
+
+# delete node-registered file if it exists
+node_registered=/etc/chef/node-registered
+if [ -f $node_registered ]; then
+  rm $node_registered
+fi
+
 commands_script_path=$(get_script_dir)
 
 chef_ext_dir=`dirname $commands_script_path`
