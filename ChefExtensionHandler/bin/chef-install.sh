@@ -51,7 +51,7 @@ curl_check(){
     echo "Detected curl..."
   else
     echo "Installing curl..."
-		if [ "$1" == "centos" ]; then
+		if [ "$1" = "centos" ]; then
     	yum install -d0 -e0 -y curl
 		else
 			apt-get install -q -y curl
@@ -103,7 +103,7 @@ get_config_settings_file() {
 
 get_chef_version() {
   config_file_name=$(get_config_settings_file)
-  if [[ -z "$config_file_name" ]]; then
+  if [ -z "$config_file_name" ]; then
     echo "No config file found !!"
   else
     if cat $config_file_name 2>/dev/null | grep -q "bootstrap_version"; then
@@ -116,12 +116,13 @@ get_chef_version() {
 }
 
 get_chef_package_from_omnitruck() {
+  echo "Call for Checking linux distributor"
   platform=$(get_linux_distributor)
 
   #check if chef-client is already installed
-  if [ "$platform" == "ubuntu" ]; then
+  if [ "$platform" = "ubuntu" ]; then
     dpkg-query -s chef
-  elif [ "$platform" == "centos" ]; then
+  elif [ "$platform" = "centos" ]; then
     yum list installed | grep -w "chef"
   fi
 
@@ -133,7 +134,6 @@ get_chef_package_from_omnitruck() {
     # Starting forked subshell to read chef-client version from runtimesettings file
     echo "Reading chef-client version from settings file"
     chef_version=$(get_chef_version &)
-    platform_version=$(lsb_release -sr)
     ARCH=$(uname -m | sed 's/x86_//;s/i[3-6]86/32/')
     if [ $ARCH -eq "64" ]; then
       ARCH="x86_64"
@@ -141,8 +141,12 @@ get_chef_package_from_omnitruck() {
       ARCH="i686"
     fi
 
-    if [ $platform -eq "centos" ]; then
+    if [ $platform = "centos" ]; then
+      platform_version=`sed -rn 's/.*[0-9].([0-9]).*/\1/p' /etc/centos-release`
       p="el"
+    else
+      platform_version=$(lsb_release -sr)
+      p=$platform
     fi
 
     # temp directory to keep installed chef package
@@ -152,7 +156,7 @@ get_chef_package_from_omnitruck() {
     if [ "$chef_version" = "No config file found !!" ]; then
       echo "Configuration error. Azure chef extension Settings file missing."
       exit 1
-    elif [[ -z "$chef_version" ]]; then
+    elif [ -z "$chef_version" ]; then
       curl -L -o "$temp_dir/chef" "http://www.chef.io/chef/download?p=$p&pv=$platform_version&m=$ARCH"
     else
       curl -L -o "$temp_dir/chef" "http://www.chef.io/chef/download?p=$p&pv=$platform_version&m=$ARCH&v=$chef_version"
@@ -170,9 +174,9 @@ get_chef_package_from_omnitruck() {
 }
 
 install_chef(){
-  if [ "$2" == "ubuntu" ]; then
+  if [ "$2" = "ubuntu" ]; then
     dpkg -i "$1/chef"
-  elif [ "$2" == "centos" ]; then
+  elif [ "$2" = "centos" ]; then
     rpm -ivh "$1/chef"
   fi
 }
@@ -196,7 +200,6 @@ get_linux_distributor(){
 }
 
 ########### Script starts from here ##################
-echo "Call for Checking linux distributor"
 auto_update_false=/etc/chef/.auto_update_false
 
 if [ -f $auto_update_false ]; then
