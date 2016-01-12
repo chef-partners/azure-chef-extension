@@ -51,7 +51,7 @@ curl_check(){
     echo "Detected curl..."
   else
     echo "Installing curl..."
-		if [ "$1" == "centos" ]; then
+		if [ "$1" = "centos" ]; then
     	yum install -d0 -e0 -y curl
 		else
 			apt-get install -q -y curl
@@ -103,7 +103,7 @@ get_config_settings_file() {
 
 get_chef_version() {
   config_file_name=$(get_config_settings_file)
-  if [[ -z "$config_file_name" ]]; then
+  if [ -z "$config_file_name" ]; then
     echo "No config file found !!"
   else
     if cat $config_file_name 2>/dev/null | grep -q "bootstrap_version"; then
@@ -115,91 +115,69 @@ get_chef_version() {
   fi
 }
 
-install_from_repo_centos(){
+get_chef_package_from_omnitruck() {
+  echo "Call for Checking linux distributor"
+  platform=$(get_linux_distributor)
+
   #check if chef-client is already installed
-  yum list installed | grep -w "chef"
-
-  if [ $? -ne 0 ]; then
-    platform="centos"
-    curl_check $platform
-    get_hostname
-    yum_repo_path=/etc/yum.repos.d/chef_stable.repo
-    yum_repo_config_url="https://packagecloud.io/install/repositories/chef/stable/config_file.repo?os=el&dist=5&name=${host}"
-
-    echo "Downloading repository file: ${yum_repo_config_url}"
-    curl -f "${yum_repo_config_url}" > $yum_repo_path
-    curl_exit_code=$?
-    curl_status $curl_exit_code $yum_repo_config_url $yum_repo_path
-
-    echo "Installing chef-client package"
-    chef_version=$(get_chef_version)
-    if [ "$chef_version" = "No config file found !!" ]; then
-      echo "Configuration error. Azure chef extension Settings file missing."
-      exit 1
-    elif [[ -z "$chef_version" ]]; then
-      yum -y install chef
-    else
-      yum -y install chef-$chef_version
-    fi
-    check_installation_status
+  if [ "$platform" = "ubuntu" ]; then
+    dpkg-query -s chef
+  elif [ "$platform" = "centos" ]; then
+    yum list installed | grep -w "chef"
   fi
-}
-
-install_from_repo_ubuntu() {
-  #check if chef-client is already installed
-  dpkg-query -s chef
 
   if [ $? -ne 0 ]; then
-    echo "Starting installation:"
+    echo "Starting installation process:"
     date +"%T"
-  	platform="ubuntu"
   	curl_check $platform &
 
     # Starting forked subshell to read chef-client version from runtimesettings file
+    echo "Reading chef-client version from settings file"
     chef_version=$(get_chef_version &)
+    ARCH=$(uname -m | sed 's/x86_//;s/i[3-6]86/32/')
+    if [ $ARCH -eq "64" ]; then
+      ARCH="x86_64"
+    elif [ $ARCH -eq "32" ]; then
+      ARCH="i686"
+    fi
 
-  	# Need to first run apt-get update so that apt-transport-https can be installed
-  	echo -n "Running apt-get update... "
-  	apt-get update
-  	echo "done."
+    if [ $platform = "centos" ]; then
+      platform_version=`sed -rn 's/.*[0-9].([0-9]).*/\1/p' /etc/centos-release`
+      p="el"
+    else
+      platform_version=$(lsb_release -sr)
+      p=$platform
+    fi
 
-  	echo -n "Installing apt-transport-https... "
-  	apt-get install -y apt-transport-https
-  	echo "done."
+    # temp directory to keep installed chef package
+    temp_dir=`mktemp -d`
 
-  	apt_config_url="https://packagecloud.io/install/repositories/chef/stable/config_file.list?os=ubuntu&dist=trusty&source=script"
-  	apt_source_path="/etc/apt/sources.list.d/chef_stable.list"
+    echo "Installing chef-client package"
+    if [ "$chef_version" = "No config file found !!" ]; then
+      echo "Configuration error. Azure chef extension Settings file missing."
+      exit 1
+    elif [ -z "$chef_version" ]; then
+      curl -L -o "$temp_dir/chef" "http://www.chef.io/chef/download?p=$p&pv=$platform_version&m=$ARCH"
+    else
+      curl -L -o "$temp_dir/chef" "http://www.chef.io/chef/download?p=$p&pv=$platform_version&m=$ARCH&v=$chef_version"
+    fi
 
-  	echo -n "Installing $apt_source_path..."
+    install_chef $temp_dir $platform
+    check_installation_status
 
-  	# create an apt config file for this repository
-  	curl -sSf "${apt_config_url}" > $apt_source_path
-  	curl_exit_code=$?
-    curl_status $curl_exit_code $apt_config_url $apt_source_path
+    #delete temp_dir
+    rm -rf $temp_dir
 
-  	echo -n "Importing packagecloud gpg key... "
-  	# import the gpg key
-  	curl https://packagecloud.io/gpg.key | sudo apt-key add -
-  	echo "done."
-
-  	echo -n "Running apt-get update... "
-  	# update apt on this system
-  	apt-get update
-  	echo "done."
-
-          echo "Installing chef-client package"
-          if [ "$chef_version" = "No config file found !!" ]; then
-            echo "Configuration error. Azure chef extension Settings file missing."
-            exit 1
-          elif [[ -z "$chef_version" ]]; then
-            apt-get install chef
-          else
-            apt-get install chef=$chef_version\*
-          fi
-
-  	check_installation_status
     echo "End of installation:"
     date +"%T"
+  fi
+}
+
+install_chef(){
+  if [ "$2" = "ubuntu" ]; then
+    dpkg -i "$1/chef"
+  elif [ "$2" = "centos" ]; then
+    rpm -ivh "$1/chef"
   fi
 }
 
@@ -222,29 +200,12 @@ get_linux_distributor(){
 }
 
 ########### Script starts from here ##################
-echo "Call for Checking linux distributor"
-linux_distributor=$(get_linux_distributor)
 auto_update_false=/etc/chef/.auto_update_false
 
 if [ -f $auto_update_false ]; then
   echo "[$(date)] Not doing install, as auto update is false"
 else
-  echo "After linux distributor check .... "
-  # get chef installer
-  case $linux_distributor in
-    "ubuntu")
-      echo "Linux Distributor: ${linux_distributor}"
-      install_from_repo_ubuntu
-      ;;
-    "centos")
-      echo "Linux Distributor: ${linux_distributor}"
-      install_from_repo_centos
-      ;;
-    *)
-      echo "No Linux Distributor detected ... exiting..."
-      exit 1
-      ;;
-  esac
+  get_chef_package_from_omnitruck
 
   export PATH=$PATH:/opt/chef/bin/:/opt/chef/embedded/bin
 
