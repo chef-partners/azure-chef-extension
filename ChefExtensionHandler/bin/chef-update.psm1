@@ -81,6 +81,11 @@ function Update-ChefClient {
     Write-Host "[$(Get-Date)] Running update process"
 
     $bootstrapDirectory = Get-BootstrapDirectory
+    # delete node-registered file if it exists
+    $nodeRegistered = $bootstrapDirectory + "\\node-registered"
+    if (Test-Path $nodeRegistered) {
+      Remove-Item -Force $nodeRegistered
+    }
     $backupLocation = Get-TempBackupDir
     $calledFromUpdate = $True
     # Save chef configuration.
