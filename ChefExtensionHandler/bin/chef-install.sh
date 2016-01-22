@@ -51,11 +51,11 @@ curl_check(){
     echo "Detected curl..."
   else
     echo "Installing curl..."
-		if [ "$1" = "centos" ]; then
-    	yum install -d0 -e0 -y curl
-		else
-			apt-get install -q -y curl
-		fi
+    if [ "$1" = "centos" ]; then
+      yum install -d0 -e0 -y curl
+    else
+      apt-get install -q -y curl
+    fi
   fi
 }
 
@@ -120,7 +120,7 @@ get_chef_package_from_omnitruck() {
   platform=$(get_linux_distributor)
 
   #check if chef-client is already installed
-  if [ "$platform" = "ubuntu" ]; then
+  if [ "$platform" = "ubuntu" -o "$platform" = "debian" ]; then
     dpkg-query -s chef
   elif [ "$platform" = "centos" ]; then
     yum list installed | grep -w "chef"
@@ -129,7 +129,7 @@ get_chef_package_from_omnitruck() {
   if [ $? -ne 0 ]; then
     echo "Starting installation process:"
     date +"%T"
-  	curl_check $platform &
+    curl_check $platform
 
     # Starting forked subshell to read chef-client version from runtimesettings file
     echo "Reading chef-client version from settings file"
@@ -138,12 +138,17 @@ get_chef_package_from_omnitruck() {
     if [ $ARCH -eq "64" ]; then
       ARCH="x86_64"
     elif [ $ARCH -eq "32" ]; then
-      ARCH="i686"
+       ARCH="i686"
     fi
-
+    echo "platform is $platform"
     if [ $platform = "centos" ]; then
       platform_version=`sed -rn 's/.*[0-9].([0-9]).*/\1/p' /etc/centos-release`
       p="el"
+    elif [ $platform = "debian" ]; then
+      echo "Inside deb################################"
+      platform_version=$(cat /etc/debian_version)
+      echo "############################Platform version: $platform_version"
+      p=$platform
     else
       platform_version=$(lsb_release -sr)
       p=$platform
@@ -157,8 +162,13 @@ get_chef_package_from_omnitruck() {
       echo "Configuration error. Azure chef extension Settings file missing."
       exit 1
     elif [ -z "$chef_version" ]; then
+      url =  "http://www.chef.io/chef/download?p=$p&pv=$platform_version&m=$ARCH"
+      echo "in chef version"
+      echo "##############################$url"
       curl -L -o "$temp_dir/chef" "http://www.chef.io/chef/download?p=$p&pv=$platform_version&m=$ARCH"
     else
+      urlv = "http://www.chef.io/chef/download?p=$p&pv=$platform_version&m=$ARCH&v=$chef_version"
+      echo "##################################33$urlv"
       curl -L -o "$temp_dir/chef" "http://www.chef.io/chef/download?p=$p&pv=$platform_version&m=$ARCH&v=$chef_version"
     fi
 
@@ -174,7 +184,8 @@ get_chef_package_from_omnitruck() {
 }
 
 install_chef(){
-  if [ "$2" = "ubuntu" ]; then
+  echo "####################in install chef$2"
+  if [ "$2" = "ubuntu" -o "$2" = "debian" ]; then
     dpkg -i "$1/chef"
   elif [ "$2" = "centos" ]; then
     rpm -ivh "$1/chef"
@@ -195,6 +206,8 @@ get_linux_distributor(){
     linux_distributor='centos'
   elif python -mplatform | grep Ubuntu > /dev/null; then
     linux_distributor='ubuntu'
+  elif python -mplatform | grep debian > /dev/null; then
+    linux_distributor='debian'
   fi
   echo "${linux_distributor}"
 }
@@ -216,6 +229,7 @@ else
     echo "azure-chef-extension is already installed."
   else
     # install azure chef extension gem
+    echo "##############################$chef_extension_root/gems/*.gem"
     install_chef_extension_gem "$chef_extension_root/gems/*.gem"
   fi
 fi
