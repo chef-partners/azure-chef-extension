@@ -9,7 +9,7 @@ remove_chef_config(){
 }
 
 # Function to uninstall ubuntu chef_pkg
-uninstall_ubuntu_chef_package(){
+uninstall_ubuntu_or_debian_chef_package(){
   pkg_name=`dpkg -l | grep chef | awk '{print $2}'`
   echo "[$(date)] Uninstalling package $pkg_name ..."
   apt-get remove --purge $pkg_name -y
@@ -43,6 +43,8 @@ get_linux_distributor(){
     linux_distributor='centos'
   elif python -mplatform | grep Ubuntu > /dev/null; then
     linux_distributor='ubuntu'
+  elif python -mplatform | grep debian > /dev/null; then
+    linux_distributor='debian'
   fi
   echo "${linux_distributor}"
 }
@@ -109,10 +111,10 @@ else
   fi
 
   case $linux_distributor in
-    "ubuntu")
+    "ubuntu"|"debian")
       echo "Linux Distributor: ${linux_distributor}"
       remove_chef_config
-      uninstall_ubuntu_chef_package
+      uninstall_ubuntu_or_debian_chef_package
       ;;
     "centos")
       echo "Linux Distributor: ${linux_distributor}"
