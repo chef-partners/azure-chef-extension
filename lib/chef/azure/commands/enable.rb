@@ -129,8 +129,11 @@ class EnableChef
         config[:chef_extension_root] = @chef_extension_root
         config[:user_client_rb] = @client_rb
         config[:log_location] = @azure_plugin_log_location
-        Chef::Config[:validation_key_content] = @validation_key
-        Chef::Config[:client_key_content] = @client_key
+        if @validator_less
+          Chef::Config[:client_key_content] = @client_key
+        else
+          Chef::Config[:validation_key_content] = @validation_key
+        end
         Chef::Config[:chef_server_ssl_cert_content] = @chef_server_ssl_cert
         config[:chef_server_url] = bootstrap_options['chef_server_url'] if bootstrap_options['chef_server_url']
         config[:validation_client_name] =  bootstrap_options['validation_client_name'] if bootstrap_options['validation_client_name']
@@ -190,8 +193,12 @@ class EnableChef
 
   def load_settings
     protected_settings = value_from_json_file(handler_settings_file,'runtimeSettings','0','handlerSettings', 'protectedSettings')
-    @validation_key = get_validation_key(protected_settings)
-    @client_key = get_client_key(protected_settings)
+    @validator_less = value_from_json_file(handler_settings_file, 'runtimeSettings', '0', 'handlerSettings', 'publicSettings', 'validatorLess')
+    if @validator_less
+      @client_key = get_client_key
+    else
+      @validation_key = get_validation_key(protected_settings)
+    end
     @chef_server_ssl_cert = get_chef_server_ssl_cert(protected_settings)
     @client_rb = value_from_json_file(handler_settings_file, 'runtimeSettings', '0', 'handlerSettings', 'publicSettings', 'client_rb')
     @run_list = value_from_json_file(handler_settings_file, 'runtimeSettings', '0', 'handlerSettings', 'publicSettings', 'runlist')
@@ -242,16 +249,14 @@ class EnableChef
     validation_key
   end
 
-  def get_client_key(encrypted_text)
-    decrypted_text = get_decrypted_key(encrypted_text)
+  def get_client_key
+    
+    client_builder = Chef::Knife::Bootstrap::ClientBuilder.new(chef_config: Chef::Config)
 
-    #extract client_key from decrypted hash
-    client_key = value_from_json_file(decrypted_text, "client_pem")
-    begin
-      client_key = OpenSSL::PKey::RSA.new(client_key.squeeze("\n")).to_pem
-    rescue OpenSSL::PKey::RSAError => e
-      Chef::Log.error "Chef client key parsing error. #{e.inspect}"
-    end
+    client_builder.run
+    key_path = client_builder.client_path
+    client_key = File.read(key_path)
+    
     client_key
   end
 
