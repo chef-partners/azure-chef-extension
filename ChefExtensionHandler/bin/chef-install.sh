@@ -142,7 +142,7 @@ get_chef_package_from_omnitruck() {
     fi
 
     if [ $platform = "centos" ]; then
-      platform_version=`sed -rn 's/.*[0-9].([0-9]).*/\1/p' /etc/centos-release`
+      platform_version=`sed -r 's/.* ([0-9]).*/\1/' /etc/centos-release`
       p="el"
     elif [ $platform = "debian" ]; then
       platform_version=$(cat /etc/debian_version)
