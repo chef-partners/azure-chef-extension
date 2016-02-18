@@ -8,7 +8,7 @@ Details about the thing that changed that needs to get included in the Release N
 -->
 
 # azure-chef-extension 1210.12.101.1000 for Windows and 1210.12.101.1000 for Ubuntu release notes:
-In this release we have added extension support for Debian platform, added functionality to determine whether to uninstall chef-client or not using flag uninstall_chef_client and installing chef from Omnitruck for Ubuntu CentOS and Debian
+In this release we have added extension support for Debian platform. We have also added an option uninstall_chef_client which determines whether to uninstall chef-client or not during Extension Update and Uninstall. Now we are installing chef from Omnitruck for Ubuntu, CentOS and Debian.
 
 See the [CHANGELOG](https://github.com/chef-partners/azure-chef-extension/blob/master/CHANGELOG.md) for a list of all changes in this release, and review.
 
@@ -17,8 +17,12 @@ More information on the contribution process for Chef projects can be found in t
 ## azure-chef-extension on Github
 https://github.com/chef-partners/azure-chef-extension
 
-## Issues fixed in azure-chef-extension 1210.12.100
+##Features added in azure-chef-extension 1210.12.101.1000 and 1210.12.101.1001
+* [azure-chef-extension #103](https://github.com/chef-partners/azure-chef-extension/pull/103) Added uninstall_chef_client flag which determines whether to uninstall chef-client or not.
+* [azure-chef-extension #108](https://github.com/chef-partners/azure-chef-extension/pull/108) Installing chef from Omnitruck for ubuntu and centos
+* [azure-chef-extension #109](https://github.com/chef-partners/azure-chef-extension/pull/109) Debian support in azure-chef-extension installing chef from Omnitruck 
 
+## Issues fixed in azure-chef-extension 1210.12.101.1000
 [azure-chef-extension #107](https://github.com/chef-partners/azure-chef-extension/pull/107) Added code to delete node-registered file during update process as it was not allowing chef-client run during enable process after update, to update handlers path in client.eb after update
 
 ## Known Issues
