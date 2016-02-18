@@ -1,5 +1,14 @@
 # azure-chef-extension Change Log
-## Latest Release: 1210.12.100.1000 (2015/12/07)
+## Latest Release: 1210.12.101.1000 for Windows (2016/02/04) and 1210.12.101.1000 for Ubuntu (2016/02/12)
+* [azure-chef-extension #104](https://github.com/chef-partners/azure-chef-extension/pull/104) Fixed pester specs
+* [azure-chef-extension #103](https://github.com/chef-partners/azure-chef-extension/pull/103) Added uninstall_chef_client flag which determines whether to uninstall chef-client or not.
+* [azure-chef-extension #107](https://github.com/chef-partners/azure-chef-extension/pull/107) Added code to delete node-registered file during update process as it was not allowing chef-client run during enable process after update.
+* [azure-chef-extension #108](https://github.com/chef-partners/azure-chef-extension/pull/108) Installing chef from Omnitruck for ubuntu and centos
+* [azure-chef-extension #109](https://github.com/chef-partners/azure-chef-extension/pull/109) Debian support in azure-chef-extension
+* [azure-chef-extension #111](https://github.com/chef-partners/azure-chef-extension/pull/110) Modified parsing code which reads bootstrap_version and handled various cases like parsing the contents having new lines
+* [azure-chef-extension #112](https://github.com/chef-partners/azure-chef-extension/pull/111) Modified sed command to read major version for centos plaform
+
+## Release: 1210.12.100.1000 (2015/12/07)
 * [azure-chef-extension #95](https://github.com/chef-partners/azure-chef-extension/pull/95) Tagging policy
 * [azure-chef-extension #94](https://github.com/chef-partners/azure-chef-extension/pull/94) Functional RSpecs for ssl cert support under bootstrap protocol cloud-api
 * [azure-chef-extension #99](https://github.com/chef-partners/azure-chef-extension/pull/99) Not removing chef-client on extension uninstall
