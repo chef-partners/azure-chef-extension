@@ -205,7 +205,7 @@ describe EnableChef do
       expect(instance).to receive(:value_from_json_file).twice.and_return('')
       expect(@object).to receive(:decrypt)
       expect(@object).to receive(:to_pem)
-      instance.send(:get_validation_key, 'encrypted_text')
+      instance.send(:get_validation_key, 'encrypted_text', 'format')
     end
   end
 
