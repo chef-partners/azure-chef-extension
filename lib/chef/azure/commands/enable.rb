@@ -190,7 +190,8 @@ class EnableChef
 
   def load_settings
     protected_settings = value_from_json_file(handler_settings_file,'runtimeSettings','0','handlerSettings', 'protectedSettings')
-    @validation_key = get_validation_key(protected_settings)
+    validation_key_format = value_from_json_file(handler_settings_file,'runtimeSettings','0','handlerSettings', 'publicSettings', 'validation_key_format')
+    @validation_key = get_validation_key(protected_settings, validation_key_format)
     @client_key = get_client_key(protected_settings)
     @chef_server_ssl_cert = get_chef_server_ssl_cert(protected_settings)
     @client_rb = value_from_json_file(handler_settings_file, 'runtimeSettings', '0', 'handlerSettings', 'publicSettings', 'client_rb')
@@ -230,11 +231,12 @@ class EnableChef
     parsedRunlist
   end
 
-  def get_validation_key(encrypted_text)
+  def get_validation_key(encrypted_text, validation_key_format)
     decrypted_text = get_decrypted_key(encrypted_text)
     #extract validation_key from decrypted hash
     validation_key = value_from_json_file(decrypted_text, "validation_key")
     begin
+      validation_key = Base64.decode64(validation_key) if(validation_key_format == "base64encoded")
       validation_key = OpenSSL::PKey::RSA.new(validation_key.squeeze("\n")).to_pem
     rescue OpenSSL::PKey::RSAError => e
       Chef::Log.error "Chef validation key parsing error. #{e.inspect}"
