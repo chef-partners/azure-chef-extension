@@ -51,7 +51,7 @@ curl_check(){
     echo "Detected curl..."
   else
     echo "Installing curl..."
-    if [ "$1" = "centos" ]; then
+    if [ "$1" = "centos" -o "$1" = "rhel" ]; then
       yum install -d0 -e0 -y curl
     else
       apt-get install -q -y curl
@@ -122,7 +122,7 @@ get_chef_package_from_omnitruck() {
   #check if chef-client is already installed
   if [ "$platform" = "ubuntu" -o "$platform" = "debian" ]; then
     dpkg-query -s chef
-  elif [ "$platform" = "centos" ]; then
+  elif [ "$platform" = "centos" -o "$platform" = "rhel" ]; then
     yum list installed | grep -w "chef"
   fi
 
@@ -147,6 +147,9 @@ get_chef_package_from_omnitruck() {
     elif [ $platform = "debian" ]; then
       platform_version=$(cat /etc/debian_version)
       p=$platform
+    elif [ $platform = "rhel" ]; then
+      platform_version=`sed -r 's/.* ([0-9]).*/\1/' /etc/redhat-release`
+      p="el"
     else
       platform_version=$(lsb_release -sr)
       p=$platform
@@ -179,7 +182,7 @@ get_chef_package_from_omnitruck() {
 install_chef(){
   if [ "$2" = "ubuntu" -o "$2" = "debian" ]; then
     dpkg -i "$1/chef"
-  elif [ "$2" = "centos" ]; then
+  elif [ "$2" = "centos" -o "$2" = "rhel" ]; then
     rpm -ivh "$1/chef"
   fi
 }
@@ -200,6 +203,8 @@ get_linux_distributor(){
     linux_distributor='ubuntu'
   elif python -mplatform | grep debian > /dev/null; then
     linux_distributor='debian'
+  elif python -mplatform | grep redhat > /dev/null; then
+    linux_distributor='rhel'
   fi
   echo "${linux_distributor}"
 }

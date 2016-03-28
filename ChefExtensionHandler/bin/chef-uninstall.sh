@@ -16,8 +16,8 @@ uninstall_ubuntu_or_debian_chef_package(){
   check_uninstallation_status
 }
 
-# Function to Uninstall centOS chef_pkg
-uninstall_centos_chef_package(){
+# Function to Uninstall centOS or RHEL chef_pkg
+uninstall_centos_or_rhel_chef_package(){
   pkg_name=`rpm -qi chef | grep Name | awk '{print $3}'`
   if test "$pkg_name" = "chef" ; then
     echo "[$(date)] Uninstalling package $pkg_name ..."
@@ -45,6 +45,8 @@ get_linux_distributor(){
     linux_distributor='ubuntu'
   elif python -mplatform | grep debian > /dev/null; then
     linux_distributor='debian'
+  elif python -mplatform | grep redhat > /dev/null; then
+    linux_distributor='rhel'
   fi
   echo "${linux_distributor}"
 }
@@ -116,10 +118,10 @@ else
       remove_chef_config
       uninstall_ubuntu_or_debian_chef_package
       ;;
-    "centos")
+    "centos"|"rhel")
       echo "Linux Distributor: ${linux_distributor}"
       remove_chef_config
-      uninstall_centos_chef_package
+      uninstall_centos_or_rhel_chef_package
       ;;
     *)
       echo "Unknown Distributor: $linux_distributor"
