@@ -15,6 +15,7 @@ Azure resource extension to enable Chef on Azure virtual machine instances.
 | Ubuntu   | 12.04, 14+  |
 | Windows  | 2008r2, 2012, 2012r2 |
 | Centos   | 6.5+                 |
+| RHEL     | 6+         |
 | Debian   | 6+         |
 
 
@@ -26,6 +27,8 @@ Azure resource extension to enable Chef on Azure virtual machine instances.
   "runlist":"< your run list >",
   "autoUpdateClient":"< true|false >",
   "deleteChefConfig":"< true|false >",
+  "validation_key_format": "< plaintext|base64encoded >",
+  "bootstrap_version": "< version of chef-client >"
   "bootstrap_options": {
     "chef_node_name":"< your node name >",
     "chef_server_url":"< your chef server url >",
@@ -43,6 +46,10 @@ This option should be set to true for updating the extension manually also.
 
 `deleteChefCofig`: Set deleteChefConfig option to true in publicconfig if you want to delete chef configuration files while update or uninstall. By default it is set to false.
 
+`validation_key_format`: Specifies the format in which `validation_key` is set in the `privateconfig.config` file. Supported values are `plaintext` and `base64encoded`. Default value is `plaintext`.
+
+`bootstrap_version`: Set the version of `chef-client` that needs to get installed on the VM. This option is supported only for linux extension.
+
 `bootstrap_options`: Set bootstrap options while adding chef extension to Azure VM. Bootstrap options used by Chef-Client during node converge. It overrides the configuration set in client_rb option. for e.g. node_name option i.e. if you set node_name as "foo" in the client_rb and in bootstrap_option you set chef_node_name as "bar" it will take "bar" as node name instead of "foo".
 
 ***Supported options in bootstrap_options json:***  `chef_node_name`, `chef_server_url`, `validation_client_name`, `environment`, `chef_node_name`, `secret`
@@ -57,6 +64,7 @@ publicconfig.config example:
   "runlist":"recipe[getting-started]",
   "autoUpdateClient":"true",
   "deleteChefConfig":"false",
+  "validation_key_format": "plaintext",
   "bootstrap_options": {
     "chef_node_name":"mynode3",
     "chef_server_url":"https://api.opscode.com/organizations/some-org",
@@ -116,11 +124,9 @@ Update-AzureVM -VM $vmOb.VM -Name "<vm-name>" -ServiceName "<cloud-service-name>
 
 **ARM commands for Azure Chef Extension**
 
-1. For windows, create ARM template file referring https://github.com/Azure/azure-quickstart-templates/blob/master/chef-extension-windows-vm/azuredeploy.json. Create ARM parameter file referring https://github.com/Azure/azure-quickstart-templates/blob/master/chef-extension-windows-vm/azuredeploy.parameters.json
+1. Please refer https://github.com/Azure/azure-quickstart-templates/tree/master/chef-json-parameters-linux-vm of creating the ARM template files.
 
-2. For linux, create ARM template file referring https://github.com/Azure/azure-quickstart-templates/blob/master/chef-json-parameters-ubuntu-vm/azuredeploy.json. Create ARM parameter file referring https://github.com/Azure/azure-quickstart-templates/blob/master/chef-json-parameters-ubuntu-vm/azuredeploy.parameters.json
-
-3. Refer code written below
+2. Refer code written below
 
 ```javascript
 Switch-AzureMode -Name AzureResourceManager
