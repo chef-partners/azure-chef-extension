@@ -1,12 +1,5 @@
 #!/bin/sh
 
-# returns script dir
-get_script_dir(){
-  SCRIPT=$(readlink -f "$0")
-  script_dir=`dirname $SCRIPT`
-  echo "${script_dir}"
-}
-
 get_linux_distributor(){
 #### Using python -mplatform command to get distributor name #####
   if python -mplatform | grep centos > /dev/null; then

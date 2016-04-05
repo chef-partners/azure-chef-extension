@@ -1,7 +1,16 @@
 #!/bin/sh
-. ./shared.sh
 
-chef_extension_root=$(get_script_dir)/../
+# returns script dir
+get_script_dir(){
+  SCRIPT=$(readlink -f "$0")
+  script_dir=`dirname $SCRIPT`
+  echo "${script_dir}"
+}
+commands_script_path=$(get_script_dir)
+
+. $commands_script_path/shared.sh
+
+chef_extension_root=$commands_script_path/../
 
 # install azure chef extension gem
 install_chef_extension_gem(){

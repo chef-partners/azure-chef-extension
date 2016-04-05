@@ -1,5 +1,14 @@
 #!/bin/sh
-. ./shared.sh
+# returns script dir
+get_script_dir(){
+  SCRIPT=$(readlink -f "$0")
+  script_dir=`dirname $SCRIPT`
+  echo "${script_dir}"
+}
+
+commands_script_path=$(get_script_dir)
+
+. $commands_script_path/shared.sh
 
 #funtions to delete ubuntu chef configuration files i.e. /etc/chef
 remove_chef_config(){
@@ -60,8 +69,6 @@ if [ -f $update_process_descriptor ]; then
   echo "[$(date)] Not doing uninstall, as the update process is running"
   rm $update_process_descriptor
 else
-
-  commands_script_path=$(get_script_dir)
 
   chef_ext_dir=`dirname $commands_script_path`
 

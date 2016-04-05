@@ -10,7 +10,12 @@
 
 # returns script dir
 export PATH=$PATH:/opt/chef/bin/:/opt/chef/embedded/bin
-. ./shared.sh
+
+get_script_dir(){
+  SCRIPT=$(readlink -f "$0")
+  script_dir=`dirname $SCRIPT`
+  echo "${script_dir}"
+}
 
 # delete .auto_update_false file if it exists
 auto_update_false=/etc/chef/.auto_update_false
