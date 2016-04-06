@@ -1,4 +1,14 @@
 #!/bin/sh
+# returns script dir
+get_script_dir(){
+  SCRIPT=$(readlink -f "$0")
+  script_dir=`dirname $SCRIPT`
+  echo "${script_dir}"
+}
+
+commands_script_path=$(get_script_dir)
+
+. $commands_script_path/shared.sh
 
 #funtions to delete ubuntu chef configuration files i.e. /etc/chef
 remove_chef_config(){
@@ -36,21 +46,6 @@ check_uninstallation_status(){
   fi
 }
 
-#function to retrieve the linux distributor
-get_linux_distributor(){
-  #### Using python -mplatform command to get distributor name #####
-  if python -mplatform | grep centos > /dev/null; then
-    linux_distributor='centos'
-  elif python -mplatform | grep Ubuntu > /dev/null; then
-    linux_distributor='ubuntu'
-  elif python -mplatform | grep debian > /dev/null; then
-    linux_distributor='debian'
-  elif python -mplatform | grep redhat > /dev/null; then
-    linux_distributor='rhel'
-  fi
-  echo "${linux_distributor}"
-}
-
 ########### Script starts from here ###################
 linux_distributor=$(get_linux_distributor)
 
@@ -74,14 +69,6 @@ if [ -f $update_process_descriptor ]; then
   echo "[$(date)] Not doing uninstall, as the update process is running"
   rm $update_process_descriptor
 else
-
-  get_script_dir(){
-    SCRIPT=$(readlink -f "$0")
-    script_dir=`dirname $SCRIPT`
-    echo "${script_dir}"
-  }
-
-  commands_script_path=$(get_script_dir)
 
   chef_ext_dir=`dirname $commands_script_path`
 
