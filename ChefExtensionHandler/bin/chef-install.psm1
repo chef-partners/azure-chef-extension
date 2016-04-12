@@ -90,14 +90,31 @@ function Download-ChefClient {
   $remoteUrl = "http://www.chef.io/chef/download?p=windows&pv=2012&m=x86_64&v=latest&prerelease=false"
   $localPath = "$env:temp\\chef-client-latest.msi"
   $webClient = new-object System.Net.WebClient
-  echo "Downloading Chef Client ..."
-  Try {
-    $webClient.DownloadFile($remoteUrl, $localPath)
-  }
-  Catch{
-    $ErrorMessage = $_.Exception.Message
-    # log to CommandExecution log:
-    echo "Error running install: $ErrorMessage"
+
+  $retries = 3
+  $retrycount = 0
+  $completed = $false
+
+
+  while (-not $completed) {
+    echo "Downloading Chef Client ..."
+    Try {
+      $webClient.DownloadFile($remoteUrl, $localPath)
+      echo "Chef Client downloading finished successfully."
+      $completed = $true
+    }
+    Catch{
+      if ($retrycount -ge $retries) {
+        echo "Chef Client Downloading failed after 3 retries."
+        $ErrorMessage = $_.Exception.Message
+        # log to CommandExecution log:
+        echo "Error running install: $ErrorMessage"
+        $completed = $true
+      } else {
+        echo "Chef Client Downloading failed. Retrying..."
+        $retrycount++
+      }
+    }
   }
 }
 
