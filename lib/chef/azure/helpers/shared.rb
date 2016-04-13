@@ -121,8 +121,8 @@ module ChefAzure
       AzureHeartBeat.update(@azure_heart_beat_file, status, code, message)
     end
 
-    def report_status_to_azure (message, status_type)
-      AzureExtensionStatus.log(@azure_status_file, message, status_type)
+    def report_status_to_azure (message, status_type, sub_status = nil)
+      AzureExtensionStatus.log(@azure_status_file, message, status_type, sub_status)
     end
   end
 end

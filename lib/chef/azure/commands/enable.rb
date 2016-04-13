@@ -79,9 +79,9 @@ class EnableChef
   def install_chef_service
     @exit_code, error_message = ChefService.new.install(@azure_plugin_log_location)
     if @exit_code == 0
-      report_status_to_azure "chef-service installed", "success"
+      report_status_to_azure "chef-service installed", "success", chef_client_logs
     else
-      report_status_to_azure "chef-service install failed - #{error_message}", "error"
+      report_status_to_azure "chef-service install failed - #{error_message}", "error", chef_client_logs
     end
     @exit_code
   end
@@ -89,11 +89,40 @@ class EnableChef
   def enable_chef_service
     @exit_code, error_message = ChefService.new.enable(@chef_extension_root, bootstrap_directory, @azure_plugin_log_location)
     if @exit_code == 0
-      report_status_to_azure "chef-service enabled", "success"
+      report_status_to_azure "chef-service enabled", "success", chef_client_logs
     else
-      report_status_to_azure "chef-service enable failed - #{error_message}", "error"
+      report_status_to_azure "chef-service enable failed - #{error_message}", "error", chef_client_logs
     end
     @exit_code
+  end
+
+  def chef_client_log_path
+    Chef::Config[:log_location] ? Chef::Config[:log_location] : "#{@azure_plugin_log_location}/chef-client.log"
+  end
+
+  def chef_client_pid_alive?(pid)
+    Process.kill(0, pid) rescue false
+  end
+
+  def chef_client_pid_exit_status(pid)
+    ret_val = Process.wait2(pid)
+    ret_val[1].exitstatus
+  end
+
+  def chef_client_run_status
+    exit_status = chef_client_pid_exit_status(@child_pid)
+    if exit_status == 0
+      'success'
+    else
+      'error'
+    end
+  end
+
+  def chef_client_logs
+    if @extended_logs
+      sub_status = { :status => chef_client_run_status,
+        :message => File.read(chef_client_log_path) }
+    end
   end
 
   # Configuring chef involves
@@ -175,8 +204,8 @@ class EnableChef
       # Now the run chef-client with runlist in background, as we done want enable command to wait, else long running chef-client with runlist will timeout azure.
       puts "#{Time.now} Launching chef-client to register node with the runlist"
       params = "-c #{bootstrap_directory}/client.rb -j #{bootstrap_directory}/first-boot.json -E #{config[:environment]} -L #{@azure_plugin_log_location}/chef-client.log --once "
-      child_pid = Process.spawn "chef-client #{params}"
-      Process.detach child_pid
+      @child_pid = Process.spawn "chef-client #{params}"
+      Process.detach @child_pid
       puts "#{Time.now} Successfully launched chef-client process with PID [#{child_pid}]"
     end
   end
@@ -196,6 +225,7 @@ class EnableChef
     @chef_server_ssl_cert = get_chef_server_ssl_cert(protected_settings)
     @client_rb = value_from_json_file(handler_settings_file, 'runtimeSettings', '0', 'handlerSettings', 'publicSettings', 'client_rb')
     @run_list = value_from_json_file(handler_settings_file, 'runtimeSettings', '0', 'handlerSettings', 'publicSettings', 'runlist')
+    @extended_logs = value_from_json_file(handler_settings_file, 'runtimeSettings', '0', 'handlerSettings', 'publicSettings', 'extendedLogs')
   end
 
   def handler_settings_file
