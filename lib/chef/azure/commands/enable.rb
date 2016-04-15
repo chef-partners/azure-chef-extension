@@ -61,9 +61,11 @@ class EnableChef
     begin
       configure_chef_only_once
 
-      install_chef_service if @exit_code == 0
-
-      enable_chef_service if @exit_code == 0
+      if windows?
+        install_chef_service
+      else
+        enable_chef_service
+      end
 
     rescue => e
       Chef::Log.error e
@@ -97,16 +99,14 @@ class EnableChef
   end
 
   def chef_client_log_path
-    Chef::Config[:log_location] ? Chef::Config[:log_location] : "#{@azure_plugin_log_location}/chef-client.log"
-  end
-
-  def chef_client_pid_alive?(pid)
-    Process.kill(0, pid) rescue false
+    chef_config
+    @chef_config[:log_location] ? @chef_config[:log_location] : "#{@azure_plugin_log_location}/chef-client.log"
   end
 
   def chef_client_pid_exit_status(pid)
-    ret_val = Process.wait2(pid)
-    ret_val[1].exitstatus
+    ret_val = @detach_process_thread.join
+    ret_val = ret_val.value
+    ret_val.exitstatus
   end
 
   def chef_client_run_status
@@ -205,8 +205,8 @@ class EnableChef
       puts "#{Time.now} Launching chef-client to register node with the runlist"
       params = "-c #{bootstrap_directory}/client.rb -j #{bootstrap_directory}/first-boot.json -E #{config[:environment]} -L #{@azure_plugin_log_location}/chef-client.log --once "
       @child_pid = Process.spawn "chef-client #{params}"
-      Process.detach @child_pid
-      puts "#{Time.now} Successfully launched chef-client process with PID [#{child_pid}]"
+      @detach_process_thread = Process.detach @child_pid
+      puts "#{Time.now} Successfully launched chef-client process with PID [#{@child_pid}]"
     end
   end
 
