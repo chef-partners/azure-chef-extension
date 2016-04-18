@@ -44,7 +44,7 @@ class AzureExtensionStatus
       # TODO: consider using substatus and message in the status json
 
       if !sub_status.nil?
-        status["status"]["substatus"] = [{
+        status[0]["status"]["substatus"] = [{
           "name" => "Chef Extension Handler",
           "status" => "#{sub_status[:status]}",
           "code" => 0,
