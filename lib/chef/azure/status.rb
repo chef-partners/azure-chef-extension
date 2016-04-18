@@ -38,19 +38,22 @@ class AzureExtensionStatus
                 "lang" => "en-US",
                 "message" => "#{status_message}"
             },
-            "substatus" => [ ({
-              "name" => "Chef Extension Handler",
-              "status" => "#{sub_status[:status]}",
-              "code" => 0,
-              "formattedMessage" => {
-                "lang" => "en-US",
-                "message" => "#{sub_status[:message]}"
-              }
-            } if !sub_status.nil? )]
-        }.reject { |key, value| value[0].nil? }
+        }
       }]
       # TODO: if status_type is null, check the message for any errors
       # TODO: consider using substatus and message in the status json
+
+      if !sub_status.nil?
+        status["status"]["substatus"] = [{
+          "name" => "Chef Extension Handler",
+          "status" => "#{sub_status[:status]}",
+          "code" => 0,
+          "formattedMessage" => {
+            "lang" => "en-US",
+            "message" => "#{sub_status[:message]}"
+          }
+        }]
+      end
 
       # Write the new status
       File.open(path, 'w') do |file|
