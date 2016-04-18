@@ -119,7 +119,7 @@ class EnableChef
   end
 
   def chef_client_logs
-    if @extended_logs
+    if @extended_logs == 'true'
       sub_status = { :status => chef_client_run_status,
         :message => File.read(chef_client_log_path) }
     end
