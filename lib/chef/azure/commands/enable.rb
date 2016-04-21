@@ -81,9 +81,9 @@ class EnableChef
   def install_chef_service
     @exit_code, error_message = ChefService.new.install(@azure_plugin_log_location)
     if @exit_code == 0
-      report_status_to_azure "chef-service installed", "success", chef_client_logs
+      report_status_to_azure "chef-service installed", "success"
     else
-      report_status_to_azure "chef-service install failed - #{error_message}", "error", chef_client_logs
+      report_status_to_azure "chef-service install failed - #{error_message}", "error"
     end
     @exit_code
   end
@@ -91,38 +91,11 @@ class EnableChef
   def enable_chef_service
     @exit_code, error_message = ChefService.new.enable(@chef_extension_root, bootstrap_directory, @azure_plugin_log_location)
     if @exit_code == 0
-      report_status_to_azure "chef-service enabled", "success", chef_client_logs
+      report_status_to_azure "chef-service enabled", "success"
     else
-      report_status_to_azure "chef-service enable failed - #{error_message}", "error", chef_client_logs
+      report_status_to_azure "chef-service enable failed - #{error_message}", "error"
     end
     @exit_code
-  end
-
-  def chef_client_log_path
-    chef_config
-    @chef_config[:log_location] ? @chef_config[:log_location] : "#{@azure_plugin_log_location}/chef-client.log"
-  end
-
-  def chef_client_pid_exit_status(pid)
-    ret_val = @detach_process_thread.join
-    ret_val = ret_val.value
-    ret_val.exitstatus
-  end
-
-  def chef_client_run_status
-    exit_status = chef_client_pid_exit_status(@child_pid)
-    if exit_status == 0
-      'success'
-    else
-      'error'
-    end
-  end
-
-  def chef_client_logs
-    if @extended_logs == 'true'
-      sub_status = { :status => chef_client_run_status,
-        :message => File.read(chef_client_log_path) }
-    end
   end
 
   # Configuring chef involves
@@ -204,10 +177,21 @@ class EnableChef
       # Now the run chef-client with runlist in background, as we done want enable command to wait, else long running chef-client with runlist will timeout azure.
       puts "#{Time.now} Launching chef-client to register node with the runlist"
       params = "-c #{bootstrap_directory}/client.rb -j #{bootstrap_directory}/first-boot.json -E #{config[:environment]} -L #{@azure_plugin_log_location}/chef-client.log --once "
-      @child_pid = Process.spawn "chef-client #{params}"
-      @detach_process_thread = Process.detach @child_pid
-      puts "#{Time.now} Successfully launched chef-client process with PID [#{@child_pid}]"
+      child_pid = Process.spawn "chef-client #{params}"
+      if @extended_logs == 'true'
+        detach_process_thread = Process.detach child_pid
+        fetch_chef_client_logs(detach_process_thread, Time.now)
+      else
+        Process.detach child_pid
+      end
+      puts "#{Time.now} Successfully launched chef-client process with PID [#{child_pid}]"
     end
+  end
+
+  def fetch_chef_client_logs(chef_client_process_thread, chef_client_run_start_time)
+    script_path = File.expand_path("../chef_client_logs.rb")
+    script_id = Process.spawn "#{script_path} #{chef_client_process_thread} #{chef_client_run_start_time} #{@azure_plugin_log_location} #{@azure_status_file}"
+    Process.detach script_id
   end
 
   def load_cloud_attributes_in_hints

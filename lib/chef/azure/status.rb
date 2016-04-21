@@ -21,7 +21,7 @@ require 'time'
 class AzureExtensionStatus
   # status file path
   # status message
-  def self.log(path, message, status_type, sub_status)
+  def self.log(path, message, status_type)
     retries = 3
     begin
       puts "Logging status message: #{message}"
@@ -42,18 +42,6 @@ class AzureExtensionStatus
       }]
       # TODO: if status_type is null, check the message for any errors
       # TODO: consider using substatus and message in the status json
-
-      if !sub_status.nil?
-        status[0]["status"]["substatus"] = [{
-          "name" => "Chef Extension Handler",
-          "status" => "#{sub_status[:status]}",
-          "code" => 0,
-          "formattedMessage" => {
-            "lang" => "en-US",
-            "message" => "#{sub_status[:message]}"
-          }
-        }]
-      end
 
       # Write the new status
       File.open(path, 'w') do |file|
