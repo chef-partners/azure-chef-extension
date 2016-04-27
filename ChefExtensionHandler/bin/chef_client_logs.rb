@@ -99,6 +99,7 @@ begin
   if ARGV.length == 5 && !File.exists?("#{bootstrap_directory}/node-registered")
     logs = ChefClientLogs.new(ARGV[0].to_i, Time.parse(ARGV[1]), ARGV[2], ARGV[3])
     logs.chef_client_logs
+    File.delete("/tmp/exit_status") if File.exists?("/tmp/exit_status")
   else
     raise "#{Time.now} Invalid invocation of the chef_client logs script."
   end
