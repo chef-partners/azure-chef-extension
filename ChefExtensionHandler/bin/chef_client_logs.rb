@@ -16,40 +16,38 @@
 # limitations under the License.
 #
 
-require 'chef/azure/helpers/shared'
 require 'json'
+require 'time'
 
 class ChefClientLogs
 
-  include ChefAzure::Shared
-
-  def initialize(process_thread, start_time, log_location, status_file)
-    @chef_client_process_thread = process_thread
+  def initialize(client_pid, start_time, log_path, status_file)
+    @chef_client_pid = client_pid
     @chef_client_run_start_time = start_time
-    @azure_plugin_log_location = log_location
+    @chef_client_log_path = log_path
     @azure_status_file = status_file
   end
 
-  def chef_client_log_path
-    chef_config
-    @chef_config[:log_location] ? @chef_config[:log_location] : "#{@azure_plugin_log_location}/chef-client.log"
-  end
-
   def chef_client_run_exit_status
-    if @chef_client_process_thread.value.exitstatus == 0
+    if File.read("/tmp/exit_status").to_i == 0
       'success'    ## successful chef_client_run ##
     else
       'error'      ## unsuccessful chef_client_run ##
     end
   end
 
+  def chef_client_process_alive?
+    Process.kill(0, @chef_client_pid) rescue false
+  end
+
   def chef_client_run_complete?
-    ## wait for maximum 10 minutes for chef_client_run to complete ##
+    ## wait for maximum 30 minutes for chef_client_run to complete ##
     chef_client_run_wait_time = ((Time.now - @chef_client_run_start_time) / 60).round
-    if @chef_client_process_thread.alive? && chef_client_run_wait_time <= 10
+    if chef_client_process_alive? && chef_client_run_wait_time <= 30
+      sleep 30
       chef_client_run_complete?
     end
-    !@chef_client_process_thread.alive?
+    !chef_client_process_alive?
   end
 
   def write_chef_client_logs(sub_status)
@@ -58,9 +56,12 @@ class ChefClientLogs
       ## read azure_status_file to preserve its existing contents ##
       status_file_contents = JSON.parse(File.read(@azure_status_file))
 
+      ## update the timestamp ##
+      status_file_contents[0]["timestampUTC"] = Time.now.utc.iso8601
+
       ## append chef_client_run logs into the substatus field of azure_status_file ##
       status_file_contents[0]["status"]["substatus"] = [{
-        "name" => "Chef Extension Handler",
+        "name" => "Chef Client run logs",
         "status" => "#{sub_status[:status]}",
         "code" => 0,
         "formattedMessage" => {
@@ -83,15 +84,25 @@ class ChefClientLogs
   end
 
   def chef_client_logs
-    ## 'transitioning' status depicts that chef_client_run is still going on and
-    ## it exceeded maximum wait time limit of 10 minutes, whereas 'success' or 'error'
+    ## 'transitioning' status depicts that the chef_client_run is still going on and
+    ## it exceeded maximum wait time limit of 30 minutes, whereas 'success' or 'error'
     ## status message depends on exit status of chef_client_run
     sub_status = { :status => chef_client_run_complete? ? chef_client_run_exit_status : 'transitioning',
-      :message => File.read(chef_client_log_path) }
+      :message => File.read(@chef_client_log_path) }
 
     write_chef_client_logs(sub_status)
   end
 end
 
-logs = ChefClientLogs.new(ARGV[0], ARGV[1], ARGV[2], ARGV[3])
-logs.chef_client_logs
+begin
+  bootstrap_directory = ARGV[4]
+  if ARGV.length == 5 && !File.exists?("#{bootstrap_directory}/node-registered")
+    logs = ChefClientLogs.new(ARGV[0].to_i, Time.parse(ARGV[1]), ARGV[2], ARGV[3])
+    logs.chef_client_logs
+  else
+    raise "#{Time.now} Invalid invocation of the chef_client logs script."
+  end
+rescue => error
+  puts error.message
+  exit
+end

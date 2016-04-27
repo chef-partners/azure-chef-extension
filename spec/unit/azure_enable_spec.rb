@@ -161,8 +161,8 @@ describe EnableChef do
 
   context "load_settings" do
     it "loads the settings from the handler settings file." do
-      expect(instance).to receive(:handler_settings_file).exactly(4).times
-      expect(instance).to receive(:value_from_json_file).exactly(4).times
+      expect(instance).to receive(:handler_settings_file).exactly(5).times
+      expect(instance).to receive(:value_from_json_file).exactly(5).times
       expect(instance).to receive(:get_validation_key)
       allow(instance).to receive(:get_client_key).and_return("")
       allow(instance).to receive(:get_chef_server_ssl_cert).and_return("")
