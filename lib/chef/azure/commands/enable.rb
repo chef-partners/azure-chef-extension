@@ -181,7 +181,13 @@ class EnableChef
       puts "#{Time.now} Launching chef-client to register node with the runlist"
       params = "-c #{bootstrap_directory}/client.rb -j #{bootstrap_directory}/first-boot.json -E #{config[:environment]} -L #{@azure_plugin_log_location}/chef-client.log --once "
       if @extended_logs == 'true'
-        @child_pid = Process.spawn "chef-client #{params}; echo $? > /tmp/exit_status"
+        if windows?
+          @exit_status_file = "c:\\exit_status"
+          @child_pid = Process.spawn "chef-client #{params}; set-content -path #{@exit_status_file} -value $lastExitCode"
+        else
+          @exit_status_file = "/tmp/exit_status"
+          @child_pid = Process.spawn "chef-client #{params}; echo $? > #{@exit_status_file}"
+        end
         @chef_client_run_start_time = Time.now
       else
         @child_pid = Process.spawn "chef-client #{params}"
@@ -205,7 +211,7 @@ class EnableChef
     ## after Chef Extension installation.
     logs_script_path = File.join(@chef_extension_root, "/bin/chef_client_logs.rb")
 
-    logs_script_pid = Process.spawn("ruby #{logs_script_path} #{@child_pid} \"#{@chef_client_run_start_time}\" #{chef_client_log_path} #{@azure_status_file} #{bootstrap_directory}")
+    logs_script_pid = Process.spawn("ruby #{logs_script_path} #{@child_pid} \"#{@chef_client_run_start_time}\" #{chef_client_log_path} #{@azure_status_file} #{bootstrap_directory} #{@exit_status_file}")
 
     Process.detach(logs_script_pid)
     puts "#{Time.now} Successfully launched chef_client_run logs collection script process with PID [#{logs_script_pid}]"

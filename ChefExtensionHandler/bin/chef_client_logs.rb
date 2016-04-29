@@ -21,15 +21,16 @@ require 'time'
 
 class ChefClientLogs
 
-  def initialize(client_pid, start_time, log_path, status_file)
+  def initialize(client_pid, start_time, log_path, status_file, exit_status_file)
     @chef_client_pid = client_pid
     @chef_client_run_start_time = start_time
     @chef_client_log_path = log_path
     @azure_status_file = status_file
+    @exit_status_file = exit_status_file
   end
 
   def chef_client_run_exit_status
-    if File.read("/tmp/exit_status").to_i == 0
+    if File.read(@exit_status_file).to_i == 0
       'success'    ## successful chef_client_run ##
     else
       'error'      ## unsuccessful chef_client_run ##
@@ -96,10 +97,10 @@ end
 
 begin
   bootstrap_directory = ARGV[4]
-  if ARGV.length == 5 && !File.exists?("#{bootstrap_directory}/node-registered")
-    logs = ChefClientLogs.new(ARGV[0].to_i, Time.parse(ARGV[1]), ARGV[2], ARGV[3])
+  if ARGV.length == 6 && !File.exists?("#{bootstrap_directory}/node-registered")
+    logs = ChefClientLogs.new(ARGV[0].to_i, Time.parse(ARGV[1]), ARGV[2], ARGV[3], ARGV[5])
     logs.chef_client_logs
-    File.delete("/tmp/exit_status") if File.exists?("/tmp/exit_status")
+    File.delete(@exit_status_file) if File.exists?(@exit_status_file)
   else
     raise "#{Time.now} Invalid invocation of the chef_client logs script."
   end
