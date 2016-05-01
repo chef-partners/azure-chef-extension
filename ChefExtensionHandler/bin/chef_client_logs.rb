@@ -37,8 +37,20 @@ class ChefClientLogs
     end
   end
 
+  def windows?
+    if RUBY_PLATFORM =~ /mswin|mingw|windows/
+      true
+    else
+      false
+    end
+  end
+
   def chef_client_process_alive?
-    Process.kill(0, @chef_client_pid) rescue false
+    if windows?
+      `powershell (Get-Process -ID #{@chef_client_pid} -ErrorAction SilentlyContinue) -ne $Null` == "True\n"
+    else
+      !!Process.kill(0, @chef_client_pid) rescue false
+    end
   end
 
   def chef_client_run_complete?
@@ -103,7 +115,7 @@ begin
     logs.chef_client_logs
     File.delete(chef_client_success_file) if File.exists?(chef_client_success_file)
   else
-    raise "#{Time.now} Invalid invocation of the chef_client logs script."
+    raise "#{Time.now} Invalid invocation of the chef_client_run logs collection script."
   end
 rescue => error
   puts error.message
