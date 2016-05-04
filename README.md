@@ -27,6 +27,7 @@ Azure resource extension to enable Chef on Azure virtual machine instances.
   "runlist":"< your run list >",
   "autoUpdateClient":"< true|false >",
   "deleteChefConfig":"< true|false >",
+  "uninstallChefClient": "< true|false >",
   "validation_key_format": "< plaintext|base64encoded >",
   "bootstrap_version": "< version of chef-client >"
   "bootstrap_options": {
@@ -46,6 +47,8 @@ This option should be set to true for updating the extension manually also.
 
 `deleteChefCofig`: Set deleteChefConfig option to true in publicconfig if you want to delete chef configuration files while update or uninstall. By default it is set to false.
 
+`uninstallChefClient`: Set uninstallChefClient option to true in publicconfig if you want to uninstall the chef client during chef extension uninstall. By default it's set to false
+ 
 `validation_key_format`: Specifies the format in which `validation_key` is set in the `privateconfig.config` file. Supported values are `plaintext` and `base64encoded`. Default value is `plaintext`.
 
 `bootstrap_version`: Set the version of `chef-client` that needs to get installed on the VM. This option is supported only for linux extension.
