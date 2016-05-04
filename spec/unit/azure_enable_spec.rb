@@ -34,6 +34,52 @@ describe EnableChef do
           expect(instance.run).to eq(0)
         end
       end
+
+      context "extended_logs is set to false" do
+        before do
+          allow(instance).to receive(:load_env)
+          allow(instance).to receive(:report_heart_beat_to_azure)
+          allow(instance).to receive(:enable_chef)
+          instance.instance_variable_set(:@extended_logs, 'false')
+        end
+
+        it "does not invoke fetch_chef_client_logs method" do
+          expect(instance).to_not receive(:fetch_chef_client_logs)
+          instance.run
+        end
+      end
+
+      context "extended_logs is set to true" do
+        context "first chef-client run" do
+          before do
+            allow(instance).to receive(:load_env)
+            allow(instance).to receive(:report_heart_beat_to_azure)
+            allow(instance).to receive(:enable_chef)
+            instance.instance_variable_set(:@extended_logs, 'true')
+            instance.instance_variable_set(:@child_pid, 123)
+          end
+
+          it "does not invoke fetch_chef_client_logs method" do
+            expect(instance).to receive(:fetch_chef_client_logs)
+            instance.run
+          end
+        end
+
+        context "subsequent chef-client run" do
+          before do
+            allow(instance).to receive(:load_env)
+            allow(instance).to receive(:report_heart_beat_to_azure)
+            allow(instance).to receive(:enable_chef)
+            instance.instance_variable_set(:@extended_logs, 'true')
+            instance.instance_variable_set(:@child_pid, nil)
+          end
+
+          it "does not invoke fetch_chef_client_logs method" do
+            expect(instance).to_not receive(:fetch_chef_client_logs)
+            instance.run
+          end
+        end
+      end
     end
 
     context "Chef service enable failed" do
@@ -111,51 +157,211 @@ describe EnableChef do
     end
   end
 
-  context "configure_chef_only_once" do
-    it "runs the chef-client for the first time for windows" do
-      allow(instance).to receive(:puts)
-      allow(File).to receive(:exists?).and_return(false)
-      allow(File).to receive(:open)
-      allow(instance).to receive(:shell_out).and_return(OpenStruct.new(:exitstatus => 0, :stdout => ""))
-      allow(instance).to receive(:bootstrap_directory).and_return(Dir.home)
-      allow(instance).to receive(:handler_settings_file).and_return(mock_data("handler_settings.settings"))
-      allow(instance).to receive(:get_validation_key).and_return("")
-      allow(instance).to receive(:get_client_key).and_return("")
-      allow(instance).to receive(:get_chef_server_ssl_cert).and_return("")
-      allow(instance).to receive(:windows?).and_return(true)
-      # Call to load_cloud_attributes_in_hints method has been removed for time being
-      #expect(instance).to receive(:load_cloud_attributes_in_hints)
-      sample_config = {:environment=>"_default", :chef_node_name=>"mynode3", :chef_extension_root=>"./", :user_client_rb=>"", :log_location=>nil, :chef_server_url=>"https://api.opscode.com/organizations/clochefacc", :validation_client_name=>"clochefacc-validator", :secret=>nil}
-      sample_runlist = ["recipe[getting-started]", "recipe[apt]"]
-      expect(Chef::Knife::Core::WindowsBootstrapContext).to receive(:new).with(sample_config, sample_runlist, any_args)
-      allow(Erubis::Eruby).to receive(:new)
-      allow(Erubis::Eruby.new).to receive(:evaluate)
-      allow(FileUtils).to receive(:rm)
-      allow(Process).to receive(:spawn)
-      allow(Process).to receive(:detach)
-      instance.send(:configure_chef_only_once)
+  describe "configure_chef_only_once" do
+    context "first chef-client run" do
+      context "extended_logs set to false" do
+        before do
+          allow(File).to receive(:exists?).and_return(false)
+          allow(instance).to receive(:puts)
+          allow(File).to receive(:open)
+          @bootstrap_directory = Dir.home
+          allow(instance).to receive(
+            :bootstrap_directory).and_return(@bootstrap_directory)
+          allow(instance).to receive(:handler_settings_file).and_return(
+            mock_data("handler_settings.settings"))
+          allow(instance).to receive(:get_validation_key).and_return("")
+          allow(instance).to receive(:get_client_key).and_return("")
+          allow(instance).to receive(:get_chef_server_ssl_cert).and_return("")
+          allow(IO).to receive_message_chain(
+            :read, :chomp).and_return("template")
+          allow(Process).to receive(:detach)
+          @sample_config = {:environment=>"_default", :chef_node_name=>"mynode3", :chef_extension_root=>"./", :user_client_rb=>"", :log_location=>nil, :chef_server_url=>"https://api.opscode.com/organizations/clochefacc", :validation_client_name=>"clochefacc-validator", :secret=>nil}
+          @sample_runlist = ["recipe[getting-started]", "recipe[apt]"]
+        end
+
+        it "runs chef-client for the first time on windows" do
+          allow(instance).to receive(:windows?).and_return(true)
+          expect(Chef::Knife::Core::WindowsBootstrapContext).to receive(
+            :new).with(@sample_config, @sample_runlist, any_args)
+          allow(Erubis::Eruby).to receive(:new).and_return("template")
+          expect(Erubis::Eruby.new).to receive(:evaluate)
+          expect(instance).to receive(:shell_out).and_return(
+            OpenStruct.new(:exitstatus => 0, :stdout => ""))
+          # Call to load_cloud_attributes_in_hints method has been removed for time being
+          #expect(instance).to receive(:load_cloud_attributes_in_hints)
+          expect(FileUtils).to receive(:rm)
+          expect(Process).to receive(:spawn).with("chef-client -c #{@bootstrap_directory}/client.rb -j #{@bootstrap_directory}/first-boot.json -E #{@sample_config[:environment]} -L #{@sample_config[:log_location]}/chef-client.log --once ").and_return(123)
+          instance.send(:configure_chef_only_once)
+          expect(instance.instance_variable_get(:@child_pid)).to be == 123
+          expect(instance.instance_variable_get(:@chef_client_success_file)).to be nil
+          expect(instance.instance_variable_get(:@chef_client_run_start_time)).to be nil
+        end
+
+        it "runs chef-client for the first time on linux" do
+          allow(instance).to receive(:windows?).and_return(false)
+          #expect(instance).to receive(:load_cloud_attributes_in_hints)
+          expect(Chef::Knife::Core::BootstrapContext).to receive(
+            :new).with(@sample_config, @sample_runlist, any_args)
+          allow(Erubis::Eruby).to receive(:new).and_return("template")
+          expect(Erubis::Eruby.new).to receive(:evaluate)
+          expect(instance).to receive(:shell_out).and_return(
+            OpenStruct.new(:exitstatus => 0, :stdout => ""))
+          expect(Process).to receive(:spawn).with("chef-client -c #{@bootstrap_directory}/client.rb -j #{@bootstrap_directory}/first-boot.json -E #{@sample_config[:environment]} -L #{@sample_config[:log_location]}/chef-client.log --once ").and_return(456)
+          instance.send(:configure_chef_only_once)
+          expect(instance.instance_variable_get(:@child_pid)).to be == 456
+          expect(instance.instance_variable_get(:@chef_client_success_file)).to be nil
+          expect(instance.instance_variable_get(:@chef_client_run_start_time)).to be nil
+        end
+      end
+
+      context "extended_logs set to true" do
+        before do
+          allow(File).to receive(:exists?).and_return(false)
+          allow(instance).to receive(:puts)
+          allow(File).to receive(:open)
+          @bootstrap_directory = Dir.home
+          allow(instance).to receive(
+            :bootstrap_directory).and_return(@bootstrap_directory)
+          allow(instance).to receive(:handler_settings_file).and_return(
+            mock_data("handler_settings_1.settings"))
+          allow(instance).to receive(:get_validation_key).and_return("")
+          allow(instance).to receive(:get_client_key).and_return("")
+          allow(instance).to receive(:get_chef_server_ssl_cert).and_return("")
+          allow(IO).to receive_message_chain(
+            :read, :chomp).and_return("template")
+          allow(Process).to receive(:detach)
+          @sample_config = {:environment=>"_default", :chef_node_name=>"mynode3", :chef_extension_root=>"./", :user_client_rb=>"", :log_location=>nil, :chef_server_url=>"https://api.opscode.com/organizations/clochefacc", :validation_client_name=>"clochefacc-validator", :secret=>nil}
+          @sample_runlist = ["recipe[getting-started]", "recipe[apt]"]
+        end
+
+        it "runs chef-client for the first time on windows" do
+          allow(instance).to receive(:windows?).and_return(true)
+          expect(Chef::Knife::Core::WindowsBootstrapContext).to receive(
+            :new).with(@sample_config, @sample_runlist, any_args)
+          allow(Erubis::Eruby).to receive(:new).and_return("template")
+          expect(Erubis::Eruby.new).to receive(:evaluate)
+          expect(instance).to receive(:shell_out).and_return(
+            OpenStruct.new(:exitstatus => 0, :stdout => ""))
+          # Call to load_cloud_attributes_in_hints method has been removed for time being
+          #expect(instance).to receive(:load_cloud_attributes_in_hints)
+          expect(FileUtils).to receive(:rm)
+          expect(Process).to receive(:spawn).with("chef-client -c #{@bootstrap_directory}/client.rb -j #{@bootstrap_directory}/first-boot.json -E #{@sample_config[:environment]} -L #{@sample_config[:log_location]}/chef-client.log --once  && touch c:\\chef_client_success").and_return(789)
+          instance.send(:configure_chef_only_once)
+          expect(instance.instance_variable_get(:@child_pid)).to be == 789
+          expect(instance.instance_variable_get(:@chef_client_success_file)).to be == 'c:\\chef_client_success'
+          expect(instance.instance_variable_get(:@chef_client_run_start_time)).to_not be nil
+        end
+
+        it "runs chef-client for the first time on linux" do
+          allow(instance).to receive(:windows?).and_return(false)
+          #expect(instance).to receive(:load_cloud_attributes_in_hints)
+          expect(Chef::Knife::Core::BootstrapContext).to receive(
+            :new).with(@sample_config, @sample_runlist, any_args)
+          allow(Erubis::Eruby).to receive(:new).and_return("template")
+          expect(Erubis::Eruby.new).to receive(:evaluate)
+          expect(instance).to receive(:shell_out).and_return(
+            OpenStruct.new(:exitstatus => 0, :stdout => ""))
+          expect(Process).to receive(:spawn).with("chef-client -c #{@bootstrap_directory}/client.rb -j #{@bootstrap_directory}/first-boot.json -E #{@sample_config[:environment]} -L #{@sample_config[:log_location]}/chef-client.log --once  && touch /tmp/chef_client_success").and_return(120)
+          instance.send(:configure_chef_only_once)
+          expect(instance.instance_variable_get(:@child_pid)).to be == 120
+          expect(instance.instance_variable_get(:@chef_client_success_file)).to be == '/tmp/chef_client_success'
+          expect(instance.instance_variable_get(:@chef_client_run_start_time)).to_not be nil
+        end
+      end
     end
 
-    it "runs the chef-client for the first time for linux" do
-      allow(instance).to receive(:puts)
-      allow(File).to receive(:exists?).and_return(false)
-      allow(File).to receive(:open)
-      allow(instance).to receive(:shell_out).and_return(OpenStruct.new(:exitstatus => 0, :stdout => ""))
-      allow(instance).to receive(:bootstrap_directory).and_return(Dir.home)
-      allow(instance).to receive(:handler_settings_file).and_return(mock_data("handler_settings.settings"))
-      allow(instance).to receive(:get_validation_key).and_return("")
-      allow(instance).to receive(:get_client_key).and_return("")
-      allow(instance).to receive(:get_chef_server_ssl_cert).and_return("")
-      allow(instance).to receive(:windows?).and_return(false)
-      #expect(instance).to receive(:load_cloud_attributes_in_hints)
-      sample_config = {:environment=>"_default", :chef_node_name=>"mynode3", :chef_extension_root=>"./", :user_client_rb=>"", :log_location=>nil, :chef_server_url=>"https://api.opscode.com/organizations/clochefacc", :validation_client_name=>"clochefacc-validator", :secret=>nil}
-      sample_runlist = ["recipe[getting-started]", "recipe[apt]"]
-      expect(Chef::Knife::Core::BootstrapContext).to receive(:new).with(sample_config, sample_runlist, any_args)
-      allow(Erubis::Eruby).to receive(:new)
-      allow(Erubis::Eruby.new).to receive(:evaluate)
-      allow(Process).to receive(:spawn)
-      allow(Process).to receive(:detach)
-      instance.send(:configure_chef_only_once)
+    context "subsequent chef_client run" do
+      before do
+        allow(File).to receive(:exists?).and_return(true)
+      end
+
+      it "does not spawn chef-client run process irrespective of the platform" do
+        expect(Process).to_not receive(:spawn)
+        expect(Process).to_not receive(:detach)
+        expect(instance.instance_variable_get(:@child_pid)).to be nil
+        instance.send(:configure_chef_only_once)
+      end
+    end
+  end
+
+  describe "chef_client_log_path" do
+    context "log_location defined in chef_config read from chef config file" do
+      before do
+        allow(instance).to receive(:chef_config)
+        chef_config = {:log_location => './logs/chef-client.log'}
+        instance.instance_variable_set(:@chef_config, chef_config)
+        instance.instance_variable_set(:@azure_plugin_log_location, './logs_other')
+      end
+
+      it "returns chef_client log path from chef_config log_location" do
+        response = instance.send(:chef_client_log_path)
+        expect(response).to be == './logs/chef-client.log'
+      end
+    end
+
+    context "log_location not defined in chef config file" do
+      before do
+        allow(instance).to receive(:chef_config)
+        chef_config = {:log_location => nil}
+        instance.instance_variable_set(:@chef_config, chef_config)
+        instance.instance_variable_set(:@azure_plugin_log_location, './logs_other')
+      end
+
+      it "returns chef_client log path from chef_config log_location" do
+        response = instance.send(:chef_client_log_path)
+        expect(response).to be == './logs_other/chef-client.log'
+      end
+    end
+
+
+  end
+
+  describe "fetch_chef_client_logs" do
+    context "for windows" do
+      before do
+        instance.instance_variable_set(:@chef_extension_root, 'c:\\extension_root')
+        instance.instance_variable_set(:@child_pid, 123)
+        instance.instance_variable_set(:@chef_client_run_start_time, '2016-05-03 20:51:01 +0530')
+        allow(instance).to receive(:chef_config).and_return(nil)
+        instance.instance_variable_set(:@chef_config, {:log_location => nil})
+        instance.instance_variable_set(:@azure_plugin_log_location, 'c:\\logs')
+        instance.instance_variable_set(:@azure_status_file, 'c:\\extension_root\\status\\0.status')
+        allow(instance).to receive(:windows?).and_return(true)
+        ENV['SYSTEMDRIVE'] = 'c:'
+        instance.instance_variable_set(:@chef_client_success_file, 'c:\\chef_client_success')
+      end
+
+      it "spawns chef_client run logs collection script" do
+        expect(Process).to receive(:spawn).with(
+          "ruby c:\\extension_root/bin/chef_client_logs.rb 123 \"2016-05-03 20:51:01 +0530\" c:\\logs/chef-client.log c:\\extension_root\\status\\0.status c:/chef c:\\chef_client_success").
+            and_return(456)
+        expect(Process).to receive(:detach).with(456)
+        expect(instance).to receive(:puts)
+        instance.send(:fetch_chef_client_logs)
+      end
+    end
+
+    context "for linux" do
+      before do
+        instance.instance_variable_set(:@chef_extension_root, '/var/extension_root')
+        instance.instance_variable_set(:@child_pid, 789)
+        instance.instance_variable_set(:@chef_client_run_start_time, '2016-05-03 21:51:01 +0530')
+        allow(instance).to receive(:chef_config).and_return(nil)
+        instance.instance_variable_set(:@chef_config, {:log_location => nil})
+        instance.instance_variable_set(:@azure_plugin_log_location, '/var/logs')
+        instance.instance_variable_set(:@azure_status_file, '/var/extension_root/status/0.status')
+        allow(instance).to receive(:windows?).and_return(false)
+        instance.instance_variable_set(:@chef_client_success_file, '/tmp/chef_client_success')
+      end
+
+      it "spawns chef_client run logs collection script" do
+        expect(Process).to receive(:spawn).with(
+          "ruby /var/extension_root/bin/chef_client_logs.rb 789 \"2016-05-03 21:51:01 +0530\" /var/logs/chef-client.log /var/extension_root/status/0.status /etc/chef /tmp/chef_client_success").
+            and_return(120)
+        expect(Process).to receive(:detach).with(120)
+        expect(instance).to receive(:puts)
+        instance.send(:fetch_chef_client_logs)
+      end
     end
   end
 
@@ -182,7 +388,8 @@ describe EnableChef do
       expect(File).to receive(:expand_path)
       allow(Chef::Log).to receive(:error)
       expect(instance).to receive(:report_status_to_azure)
-      expect {instance.send(:handler_settings_file)}.to raise_error
+      expect {instance.send(:handler_settings_file)}.to raise_error(
+        "Configuration error. Azure chef extension Settings file missing.")
     end
   end
 
