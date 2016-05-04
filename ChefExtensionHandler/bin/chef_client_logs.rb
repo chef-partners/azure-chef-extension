@@ -108,14 +108,18 @@ class ChefClientLogs
 end
 
 begin
-  bootstrap_directory = ARGV[4]
-  chef_client_success_file = ARGV[5]
-  if ARGV.length == 6 && !File.exists?("#{bootstrap_directory}/node-registered")
-    logs = ChefClientLogs.new(ARGV[0].to_i, Time.parse(ARGV[1]), ARGV[2], ARGV[3], chef_client_success_file)
-    logs.chef_client_logs
-    File.delete(chef_client_success_file) if File.exists?(chef_client_success_file)
+  if ARGV.length == 6
+    bootstrap_directory = ARGV[4]
+    chef_client_success_file = ARGV[5]
+    if !File.exists?("#{bootstrap_directory}/node-registered")
+      logs = ChefClientLogs.new(ARGV[0].to_i, Time.parse(ARGV[1]), ARGV[2], ARGV[3], chef_client_success_file)
+      logs.chef_client_logs
+      File.delete(chef_client_success_file) if File.exists?(chef_client_success_file)
+    else
+      raise "#{Time.now} The chef-client run logs collection script runs only for the first chef-client run which had already happened on this node. Exiting for now."
+    end
   else
-    raise "#{Time.now} Invalid invocation of the chef_client_run logs collection script."
+    raise "#{Time.now} Invalid invocation of the chef-client run logs collection script."
   end
 rescue => error
   puts error.message
