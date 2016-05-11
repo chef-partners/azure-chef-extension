@@ -8,6 +8,8 @@ get_script_dir(){
 
 commands_script_path=$(get_script_dir)
 
+. $commands_script_path/shared.sh
+
 #funtions to delete ubuntu chef configuration files i.e. /etc/chef
 remove_chef_config(){
   if [ ! -z $delete_chef_config ] && [ $delete_chef_config = "true" ] ; then
@@ -34,20 +36,6 @@ uninstall_centos_or_rhel_chef_package(){
   else
     echo "[$(date)] No Package found to uninstall!!!"
   fi
-}
-
-get_linux_distributor(){
-#### Using python -mplatform command to get distributor name #####
-  if python -mplatform | grep centos > /dev/null; then
-    linux_distributor='centos'
-  elif python -mplatform | grep Ubuntu > /dev/null; then
-    linux_distributor='ubuntu'
-  elif python -mplatform | grep debian > /dev/null; then
-    linux_distributor='debian'
-  elif python -mplatform | grep redhat > /dev/null; then
-    linux_distributor='rhel'
-  fi
-  echo "${linux_distributor}"
 }
 
 check_uninstallation_status(){

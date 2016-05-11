@@ -8,6 +8,8 @@ get_script_dir(){
 }
 commands_script_path=$(get_script_dir)
 
+. $commands_script_path/shared.sh
+
 chef_extension_root=$commands_script_path/../
 
 # install azure chef extension gem
@@ -44,7 +46,24 @@ get_chef_version() {
   fi
 }
 
+curl_check(){
+  echo "Checking for curl..."
+  if command -v curl > /dev/null; then
+    echo "Detected curl..."
+  else
+    echo "Installing curl..."
+    if [ "$1" = "centos" -o "$1" = "rhel" ]; then
+      yum install -d0 -e0 -y curl
+    else
+      apt-get install -q -y curl
+    fi
+  fi
+}
+
 chef_install_from_script(){
+    echo "Call for Checking linux distributor"
+    platform=$(get_linux_distributor)
+    curl_check $platform
     echo "Reading chef-client version from settings file"
     chef_version=$(get_chef_version &)
     if [ "$chef_version" = "No config file found !!" ]; then
