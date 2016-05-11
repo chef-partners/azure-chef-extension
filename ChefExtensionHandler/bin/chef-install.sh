@@ -206,7 +206,7 @@ if [ -f $auto_update_false ]; then
 else
   get_chef_package_from_omnitruck
 
-  export PATH=$PATH:/opt/chef/bin/:/opt/chef/embedded/bin
+  export PATH=/opt/chef/bin/:/opt/chef/embedded/bin:$PATH
 
   # check if azure-chef-extension is installed
   azure_chef_extn_gem=`gem list azure-chef-extension | grep azure-chef-extension | awk '{print $1}'`
