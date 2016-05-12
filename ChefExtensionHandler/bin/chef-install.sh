@@ -61,17 +61,20 @@ curl_check(){
 }
 
 chef_install_from_script(){
+    chef_version=$(get_chef_version &)
+    echo "Reading chef-client version from settings file"
     echo "Call for Checking linux distributor"
     platform=$(get_linux_distributor)
     curl_check $platform
-    echo "Reading chef-client version from settings file"
-    chef_version=$(get_chef_version &)
+    echo "chef client version $chef_version"
     if [ "$chef_version" = "No config file found !!" ]; then
       echo "Configuration error. Azure chef extension Settings file missing."
       exit 1
     elif [ -z "$chef_version" ]; then
+      echo "Downloading and installing install.sh without passing bootstrap version"
       curl -L https://omnitruck.chef.io/install.sh | sudo bash
     else
+      echo "Downloading and installing install.sh with bootstrap version $chef_version"
       curl -L https://omnitruck.chef.io/install.sh | sudo bash -s -- -v $chef_version
     fi
 }
