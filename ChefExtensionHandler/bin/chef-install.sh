@@ -46,6 +46,20 @@ get_chef_version() {
   fi
 }
 
+wget_check(){
+  echo "Checking for wget..."
+  if command -v curl > /dev/null; then
+    echo "Detected wget..."
+  else
+    echo "Installing wget..."
+    if [ "$1" = "centos" -o "$1" = "rhel" ]; then
+      yum install -d0 -e0 -y wget
+    else
+      apt-get install -q -y wget
+    fi
+  fi
+}
+
 curl_check(){
   echo "Checking for curl..."
   if command -v curl > /dev/null; then
@@ -65,18 +79,28 @@ chef_install_from_script(){
     echo "Reading chef-client version from settings file"
     echo "Call for Checking linux distributor"
     platform=$(get_linux_distributor)
-    curl_check $platform
+    wget_check $platform
+    wget -O /tmp/$platform-install.sh https://omnitruck.chef.io/install.sh
+      if ! test -s /tmp/$platform-install.sh; then       
+        echo "Using curl to download install.sh"
+        curl_check $platform
+        curl -L -o /tmp/$platform-install.sh https://omnitruck.chef.io/install.sh
+      fi
+      echo "Install.sh script downloaded successfully"
     echo "chef client version $chef_version"
     if [ "$chef_version" = "No config file found !!" ]; then
       echo "Configuration error. Azure chef extension Settings file missing."
       exit 1
     elif [ -z "$chef_version" ]; then
-      echo "Downloading and installing install.sh without passing bootstrap version"
-      curl -L https://omnitruck.chef.io/install.sh | sudo bash
+      echo "Installing latest chef client"
+      sh /tmp/$platform-install.sh 
     else
-      echo "Downloading and installing install.sh with bootstrap version $chef_version"
-      curl -L https://omnitruck.chef.io/install.sh | sudo bash -s -- -v $chef_version
+      echo "Installing chef client with version $chef_version"
+      sh /tmp/$platform-install.sh -v $chef_version
     fi
+    rm /tmp/$platform-install.sh -f
+    echo "chef client installed sucessfully"
+    echo `knife -v`
 }
 
 ########### Script starts from here ##################
