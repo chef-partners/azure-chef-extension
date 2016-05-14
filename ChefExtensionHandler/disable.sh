@@ -1,7 +1,7 @@
 
 #!/bin/sh
 
-export PATH=$PATH:/opt/chef/bin:/opt/chef/embedded/bin
+export PATH=/opt/chef/bin:/opt/chef/embedded/bin:$PATH
 
 SCRIPT=$(readlink -f "$0")
 
