@@ -25,6 +25,20 @@ install_chef_extension_gem(){
   fi
 }
 
+curl_check(){
+  echo "Checking for curl..."
+  if command -v curl > /dev/null; then
+    echo "Detected curl..."
+  else
+    echo "Installing curl..."
+    if [ "$1" = "centos" -o "$1" = "rhel" ]; then
+      yum install -d0 -e0 -y curl
+    else
+      apt-get install -q -y curl
+    fi
+  fi
+}
+
 get_config_settings_file() {
   config_files_path="$chef_extension_root/config/*.settings"
   config_file_name=`ls $config_files_path 2>/dev/null | sort -V | tail -1`
@@ -46,27 +60,13 @@ get_chef_version() {
   fi
 }
 
-wget_check(){
-  echo "Checking for wget..."
-  if command -v wget > /dev/null; then
-    echo "Detected wget..."
-  else
-    echo "Installing wget..."
-    if [ "$1" = "centos" -o "$1" = "rhel" ]; then
-      yum install -d0 -e0 -y wget
-    else
-      apt-get install -q -y wget
-    fi
-  fi
-}
-
 chef_install_from_script(){
     echo "Reading chef-client version from settings file"
     chef_version=$(get_chef_version &)
     echo "Call for Checking linux distributor"
     platform=$(get_linux_distributor)
-    wget_check $platform
-    wget -O /tmp/$platform-install.sh https://omnitruck.chef.io/install.sh
+    curl_check $platform
+    curl -L -o /tmp/$platform-install.sh https://omnitruck.chef.io/install.sh
     echo "Install.sh script downloaded at /tmp/$platform-install.sh"
     if [ "$chef_version" = "No config file found !!" ]; then
       echo "Configuration error. Azure chef extension Settings file missing."
