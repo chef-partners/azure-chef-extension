@@ -90,7 +90,7 @@ function Uninstall-ChefClient {
   # Source the shared PS
   . $(Get-SharedHelper)
 
-  $env:Path += ";C:\opscode\chef\bin;C:\opscode\chef\embedded\bin"
+  $env:Path = "C:\\opscode\\chef\\bin;C:\\opscode\\chef\\embedded\\bin;" + $env:Path
 
   $powershellVersion = Get-PowershellVersion
 

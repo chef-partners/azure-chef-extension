@@ -51,7 +51,7 @@ linux_distributor=$(get_linux_distributor)
 
 auto_update_false=/etc/chef/.auto_update_false
 
-export PATH=$PATH:/opt/chef/embedded/bin:/opt/chef/bin
+export PATH=/opt/chef/embedded/bin:/opt/chef/bin:$PATH
 
 if [ -f $auto_update_false ]; then
   uninstall_chef_client=`ruby -e "require 'chef/azure/helpers/parse_json';value_from_json_file_for_ps '$handler_settings_file','runtimeSettings','0','handlerSettings','publicSettings','uninstallChefClient'"`

@@ -79,7 +79,7 @@ function Install-ChefClient {
 
     Run-ChefInstaller $localDestinationMsiPath $chefClientMsiLogPath
 
-    $env:Path += ";C:\\opscode\\chef\\bin;C:\\opscode\\chef\\embedded\\bin"
+    $env:Path = "C:\\opscode\\chef\\bin;C:\\opscode\\chef\\embedded\\bin;" + $env:Path
 
     Install-AzureChefExtensionGem $chefExtensionRoot
   }
