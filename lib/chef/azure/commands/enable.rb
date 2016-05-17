@@ -144,7 +144,7 @@ class EnableChef
         config[:node_verify_api_cert] =  bootstrap_options['node_verify_api_cert'] if bootstrap_options['node_verify_api_cert']
         config[:node_ssl_verify_mode] =  bootstrap_options['node_ssl_verify_mode'] if bootstrap_options['node_ssl_verify_mode']
         runlist = @run_list.empty? ? [] : escape_runlist(@run_list)
-       # load_cloud_attributes_in_hints
+        load_cloud_attributes_in_hints
         if windows?
           context = Chef::Knife::Core::WindowsBootstrapContext.new(config, runlist, Chef::Config, config[:secret])
           template_file += "\\bootstrap\\windows-chef-client-msi.erb"
@@ -206,7 +206,7 @@ class EnableChef
     ## or till maximum wait timeout of 30 minutes and then later reads logs from
     ## chef-client.log and writes into 0.status file. These chef-client logs from
     ## 0.status file are queried & displayed by knife-azure plugin during server
-    ## create to give end-user the detailed overview of the chef-client run happened 
+    ## create to give end-user the detailed overview of the chef-client run happened
     ## after Chef Extension installation.
     logs_script_path = File.join(@chef_extension_root, "/bin/chef_client_logs.rb")
 
@@ -218,7 +218,10 @@ class EnableChef
 
   def load_cloud_attributes_in_hints
     cloud_attributes = {}
-    cloud_attributes["vm_name"] = Socket.gethostname
+    hints = eval(@ohai_hints)
+    hints.each do |key, value|
+      cloud_attributes[key] = value
+    end
     Chef::Config[:knife][:hints] ||= {}
     Chef::Config[:knife][:hints]["azure"] ||= cloud_attributes
   end
@@ -232,6 +235,7 @@ class EnableChef
     @client_rb = value_from_json_file(handler_settings_file, 'runtimeSettings', '0', 'handlerSettings', 'publicSettings', 'client_rb')
     @run_list = value_from_json_file(handler_settings_file, 'runtimeSettings', '0', 'handlerSettings', 'publicSettings', 'runlist')
     @extended_logs = value_from_json_file(handler_settings_file, 'runtimeSettings', '0', 'handlerSettings', 'publicSettings', 'extendedLogs')
+    @ohai_hints = value_from_json_file(handler_settings_file, 'runtimeSettings', '0', 'handlerSettings', 'publicSettings', 'hints')
   end
 
   def handler_settings_file
