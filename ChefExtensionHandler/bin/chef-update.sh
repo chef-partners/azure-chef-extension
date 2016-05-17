@@ -9,6 +9,10 @@
 # 5 enable new version
 
 # returns script dir
+
+. /etc/environment
+export
+
 export PATH=/opt/chef/bin/:/opt/chef/embedded/bin:$PATH
 
 get_script_dir(){
