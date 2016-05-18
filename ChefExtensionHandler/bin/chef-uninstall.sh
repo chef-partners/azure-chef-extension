@@ -50,7 +50,6 @@ check_uninstallation_status(){
 linux_distributor=$(get_linux_distributor)
 
 . /etc/environment
-export
 
 auto_update_false=/etc/chef/.auto_update_false
 

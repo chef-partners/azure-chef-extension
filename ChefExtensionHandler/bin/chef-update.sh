@@ -8,13 +8,11 @@
 # 4 uninstall old version
 # 5 enable new version
 
-# returns script dir
-
 . /etc/environment
-export
 
 export PATH=/opt/chef/bin/:/opt/chef/embedded/bin:$PATH
 
+# returns script dir
 get_script_dir(){
   SCRIPT=$(readlink -f "$0")
   script_dir=`dirname $SCRIPT`
