@@ -204,8 +204,9 @@ auto_update_false=/etc/chef/.auto_update_false
 if [ -f $auto_update_false ]; then
   echo "[$(date)] Not doing install, as auto update is false"
 else
-  get_chef_package_from_omnitruck
+  . /etc/environment
 
+  get_chef_package_from_omnitruck
   export PATH=/opt/chef/bin/:/opt/chef/embedded/bin:$PATH
 
   # check if azure-chef-extension is installed

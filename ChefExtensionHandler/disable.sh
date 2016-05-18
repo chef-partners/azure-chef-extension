@@ -1,6 +1,8 @@
 
 #!/bin/sh
 
+. /etc/environment
+
 export PATH=/opt/chef/bin:/opt/chef/embedded/bin:$PATH
 
 SCRIPT=$(readlink -f "$0")

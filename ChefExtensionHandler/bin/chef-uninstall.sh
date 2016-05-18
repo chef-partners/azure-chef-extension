@@ -49,6 +49,8 @@ check_uninstallation_status(){
 ########### Script starts from here ###################
 linux_distributor=$(get_linux_distributor)
 
+. /etc/environment
+
 auto_update_false=/etc/chef/.auto_update_false
 
 export PATH=/opt/chef/embedded/bin:/opt/chef/bin:$PATH
