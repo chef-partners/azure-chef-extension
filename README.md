@@ -16,7 +16,7 @@ Azure resource extension to enable Chef on Azure virtual machine instances.
 | Windows  | 2008r2, 2012, 2012r2 |
 | Centos   | 6.5+                 |
 | RHEL     | 6+         |
-| Debian   | 6,7,8      |
+| Debian   | 7,8        |
 
 
 ##Azure Chef Extension usage:
