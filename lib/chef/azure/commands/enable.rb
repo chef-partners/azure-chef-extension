@@ -144,7 +144,8 @@ class EnableChef
         config[:node_verify_api_cert] =  bootstrap_options['node_verify_api_cert'] if bootstrap_options['node_verify_api_cert']
         config[:node_ssl_verify_mode] =  bootstrap_options['node_ssl_verify_mode'] if bootstrap_options['node_ssl_verify_mode']
         runlist = @run_list.empty? ? [] : escape_runlist(@run_list)
-        load_cloud_attributes_in_hints
+        load_cloud_attributes_in_hints if ! @ohai_hints.empty?
+
         if windows?
           context = Chef::Knife::Core::WindowsBootstrapContext.new(config, runlist, Chef::Config, config[:secret])
           template_file += "\\bootstrap\\windows-chef-client-msi.erb"
