@@ -26,6 +26,7 @@ describe "EnableChef" do
       allow(File).to receive(:exists?).and_return(false)
       allow(instance).to receive(:bootstrap_directory).and_return(@temp_directory)
       allow(instance).to receive(:copy_settings_file)
+      allow(instance).to receive(:load_cloud_attributes_in_hints)
       allow(instance).to receive(:handler_settings_file).and_return(mock_data("handler_settings.settings"))
       allow(instance).to receive(:get_validation_key).and_return("validation_key")
       allow(instance).to receive(:get_client_key).and_return("")

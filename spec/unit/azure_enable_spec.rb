@@ -187,8 +187,7 @@ describe EnableChef do
           expect(Erubis::Eruby.new).to receive(:evaluate)
           expect(instance).to receive(:shell_out).and_return(
             OpenStruct.new(:exitstatus => 0, :stdout => ""))
-          # Call to load_cloud_attributes_in_hints method has been removed for time being
-          #expect(instance).to receive(:load_cloud_attributes_in_hints)
+          expect(instance).to receive(:load_cloud_attributes_in_hints)
           expect(FileUtils).to receive(:rm)
           expect(Process).to receive(:spawn).with("chef-client -c #{@bootstrap_directory}/client.rb -j #{@bootstrap_directory}/first-boot.json -E #{@sample_config[:environment]} -L #{@sample_config[:log_location]}/chef-client.log --once ").and_return(123)
           instance.send(:configure_chef_only_once)
@@ -199,7 +198,7 @@ describe EnableChef do
 
         it "runs chef-client for the first time on linux" do
           allow(instance).to receive(:windows?).and_return(false)
-          #expect(instance).to receive(:load_cloud_attributes_in_hints)
+          expect(instance).to receive(:load_cloud_attributes_in_hints)
           expect(Chef::Knife::Core::BootstrapContext).to receive(
             :new).with(@sample_config, @sample_runlist, any_args)
           allow(Erubis::Eruby).to receive(:new).and_return("template")
@@ -242,8 +241,7 @@ describe EnableChef do
           expect(Erubis::Eruby.new).to receive(:evaluate)
           expect(instance).to receive(:shell_out).and_return(
             OpenStruct.new(:exitstatus => 0, :stdout => ""))
-          # Call to load_cloud_attributes_in_hints method has been removed for time being
-          #expect(instance).to receive(:load_cloud_attributes_in_hints)
+          expect(instance).to receive(:load_cloud_attributes_in_hints)
           expect(FileUtils).to receive(:rm)
           expect(Process).to receive(:spawn).with("chef-client -c #{@bootstrap_directory}/client.rb -j #{@bootstrap_directory}/first-boot.json -E #{@sample_config[:environment]} -L #{@sample_config[:log_location]}/chef-client.log --once  && touch c:\\chef_client_success").and_return(789)
           instance.send(:configure_chef_only_once)
@@ -254,7 +252,7 @@ describe EnableChef do
 
         it "runs chef-client for the first time on linux" do
           allow(instance).to receive(:windows?).and_return(false)
-          #expect(instance).to receive(:load_cloud_attributes_in_hints)
+          expect(instance).to receive(:load_cloud_attributes_in_hints)
           expect(Chef::Knife::Core::BootstrapContext).to receive(
             :new).with(@sample_config, @sample_runlist, any_args)
           allow(Erubis::Eruby).to receive(:new).and_return("template")
@@ -367,8 +365,8 @@ describe EnableChef do
 
   context "load_settings" do
     it "loads the settings from the handler settings file." do
-      expect(instance).to receive(:handler_settings_file).exactly(5).times
-      expect(instance).to receive(:value_from_json_file).exactly(5).times
+      expect(instance).to receive(:handler_settings_file).exactly(6).times
+      expect(instance).to receive(:value_from_json_file).exactly(6).times
       expect(instance).to receive(:get_validation_key)
       allow(instance).to receive(:get_client_key).and_return("")
       allow(instance).to receive(:get_chef_server_ssl_cert).and_return("")
@@ -493,9 +491,21 @@ describe EnableChef do
   end
 
   context "load_cloud_attributes_in_hints" do
+    before do
+      hints = "{\"public_ip\"=>\"my_public_ip\",\"vm_name\"=>\"my_vm_name\",
+        \"public_fqdn\"=>\"my_public_fqdn\",\"port\"=>\"my_port\",
+        \"platform\"=>\"my_platform\"}"
+      instance.instance_variable_set(:@ohai_hints, hints)
+    end
+
     it 'loads cloud attributs in Chef::Config["knife"]["hints"]' do
-      allow(instance).to receive(Socket.gethostname).and_return("something")
       instance.send(:load_cloud_attributes_in_hints)
+      hints = Chef::Config[:knife][:hints]["azure"]
+      expect(hints['public_ip']).to eq 'my_public_ip'
+      expect(hints['vm_name']).to eq 'my_vm_name'
+      expect(hints['public_fqdn']).to eq 'my_public_fqdn'
+      expect(hints['port']).to eq 'my_port'
+      expect(hints['platform']).to eq 'my_platform'
     end
   end
 end
