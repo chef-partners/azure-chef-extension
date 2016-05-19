@@ -45,6 +45,11 @@ class EnableChef
         report_heart_beat_to_azure(AzureHeartBeat::NOTREADY, 0, "chef-service enable failed.")
       end
     end
+
+    if @extended_logs == 'true' && !@child_pid.nil?
+      fetch_chef_client_logs
+    end
+
     return @exit_code
   end
 
@@ -175,10 +180,40 @@ class EnableChef
       # Now the run chef-client with runlist in background, as we done want enable command to wait, else long running chef-client with runlist will timeout azure.
       puts "#{Time.now} Launching chef-client to register node with the runlist"
       params = "-c #{bootstrap_directory}/client.rb -j #{bootstrap_directory}/first-boot.json -E #{config[:environment]} -L #{@azure_plugin_log_location}/chef-client.log --once "
-      child_pid = Process.spawn "chef-client #{params}"
-      Process.detach child_pid
-      puts "#{Time.now} Successfully launched chef-client process with PID [#{child_pid}]"
+      if @extended_logs == 'true'
+        if windows?
+          @chef_client_success_file = "c:\\chef_client_success"
+        else
+          @chef_client_success_file = "/tmp/chef_client_success"
+        end
+        @child_pid = Process.spawn "chef-client #{params} && touch #{@chef_client_success_file}"
+        @chef_client_run_start_time = Time.now
+      else
+        @child_pid = Process.spawn "chef-client #{params}"
+      end
+      Process.detach @child_pid
+      puts "#{Time.now} Successfully launched chef-client process with PID [#{@child_pid}]"
     end
+  end
+
+  def chef_client_log_path
+    chef_config
+    @chef_config[:log_location] ? @chef_config[:log_location] : "#{@azure_plugin_log_location}/chef-client.log"
+  end
+
+  def fetch_chef_client_logs
+    ## set path for the script which waits for the first chef-client run to complete
+    ## or till maximum wait timeout of 30 minutes and then later reads logs from
+    ## chef-client.log and writes into 0.status file. These chef-client logs from
+    ## 0.status file are queried & displayed by knife-azure plugin during server
+    ## create to give end-user the detailed overview of the chef-client run happened 
+    ## after Chef Extension installation.
+    logs_script_path = File.join(@chef_extension_root, "/bin/chef_client_logs.rb")
+
+    logs_script_pid = Process.spawn("ruby #{logs_script_path} #{@child_pid} \"#{@chef_client_run_start_time}\" #{chef_client_log_path} #{@azure_status_file} #{bootstrap_directory} #{@chef_client_success_file}")
+
+    Process.detach(logs_script_pid)
+    puts "#{Time.now} Successfully launched chef_client_run logs collection script process with PID [#{logs_script_pid}]"
   end
 
   def load_cloud_attributes_in_hints
@@ -196,6 +231,7 @@ class EnableChef
     @chef_server_ssl_cert = get_chef_server_ssl_cert(protected_settings)
     @client_rb = value_from_json_file(handler_settings_file, 'runtimeSettings', '0', 'handlerSettings', 'publicSettings', 'client_rb')
     @run_list = value_from_json_file(handler_settings_file, 'runtimeSettings', '0', 'handlerSettings', 'publicSettings', 'runlist')
+    @extended_logs = value_from_json_file(handler_settings_file, 'runtimeSettings', '0', 'handlerSettings', 'publicSettings', 'extendedLogs')
   end
 
   def handler_settings_file
