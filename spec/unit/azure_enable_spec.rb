@@ -159,7 +159,7 @@ describe EnableChef do
 
   describe "configure_chef_only_once" do
     context "first chef-client run" do
-      context "extended_logs set to false" do
+      context "extended_logs set to false and ohai_hints not passed" do
         before do
           allow(File).to receive(:exists?).and_return(false)
           allow(instance).to receive(:puts)
@@ -187,7 +187,7 @@ describe EnableChef do
           expect(Erubis::Eruby.new).to receive(:evaluate)
           expect(instance).to receive(:shell_out).and_return(
             OpenStruct.new(:exitstatus => 0, :stdout => ""))
-          expect(instance).to receive(:load_cloud_attributes_in_hints)
+          expect(instance).to_not receive(:load_cloud_attributes_in_hints)
           expect(FileUtils).to receive(:rm)
           expect(Process).to receive(:spawn).with("chef-client -c #{@bootstrap_directory}/client.rb -j #{@bootstrap_directory}/first-boot.json -E #{@sample_config[:environment]} -L #{@sample_config[:log_location]}/chef-client.log --once ").and_return(123)
           instance.send(:configure_chef_only_once)
@@ -198,7 +198,7 @@ describe EnableChef do
 
         it "runs chef-client for the first time on linux" do
           allow(instance).to receive(:windows?).and_return(false)
-          expect(instance).to receive(:load_cloud_attributes_in_hints)
+          expect(instance).to_not receive(:load_cloud_attributes_in_hints)
           expect(Chef::Knife::Core::BootstrapContext).to receive(
             :new).with(@sample_config, @sample_runlist, any_args)
           allow(Erubis::Eruby).to receive(:new).and_return("template")
@@ -213,7 +213,7 @@ describe EnableChef do
         end
       end
 
-      context "extended_logs set to true" do
+      context "extended_logs set to true and ohai_hints passed" do
         before do
           allow(File).to receive(:exists?).and_return(false)
           allow(instance).to receive(:puts)
@@ -274,6 +274,7 @@ describe EnableChef do
       end
 
       it "does not spawn chef-client run process irrespective of the platform" do
+        expect(instance).to_not receive(:load_cloud_attributes_in_hints)
         expect(Process).to_not receive(:spawn)
         expect(Process).to_not receive(:detach)
         expect(instance.instance_variable_get(:@child_pid)).to be nil
