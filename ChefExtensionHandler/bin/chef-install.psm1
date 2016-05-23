@@ -29,7 +29,7 @@ function Chef-GetExtensionRoot {
 function Install-ChefClient {
   trap [Exception] {echo $_.Exception.Message;exit 1}
 
-  . { iwr -useb https://omnitruck.chef.io/install.ps1 } | iex; install
+  iex (new-object net.webclient).downloadstring('https://omnitruck.chef.io/install.ps1');install
   $env:Path = "C:\\opscode\\chef\\bin;C:\\opscode\\chef\\embedded\\bin;" + $env:Path
   $chefExtensionRoot = Chef-GetExtensionRoot
   Install-AzureChefExtensionGem $chefExtensionRoot
