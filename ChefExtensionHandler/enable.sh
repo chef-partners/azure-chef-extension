@@ -8,6 +8,10 @@ CHEF_EXT_DIR=$(dirname "$SCRIPT")
 
 echo $CHEF_EXT_DIR
 
+. $CHEF_EXT_DIR/bin/shared.sh
+
+read_environment_variables $CHEF_EXT_DIR
+
 auto_update_false=/etc/chef/.auto_update_false
 
 if [ -f $auto_update_false ]; then
