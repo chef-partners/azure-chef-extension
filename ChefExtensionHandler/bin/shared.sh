@@ -28,7 +28,7 @@ extract_environment_variables_list() {
 }
 
 export_env_vars() {
-  export $1=$2
+  eval "export $1=$2"
 }
 
 read_environment_variables(){
@@ -40,7 +40,7 @@ read_environment_variables(){
     exit 1
   else
     if cat $config_file_name 2>/dev/null | grep -q "environment_variables"; then
-      env_vars_list=extract_environment_variables_list $config_file_name
+      env_vars_list=$(extract_environment_variables_list $config_file_name)
 
       for i in $env_vars_list
       do
