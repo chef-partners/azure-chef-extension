@@ -31,7 +31,7 @@ Azure resource extension to enable Chef on Azure virtual machine instances.
   "validation_key_format": "< plaintext|base64encoded >",
   "bootstrap_version": "< version of chef-client >",
   "environment_variables": {
-    < comma separated list of key-value pairs >
+    "< comma separated list of key-value pairs >"
   },
   "bootstrap_options": {
     "chef_node_name":"< your node name >",
@@ -141,16 +141,17 @@ Update-AzureVM -VM $vmOb.VM -Name "<vm-name>" -ServiceName "<cloud-service-name>
 1. Please refer https://github.com/Azure/azure-quickstart-templates/tree/master/chef-json-parameters-linux-vm of creating the ARM template files.
 
 2. Find below some advanced options that can be set in the Azure ARM template file `azuredeploy.json`:
+3. 
 
-a. `environment_variables`: Specifies the list of environment variables (like the environment variables for proxy server configuration) to be available to the Chef Extension scripts. This option is currently supported only for `Linux` platforms.
+  a. `environment_variables`: Specifies the list of environment variables (like the environment variables for proxy server configuration) to be available to the Chef Extension scripts. This option is currently supported only for `Linux` platforms.
 
-b. `hints`: Specifies the Ohai Hints to be set in the Ohai configuration of the target node.
-
-
-Set both these options under `properties` --> `settings` section of the `Microsoft.Compute/virtualMachines/extensions` resource type as shown in the below example:
+  b. `hints`: Specifies the Ohai Hints to be set in the Ohai configuration of the target node.
 
 
-Example:
+  ***Note***: Set both these options under `properties` --> `settings` section of the `Microsoft.Compute/virtualMachines/extensions` resource type as shown in the below example:
+
+
+  Example:
 
 ```javascript
 {
@@ -207,6 +208,7 @@ New-AzureResourceGroupDeployment -Name <deployment_name> -TemplateParameterFile 
 **References:**
 http://azure.microsoft.com/en-us/documentation/templates/chef-json-parameters-ubuntu-vm/
 http://azure.microsoft.com/en-us/documentation/templates/multi-vm-chef-template-ubuntu-vm/
+
 
 ##Azure Chef Extension Version Scheme
 
