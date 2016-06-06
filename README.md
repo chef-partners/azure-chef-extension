@@ -139,10 +139,8 @@ Update-AzureVM -VM $vmOb.VM -Name "<vm-name>" -ServiceName "<cloud-service-name>
 **ARM commands for Azure Chef Extension**
 
 1. Please refer https://github.com/Azure/azure-quickstart-templates/tree/master/chef-json-parameters-linux-vm of creating the ARM template files.
-
+ 
 2. Find below some advanced options that can be set in the Azure ARM template file `azuredeploy.json`:
-3. 
-
   a. `environment_variables`: Specifies the list of environment variables (like the environment variables for proxy server configuration) to be available to the Chef Extension scripts. This option is currently supported only for `Linux` platforms.
 
   b. `hints`: Specifies the Ohai Hints to be set in the Ohai configuration of the target node.
@@ -208,6 +206,7 @@ New-AzureResourceGroupDeployment -Name <deployment_name> -TemplateParameterFile 
 **References:**
 http://azure.microsoft.com/en-us/documentation/templates/chef-json-parameters-ubuntu-vm/
 http://azure.microsoft.com/en-us/documentation/templates/multi-vm-chef-template-ubuntu-vm/
+
 
 
 ##Azure Chef Extension Version Scheme
