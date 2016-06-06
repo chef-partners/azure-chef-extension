@@ -45,7 +45,7 @@ read_environment_variables(){
       for i in $env_vars_list
       do
         env_var_name=$(echo $i | awk -F':' '{print $1}')
-        env_var_value=$(echo $i | awk -F':' '{print $2}')
+        env_var_value=$(echo $i | awk -F':' '{OFS=":";$1="";print $0}' | sed 's/^:*//g;s/^ *//g;s/ *$//g')
         export_env_vars $env_var_name $env_var_value
       done
       echo "[$(date)] Environment variables read operation completed"
