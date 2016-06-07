@@ -10,6 +10,10 @@ commands_script_path=$(get_script_dir)
 
 . $commands_script_path/shared.sh
 
+chef_extension_root=$commands_script_path/../
+
+read_environment_variables $chef_extension_root
+
 #funtions to delete ubuntu chef configuration files i.e. /etc/chef
 remove_chef_config(){
   if [ ! -z $delete_chef_config ] && [ $delete_chef_config = "true" ] ; then

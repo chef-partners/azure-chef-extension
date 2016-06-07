@@ -29,7 +29,10 @@ Azure resource extension to enable Chef on Azure virtual machine instances.
   "deleteChefConfig":"< true|false >",
   "uninstallChefClient": "< true|false >",
   "validation_key_format": "< plaintext|base64encoded >",
-  "bootstrap_version": "< version of chef-client >"
+  "bootstrap_version": "< version of chef-client >",
+  "environment_variables": {
+    "< comma separated list of key-value pairs >"
+  },
   "bootstrap_options": {
     "chef_node_name":"< your node name >",
     "chef_server_url":"< your chef server url >",
@@ -53,6 +56,8 @@ This option should be set to true for updating the extension manually also.
 
 `bootstrap_version`: Set the version of `chef-client` that needs to get installed on the VM. This option is supported only for linux extension.
 
+`environment_variables`: Specifies the list of environment variables (like the environment variables for proxy server configuration) to be available to the Chef Extension scripts. This option is currently supported only for `Linux` platforms.
+
 `bootstrap_options`: Set bootstrap options while adding chef extension to Azure VM. Bootstrap options used by Chef-Client during node converge. It overrides the configuration set in client_rb option. for e.g. node_name option i.e. if you set node_name as "foo" in the client_rb and in bootstrap_option you set chef_node_name as "bar" it will take "bar" as node name instead of "foo".
 
 ***Supported options in bootstrap_options json:***  `chef_node_name`, `chef_server_url`, `validation_client_name`, `environment`, `chef_node_name`, `secret`
@@ -68,6 +73,12 @@ publicconfig.config example:
   "autoUpdateClient":"true",
   "deleteChefConfig":"false",
   "validation_key_format": "plaintext",
+  "environment_variables": {
+    "variable_1": "value_1",
+    "variable_2": "value_2",
+    ...
+    "variable_n": "value_n"
+  },
   "bootstrap_options": {
     "chef_node_name":"mynode3",
     "chef_server_url":"https://api.opscode.com/organizations/some-org",
@@ -129,7 +140,53 @@ Update-AzureVM -VM $vmOb.VM -Name "<vm-name>" -ServiceName "<cloud-service-name>
 
 1. Please refer https://github.com/Azure/azure-quickstart-templates/tree/master/chef-json-parameters-linux-vm of creating the ARM template files.
 
-2. Refer code written below
+2. Find below some advanced options that can be set in the Azure ARM template file `azuredeploy.json`:
+  - `environment_variables`: Specifies the list of environment variables (like the environment variables for proxy server configuration) to be available to the Chef Extension scripts. This option is currently supported only for `Linux` platforms.
+  - `hints`: Specifies the Ohai Hints to be set in the Ohai configuration of the target node.
+  
+  ***Note***: Set both these options under `properties` --> `settings` section of the `Microsoft.Compute/virtualMachines/extensions` resource type as shown in the below example:
+
+  Example:
+  
+  ```javascript
+  {
+    "type": "Microsoft.Compute/virtualMachines/extensions",
+    "name": "[concat(variables('vmName'),'/', variables('vmExtensionName'))]",
+    "apiVersion": "2015-05-01-preview",
+    "location": "[resourceGroup().location]",
+    "dependsOn": [
+      "[concat('Microsoft.Compute/virtualMachines/', variables('vmName'))]"
+    ],
+    "properties": {
+      "publisher": "Chef.Bootstrap.WindowsAzure",
+      "type": "LinuxChefClient",
+      "typeHandlerVersion": "1210.12",
+      "settings": {
+        "bootstrap_options": {
+          "chef_node_name": "[parameters('chef_node_name')]",
+          "chef_server_url": "[parameters('chef_server_url')]",
+          "validation_client_name": "[parameters('validation_client_name')]"
+        },
+        "runlist": "[parameters('runlist')]",
+        "validation_key_format": "[parameters('validation_key_format')]",
+        "environment_variables": {
+          "variable_1": "value_1",
+          "variable_2": "value_2",
+          "variable_3": "value_3"
+        },
+        "hints": {
+          "public_fqdn": "[reference(variables('publicIPAddressName')).dnsSettings.fqdn]",
+          "vm_name": "[reference(variables('vmName'))]"
+        }
+      },
+      "protectedSettings": {
+        "validation_key": "[parameters('validation_key')]"
+      }
+    }
+  }
+```
+
+3. Refer code written below
 
 ```javascript
 Switch-AzureMode -Name AzureResourceManager
@@ -146,6 +203,8 @@ New-AzureResourceGroupDeployment -Name <deployment_name> -TemplateParameterFile 
 **References:**
 http://azure.microsoft.com/en-us/documentation/templates/chef-json-parameters-ubuntu-vm/
 http://azure.microsoft.com/en-us/documentation/templates/multi-vm-chef-template-ubuntu-vm/
+
+
 
 ##Azure Chef Extension Version Scheme
 

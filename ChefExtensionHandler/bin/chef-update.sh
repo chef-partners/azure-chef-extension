@@ -17,6 +17,14 @@ get_script_dir(){
   echo "${script_dir}"
 }
 
+commands_script_path=$(get_script_dir)
+
+. $commands_script_path/shared.sh
+
+chef_ext_dir=`dirname $commands_script_path`
+
+read_environment_variables $chef_ext_dir
+
 # delete .auto_update_false file if it exists
 auto_update_false=/etc/chef/.auto_update_false
 if [ -f $auto_update_false ]; then
@@ -28,10 +36,6 @@ node_registered=/etc/chef/node-registered
 if [ -f $node_registered ]; then
   rm $node_registered
 fi
-
-commands_script_path=$(get_script_dir)
-
-chef_ext_dir=`dirname $commands_script_path`
 
 # this gets auto_update_client value from previous extension version
 waagentdir="$(dirname "$chef_ext_dir")"

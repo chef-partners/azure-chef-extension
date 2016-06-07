@@ -12,6 +12,8 @@ commands_script_path=$(get_script_dir)
 
 chef_extension_root=$commands_script_path/../
 
+read_environment_variables $chef_extension_root
+
 # install azure chef extension gem
 install_chef_extension_gem(){
  echo "[$(date)] Installing Azure Chef Extension gem"
@@ -39,15 +41,8 @@ curl_check(){
   fi
 }
 
-get_config_settings_file() {
-  config_files_path="$chef_extension_root/config/*.settings"
-  config_file_name=`ls $config_files_path 2>/dev/null | sort -V | tail -1`
-
-  echo $config_file_name
-}
-
 get_chef_version() {
-  config_file_name=$(get_config_settings_file)
+  config_file_name=$(get_config_settings_file $chef_extension_root)
   if [ -z "$config_file_name" ]; then
     echo "No config file found !!"
   else
