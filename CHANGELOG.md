@@ -1,5 +1,15 @@
 # azure-chef-extension Change Log
-## Latest Release: 1210.12.102.1000 (2016/03/28)
+## Latest Release: 1210.12.103.1000 (2016/05/24)
+* [azure-chef-extension #127](https://github.com/chef-partners/azure-chef-extension/pull/127) Updated README for adding uninstallChefClient option
+* [azure-chef-extension #133](https://github.com/chef-partners/azure-chef-extension/pull/133) Appending Environment path for ruby at the end
+* [azure-chef-extension #128](https://github.com/chef-partners/azure-chef-extension/pull/128) Use opscode chef's install for chef installation
+* [azure-chef-extension #122](https://github.com/chef-partners/azure-chef-extension/pull/122) Added code to write chef_client run logs in sub_status field of 0.status file
+* [azure-chef-extension #135](https://github.com/chef-partners/azure-chef-extension/pull/135) Added support to read ohai_hints in extension
+* [azure-chef-extension #136](https://github.com/chef-partners/azure-chef-extension/pull/136) Fixed bug when ohai_hints are not passed and modified RSpecs
+* [azure-chef-extension #139](https://github.com/chef-partners/azure-chef-extension/pull/139) Used different way for downloading opscode install.ps1 file for windows
+
+
+## Release: 1210.12.102.1000 (2016/03/28)
 * [azure-chef-extension #115](https://github.com/chef-partners/azure-chef-extension/pull/115) Decrypting validation key if it's provided in Base64encoded format
 * [azure-chef-extension #116](https://github.com/chef-partners/azure-chef-extension/pull/116) Added AzureChefExtension support for RHEL platform
 
