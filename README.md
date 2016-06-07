@@ -139,54 +139,51 @@ Update-AzureVM -VM $vmOb.VM -Name "<vm-name>" -ServiceName "<cloud-service-name>
 **ARM commands for Azure Chef Extension**
 
 1. Please refer https://github.com/Azure/azure-quickstart-templates/tree/master/chef-json-parameters-linux-vm of creating the ARM template files.
- 
+
 2. Find below some advanced options that can be set in the Azure ARM template file `azuredeploy.json`:
-  a. `environment_variables`: Specifies the list of environment variables (like the environment variables for proxy server configuration) to be available to the Chef Extension scripts. This option is currently supported only for `Linux` platforms.
-
-  b. `hints`: Specifies the Ohai Hints to be set in the Ohai configuration of the target node.
-
-
+  - `environment_variables`: Specifies the list of environment variables (like the environment variables for proxy server configuration) to be available to the Chef Extension scripts. This option is currently supported only for `Linux` platforms.
+  - `hints`: Specifies the Ohai Hints to be set in the Ohai configuration of the target node.
+  
   ***Note***: Set both these options under `properties` --> `settings` section of the `Microsoft.Compute/virtualMachines/extensions` resource type as shown in the below example:
 
-
   Example:
-
-```javascript
-{
-  "type": "Microsoft.Compute/virtualMachines/extensions",
-  "name": "[concat(variables('vmName'),'/', variables('vmExtensionName'))]",
-  "apiVersion": "2015-05-01-preview",
-  "location": "[resourceGroup().location]",
-  "dependsOn": [
-    "[concat('Microsoft.Compute/virtualMachines/', variables('vmName'))]"
-  ],
-  "properties": {
-    "publisher": "Chef.Bootstrap.WindowsAzure",
-    "type": "LinuxChefClient",
-    "typeHandlerVersion": "1210.12",
-    "settings": {
-      "bootstrap_options": {
-        "chef_node_name": "[parameters('chef_node_name')]",
-        "chef_server_url": "[parameters('chef_server_url')]",
-        "validation_client_name": "[parameters('validation_client_name')]"
+  
+  ```javascript
+  {
+    "type": "Microsoft.Compute/virtualMachines/extensions",
+    "name": "[concat(variables('vmName'),'/', variables('vmExtensionName'))]",
+    "apiVersion": "2015-05-01-preview",
+    "location": "[resourceGroup().location]",
+    "dependsOn": [
+      "[concat('Microsoft.Compute/virtualMachines/', variables('vmName'))]"
+    ],
+    "properties": {
+      "publisher": "Chef.Bootstrap.WindowsAzure",
+      "type": "LinuxChefClient",
+      "typeHandlerVersion": "1210.12",
+      "settings": {
+        "bootstrap_options": {
+          "chef_node_name": "[parameters('chef_node_name')]",
+          "chef_server_url": "[parameters('chef_server_url')]",
+          "validation_client_name": "[parameters('validation_client_name')]"
+        },
+        "runlist": "[parameters('runlist')]",
+        "validation_key_format": "[parameters('validation_key_format')]",
+        "environment_variables": {
+          "variable_1": "value_1",
+          "variable_2": "value_2",
+          "variable_3": "value_3"
+        },
+        "hints": {
+          "public_fqdn": "[reference(variables('publicIPAddressName')).dnsSettings.fqdn]",
+          "vm_name": "[reference(variables('vmName'))]"
+        }
       },
-      "runlist": "[parameters('runlist')]",
-      "validation_key_format": "[parameters('validation_key_format')]",
-      "environment_variables": {
-        "variable_1": "value_1",
-        "variable_2": "value_2",
-        "variable_3": "value_3"
-      },
-      "hints": {
-        "public_fqdn": "[reference(variables('publicIPAddressName')).dnsSettings.fqdn]",
-        "vm_name": "[reference(variables('vmName'))]"
+      "protectedSettings": {
+        "validation_key": "[parameters('validation_key')]"
       }
-    },
-    "protectedSettings": {
-      "validation_key": "[parameters('validation_key')]"
     }
   }
-}
 ```
 
 3. Refer code written below
