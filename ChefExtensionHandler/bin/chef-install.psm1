@@ -37,10 +37,6 @@ function Install-ChefClient {
       iex (new-object net.webclient).downloadstring('https://omnitruck.chef.io/install.ps1');install
       $completed = $true
     }
-    Catch [System.Management.Automation.RuntimeException] {
-      ## this catch is for the get-filehash command not found exception (which is of type RuntimeException) raised on powershell version 3.0 or lesser ##
-      $completed = $true
-    }
     Catch [System.Net.WebException] {
       ## this catch is for the WebException raised during a WebClient request while downloading the chef-client package ##
       if ($retrycount -ge $retries) {
