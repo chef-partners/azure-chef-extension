@@ -46,7 +46,8 @@ function Install-ChefClient {
         echo "Error running install: $ErrorMessage"
         exit 1
       } else {
-        echo "Chef Client package download failed. Retrying..."
+        echo "Chef Client package download failed. Retrying in 20s..."
+        sleep 20
         $retrycount++
       }
     }
