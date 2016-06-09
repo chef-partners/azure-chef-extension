@@ -27,13 +27,34 @@ function Chef-GetExtensionRoot {
 }
 
 function Install-ChefClient {
-  trap [Exception] {echo $_.Exception.Message;exit 1}
+  $retries = 3
+  $retrycount = 0
+  $completed = $false
 
-  iex (new-object net.webclient).downloadstring('https://omnitruck.chef.io/install.ps1');install
+  while (-not $completed) {
+    echo "Downloading Chef Client ..."
+    Try {
+      iex (new-object net.webclient).downloadstring('https://omnitruck.chef.io/install.ps1');install
+      $completed = $true
+    }
+    Catch [System.Net.WebException] {
+      ## this catch is for the WebException raised during a WebClient request while downloading the chef-client package ##
+      if ($retrycount -ge $retries) {
+        echo "Chef Client Downloading failed after 3 retries."
+        $ErrorMessage = $_.Exception.Message
+        # log to CommandExecution log:
+        echo "Error running install: $ErrorMessage"
+        exit 1
+      } else {
+        echo "Chef Client package download failed. Retrying in 20s..."
+        sleep 20
+        $retrycount++
+      }
+    }
+  }
   $env:Path = "C:\\opscode\\chef\\bin;C:\\opscode\\chef\\embedded\\bin;" + $env:Path
   $chefExtensionRoot = Chef-GetExtensionRoot
   Install-AzureChefExtensionGem $chefExtensionRoot
-
 }
 
 Export-ModuleMember -Function Install-ChefClient
