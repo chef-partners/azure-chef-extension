@@ -60,21 +60,31 @@ chef_install_from_script(){
     chef_version=$(get_chef_version &)
     echo "Call for Checking linux distributor"
     platform=$(get_linux_distributor)
-    curl_check $platform
-    curl -L -o /tmp/$platform-install.sh https://omnitruck.chef.io/install.sh
-    echo "Install.sh script downloaded at /tmp/$platform-install.sh"
-    if [ "$chef_version" = "No config file found !!" ]; then
-      echo "Configuration error. Azure chef extension Settings file missing."
-      exit 1
-    elif [ -z "$chef_version" ]; then
-      echo "Installing latest chef client"
-      sh /tmp/$platform-install.sh 
-    else
-      echo "Installing chef client with version $chef_version"
-      sh /tmp/$platform-install.sh -v $chef_version
+    #check if chef-client is already installed
+    if [ "$platform" = "ubuntu" -o "$platform" = "debian" ]; then
+      dpkg-query -s chef > /dev/null 2>&1
+    elif [ "$platform" = "centos" -o "$platform" = "rhel" ]; then
+      yum list installed | grep -w "chef"
     fi
-    echo "Deleting Install.sh script present at /tmp/$platform-install.sh"
-    rm /tmp/$platform-install.sh -f
+    if [ $? -ne 0 ]; then
+      curl_check $platform
+      curl -L -o /tmp/$platform-install.sh https://omnitruck.chef.io/install.sh
+      echo "Install.sh script downloaded at /tmp/$platform-install.sh"
+      if [ "$chef_version" = "No config file found !!" ]; then
+        echo "Configuration error. Azure chef extension Settings file missing."
+        exit 1
+      elif [ -z "$chef_version" ]; then
+        echo "Installing latest chef client"
+        sh /tmp/$platform-install.sh
+      else
+        echo "Installing chef client with version $chef_version"
+        sh /tmp/$platform-install.sh -v $chef_version
+      fi
+      echo "Deleting Install.sh script present at /tmp/$platform-install.sh"
+      rm /tmp/$platform-install.sh -f
+    else
+      echo "Chef-client is already installed"
+    fi
 }
 
 ########### Script starts from here ##################

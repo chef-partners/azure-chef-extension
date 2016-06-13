@@ -26,6 +26,10 @@ function Chef-GetExtensionRoot {
   $chefExtensionRoot
 }
 
+function Get-ChefPackage {
+  Get-WmiObject -Class Win32_Product | Where-Object { $_.Name.contains("Chef Client") }
+}
+
 function Install-ChefClient {
   $retries = 3
   $retrycount = 0
@@ -34,7 +38,11 @@ function Install-ChefClient {
   while (-not $completed) {
     echo "Downloading Chef Client ..."
     Try {
-      iex (new-object net.webclient).downloadstring('https://omnitruck.chef.io/install.ps1');install
+      ## Get chef_pkg by matching "chef client" string with $_.Name
+      $chef_pkg = Get-ChefPackage
+      if (-Not $chef_pkg) {
+        iex (new-object net.webclient).downloadstring('https://omnitruck.chef.io/install.ps1');install
+      }
       $completed = $true
     }
     Catch [System.Net.WebException] {
