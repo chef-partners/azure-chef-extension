@@ -1,5 +1,11 @@
 # azure-chef-extension Change Log
-## Latest Release: 1210.12.103.1000 (2016/05/24)
+## Latest Release: 1210.12.104.1000 (2016/06/20)
+* [azure-chef-extension #141](https://github.com/chef-partners/azure-chef-extension/pull/141) Added support to read environment variables from handler settings file
+* [azure-chef-extension #143](https://github.com/chef-partners/azure-chef-extension/pull/143) Added retry logic for chef-client download issue on Windows platform.
+* [azure-chef-extension #144](https://github.com/chef-partners/azure-chef-extension/pull/144) Added check for chef-client installation and to skip installation if exists
+
+
+## Release: 1210.12.103.1000 (2016/05/24)
 * [azure-chef-extension #127](https://github.com/chef-partners/azure-chef-extension/pull/127) Updated README for adding uninstallChefClient option
 * [azure-chef-extension #133](https://github.com/chef-partners/azure-chef-extension/pull/133) Appending Environment path for ruby at the end
 * [azure-chef-extension #128](https://github.com/chef-partners/azure-chef-extension/pull/128) Use opscode chef's install for chef installation
