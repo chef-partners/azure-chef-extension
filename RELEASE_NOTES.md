@@ -7,7 +7,7 @@ Example Note:
 Details about the thing that changed that needs to get included in the Release Notes in markdown.
 -->
 # azure-chef-extension 1210.12.104.1000 release notes:
-In this release we have added feature to allow user to pass environment variables in extensions publicconfig.config. Refer [READEME](https://github.com/chef-partners/azure-chef-extension/blob/master/README.md) for usage. This option is currently supported only for Linux platforms.
+In this release we have added feature to allow user to pass environment variables in extensions publicconfig.config file or in template. Refer [READEME](https://github.com/chef-partners/azure-chef-extension/blob/master/README.md#azure-chef-extension-usage) for usage. This option is currently supported only for Linux platforms.
 
 See the [CHANGELOG](https://github.com/chef-partners/azure-chef-extension/blob/master/CHANGELOG.md) for a list of all changes in this release, and review.
 
