@@ -88,22 +88,17 @@ chef_install_from_script(){
 }
 
 ########### Script starts from here ##################
-auto_update_false=/etc/chef/.auto_update_false
 
-if [ -f $auto_update_false ]; then
-  echo "[$(date)] Not doing install, as auto update is false"
+chef_install_from_script
+
+export PATH=/opt/chef/bin/:/opt/chef/embedded/bin:$PATH
+
+# check if azure-chef-extension is installed
+azure_chef_extn_gem=`gem list azure-chef-extension | grep azure-chef-extension | awk '{print $1}'`
+
+if test "$azure_chef_extn_gem" = "azure-chef-extension" ; then
+  echo "azure-chef-extension is already installed."
 else
-  chef_install_from_script
-
-  export PATH=/opt/chef/bin/:/opt/chef/embedded/bin:$PATH
-
-  # check if azure-chef-extension is installed
-  azure_chef_extn_gem=`gem list azure-chef-extension | grep azure-chef-extension | awk '{print $1}'`
-
-  if test "$azure_chef_extn_gem" = "azure-chef-extension" ; then
-    echo "azure-chef-extension is already installed."
-  else
-    # install azure chef extension gem
-    install_chef_extension_gem "$chef_extension_root/gems/*.gem"
-  fi
+  # install azure chef extension gem
+  install_chef_extension_gem "$chef_extension_root/gems/*.gem"
 fi
