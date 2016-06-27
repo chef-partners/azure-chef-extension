@@ -29,10 +29,6 @@ class ChefService
         end
       end
       # Unix - only start chef-client in daemonize mode using self.enable
-    rescue Mixlib::ShellOut::ShellCommandFailed => e
-      Chef::Log.error "#{error_message} (#{e})"
-      message = "#{error_message} - #{e} - Check log file for details"
-      exit_code = 1
     rescue => e
       Chef::Log.error "#{error_message} (#{e})"
       message = "#{error_message}- #{e} - Check log file for details"
@@ -63,7 +59,7 @@ class ChefService
 
         chef_cron = ERBHelpers::ERBCompiler.run(
           File.read(File.join(templates_dir, "chef-client-cron-create.erb")),
-           {:name => AZURE_CHEF_CRON_NAME, :extension_root => extension_root, 
+           {:name => AZURE_CHEF_CRON_NAME, :extension_root => extension_root,
             :bootstrap_directory => bootstrap_directory, :log_location =>  log_location,
             :interval => (chef_config[:interval] || 1800)/60, :sleep_time => (chef_config[:splay] || 0), :chef_pid_file => chef_pid_file
           })
@@ -72,10 +68,6 @@ class ChefService
         result = shell_out("chef-apply -e \"#{chef_cron}\"")
         result.error!
       end
-    rescue Mixlib::ShellOut::ShellCommandFailed => e
-      Chef::Log.error "#{error_message} (#{e})"
-      message = "#{error_message} - #{e} - Check log file for details", "error"
-      exit_code = 1
     rescue => e
       Chef::Log.error "#{error_message} (#{e})"
       message = "#{error_message} - #{e} - Check log file for details", "error"
@@ -109,10 +101,6 @@ class ChefService
         result = shell_out("chef-apply -e \"#{chef_cron}\"")
         result.error!
       end
-    rescue Mixlib::ShellOut::ShellCommandFailed => e
-      Chef::Log.error "#{error_message} (#{e})"
-      message = "#{error_message} - #{e} - Check log file for details", "error"
-      exit_code = 1
     rescue => e
       Chef::Log.error "#{error_message} (#{e})"
       message = "#{error_message} - #{e} - Check log file for details", "error"
@@ -160,10 +148,6 @@ class ChefService
         end
         return false
       end
-    rescue Mixlib::ShellOut::ShellCommandFailed => e
-      Chef::Log.warn "Error checking chef-client service status (#{e})"
-      message = "#{e} - Check log file for details", "error"
-      raise
     rescue => e
       Chef::Log.error e
       message = "#{e} - Check log file for details", "error"
