@@ -176,29 +176,3 @@ function Get-autoUpdateClientSetting{
 
   Get-JsonValueUsingRuby "$chefExtensionParent\\$extensionPreviousVersion\\RuntimeSettings\\$latestSettingFile" "runtimeSettings" 0 "handlerSettings" "publicSettings" "autoUpdateClient"
 }
-
-# Get the deleteChefConfig value
-function Get-deleteChefConfigSetting {
-  param([boolean]$calledFromUpdate = $False)
-  $powershellVersion = Get-PowershellVersion
-  if ($powershellVersion -ge 3) {
-    if ($calledFromUpdate) {
-      $json_handlerSettings = Get-PreviousVersionHandlerSettings
-    } else {
-      $json_handlerSettings = Get-HandlerSettings
-    }
-    $deleteChefConfig = $json_handlerSettings.publicSettings.deleteChefConfig
-  } else {
-    $latestSettingFile = (Get-ChildItem "C:\\chef" -Filter *.settings | Sort-Object Name -descending | Select-Object -First 1 ).Name
-    $deleteChefConfig = Get-JsonValueUsingRuby "C:\\chef\\$latestSettingFile" "runtimeSettings" 0 "handlerSettings" "publicSettings" "deleteChefConfig"
-  }
-  return $deleteChefConfig
-}
-
-# Get the uninstall chef client setting for powershell 2
-function Get-uninstallChefClientSetting{
-  $extensionPreviousVersion = Get-PreviousExtensionVersion
-  $latestSettingFile = Get-HandlerSettingsFileName "$chefExtensionParent\\$extensionPreviousVersion"
-
-  Get-JsonValueUsingRuby "$chefExtensionParent\\$extensionPreviousVersion\\RuntimeSettings\\$latestSettingFile" "runtimeSettings" 0 "handlerSettings" "publicSettings" "uninstallChefClient"
-}

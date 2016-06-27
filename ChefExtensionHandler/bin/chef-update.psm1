@@ -1,10 +1,10 @@
 # Reinstall with new version
 #
 # GA will do this:
-# 1 unpack new pkg at <extn>/<new ver>/new zip
-# 2 disable old version
-# 3 update new version
-# 4 uninstall old version
+# 1 disable old version
+# 2 update new version
+# 3 uninstall old version
+# 4 install new version
 # 5 enable new version
 
 # This script witll call install (on the new version)
@@ -44,37 +44,9 @@ function Update-ChefClient {
 
   $powershellVersion = Get-PowershellVersion
 
-  if ($powershellVersion -ge 3) {
-    $json_handlerSettings = Get-PreviousVersionHandlerSettings
-    $autoUpdateClient = $json_handlerSettings.publicSettings.autoUpdateClient
-  } else {
-    $autoUpdateClient = Get-autoUpdateClientSetting
-  }
-
   # Import Chef Install and Chef Uninstall PS modules
   Import-Module "$(Chef-GetExtensionRoot)\\bin\\chef-install.psm1"
-
-  if ($powershellVersion -ge 3) {
-    $json_handlerSettings = Get-PreviousVersionHandlerSettings
-    $uninstallChefClient = $json_handlerSettings.publicSettings.uninstallChefClient
-  } else {
-    $uninstallChefClient = Get-uninstallChefClientSetting
-  }
-
-  Write-Host "[$(Get-Date)] AutoUpdateClient: $autoUpdateClient"
-  # Auto update flag in Runtime Settings allows the user to opt for automatic chef-client update.
-  # Default value is false
-  if($autoUpdateClient -ne "true"){
-    Write-Host "[$(Get-Date)] Auto update disabled"
-    if ($uninstallChefClient -eq "true"){
-      Write-Host "Invalid config specified...uninstallChefClient flag cannot be true when autoUpdateClient flag is false."
-    }
-    exit 1
-  }
-
-  if ($uninstallChefClient -eq "true"){
-    Import-Module "$(Chef-GetExtensionRoot)\\bin\\chef-uninstall.psm1"
-  }
+  Import-Module "$(Chef-GetExtensionRoot)\\bin\\chef-uninstall.psm1"
 
   Try
   {
@@ -92,12 +64,10 @@ function Update-ChefClient {
     Copy-Item $bootstrapDirectory $backupLocation -recurse
     Write-Host "[$(Get-Date)] Configuration saved to $backupLocation"
 
-    # uninstall chef. this will work since the uninstall script is idempotent.
-    if ($uninstallChefClient -eq "true"){
-      echo "Calling Uninstall-ChefClient from $scriptDir\chef-uninstall.psm1"
-      Uninstall-ChefClient $calledFromUpdate
-      Write-Host "[$(Get-Date)] Uninstall completed"
-    }
+    # uninstall chef. this will work since the uninstall script is idempotent
+    echo "Calling Uninstall-ChefClient from $scriptDir\chef-uninstall.psm1"
+    Uninstall-ChefClient $calledFromUpdate
+    Write-Host "[$(Get-Date)] Uninstall completed"
 
     # Restore Chef Configuration
     Copy-Item $backupLocation $bootstrapDirectory -recurse
