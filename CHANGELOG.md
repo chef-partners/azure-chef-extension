@@ -1,5 +1,10 @@
 # azure-chef-extension Change Log
-## Latest Release: 1210.12.104.1000 (2016/06/20)
+## Latest Release: 1210.12.105.1000 (2016/06/27)
+* [azure-chef-extension #149](https://github.com/chef-partners/azure-chef-extension/pull/149) Removed unrequired flags for Linux Platforms
+* [azure-chef-extension #150](https://github.com/chef-partners/azure-chef-extension/pull/150) Removed unwanted flags for windows
+
+
+## Release: 1210.12.104.1000 (2016/06/20)
 * [azure-chef-extension #141](https://github.com/chef-partners/azure-chef-extension/pull/141) Added support to read environment variables from handler settings file
 * [azure-chef-extension #143](https://github.com/chef-partners/azure-chef-extension/pull/143) Added retry logic for chef-client download issue on Windows platform.
 * [azure-chef-extension #144](https://github.com/chef-partners/azure-chef-extension/pull/144) Added check for chef-client installation and to skip installation if exists
