@@ -25,9 +25,6 @@ Azure resource extension to enable Chef on Azure virtual machine instances.
 {
   "client_rb": "< your client.rb configuration >".
   "runlist":"< your run list >",
-  "autoUpdateClient":"< true|false >",
-  "deleteChefConfig":"< true|false >",
-  "uninstallChefClient": "< true|false >",
   "validation_key_format": "< plaintext|base64encoded >",
   "bootstrap_version": "< version of chef-client >",
   "environment_variables": {
@@ -45,13 +42,6 @@ Azure resource extension to enable Chef on Azure virtual machine instances.
 `run_list`: A run-list defines all of the information necessary for Chef to configure a node into the desired state.
 It is an ordered list of roles and/or recipes that are run in the exact order defined in the run-list.
 
-`autoUpdateClient` : Set this option to true to auto udpate chef extension version. By default it's set to false.  Extension's Hotfix versions are auto-updated on the VM when the VM is restarted. for e.g.: A VM that has 1205.12.2.0, gets auto updated to 1205.12.2.1 when 1205.12.2.1 is published.
-This option should be set to true for updating the extension manually also.
-
-`deleteChefCofig`: Set deleteChefConfig option to true in publicconfig if you want to delete chef configuration files while update or uninstall. By default it is set to false.
-
-`uninstallChefClient`: Set uninstallChefClient option to true in publicconfig if you want to uninstall the chef client during chef extension uninstall. By default it's set to false
- 
 `validation_key_format`: Specifies the format in which `validation_key` is set in the `privateconfig.config` file. Supported values are `plaintext` and `base64encoded`. Default value is `plaintext`.
 
 `bootstrap_version`: Set the version of `chef-client` that needs to get installed on the VM. This option is supported only for linux extension.
@@ -70,8 +60,6 @@ publicconfig.config example:
 {
   "client_rb": "chef_server_url  \"https://api.opscode.com/organizations/some-org\"\nvalidation_client_name   \"some-org-validator\"\nclient_key    \"c:/chef/client.pem\"\nvalidation_key    \"c:/chef/validation.pem\"",
   "runlist":"recipe[getting-started]",
-  "autoUpdateClient":"true",
-  "deleteChefConfig":"false",
   "validation_key_format": "plaintext",
   "environment_variables": {
     "variable_1": "value_1",
@@ -128,8 +116,7 @@ New-AzureVM -Location 'West US' -ServiceName $svc -VM $vObj1
 
 1. Suppose you have a VM with extension version 1205 .12
 2. `$vmm = Get-AzureVM -Name "<vm-name>" -ServiceName "<cloud-service-name>"`
-3. Set `autoUpdateClient` to true in publicconfig.config file
-4. Update to latest version- Ex- 1206.12
+3. Update to latest version- Ex- 1206.12
 ```
 $vmOb = Set-AzureVMExtension -VM $vmm -ExtensionName 'ChefClient' -Publisher ‘Chef.Bootstrap.WindowsAzure’ -Version '1206.12' -PublicConfigPath 'path\\to\\publicconfig.config' -PrivateConfigPath 'path\\to\\privateconfig.config'
 
@@ -143,11 +130,11 @@ Update-AzureVM -VM $vmOb.VM -Name "<vm-name>" -ServiceName "<cloud-service-name>
 2. Find below some advanced options that can be set in the Azure ARM template file `azuredeploy.json`:
   - `environment_variables`: Specifies the list of environment variables (like the environment variables for proxy server configuration) to be available to the Chef Extension scripts. This option is currently supported only for `Linux` platforms.
   - `hints`: Specifies the Ohai Hints to be set in the Ohai configuration of the target node.
-  
+
   ***Note***: Set both these options under `properties` --> `settings` section of the `Microsoft.Compute/virtualMachines/extensions` resource type as shown in the below example:
 
   Example:
-  
+
   ```javascript
   {
     "type": "Microsoft.Compute/virtualMachines/extensions",
