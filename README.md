@@ -37,7 +37,7 @@ Azure resource extension to enable Chef on Azure virtual machine instances.
   }
 }
 ```
-`client_rb`: Set this option to specify additional configuration details for the chef-client. Additions are appending to the top of the client.rb file.  Refer to [client.rb] (https://docs.chef.io/config_rb_client.html)
+`client_rb`: Set this option to specify additional configuration details for the chef-client. Additions are appended to the top of the client.rb file.  Refer to [client.rb] (https://docs.chef.io/config_rb_client.html)
 
 `run_list`: A run-list defines all of the information necessary for Chef to configure a node into the desired state.
 It is an ordered list of roles and/or recipes that are run in the exact order defined in the run-list.
