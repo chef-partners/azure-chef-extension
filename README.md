@@ -23,7 +23,7 @@ Azure resource extension to enable Chef on Azure virtual machine instances.
 #####Options that can be set in publicconfig.config
 ```javascript
 {
-  "client_rb": "< your client.rb configuration >".
+  "client_rb": "< your additions to the client.rb configuration >".
   "runlist":"< your run list >",
   "validation_key_format": "< plaintext|base64encoded >",
   "bootstrap_version": "< version of chef-client >",
@@ -37,7 +37,7 @@ Azure resource extension to enable Chef on Azure virtual machine instances.
   }
 }
 ```
-`client_rb`: Set this option to specify the configuration details for the chef-client. Refer to [client.rb] (https://docs.chef.io/config_rb_client.html)
+`client_rb`: Set this option to specify additional configuration details for the chef-client. Additions are appending to the top of the client.rb file.  Refer to [client.rb] (https://docs.chef.io/config_rb_client.html)
 
 `run_list`: A run-list defines all of the information necessary for Chef to configure a node into the desired state.
 It is an ordered list of roles and/or recipes that are run in the exact order defined in the run-list.
@@ -78,7 +78,7 @@ publicconfig.config example:
 #####Options that can be set in privateconfig.config
 ```javascript
 {
-  "validation_key": "<your chef organisation validation key>"
+  "validation_key": "<your chef organisation validation key as a JSON escaped string>"
 }
 ```
 
@@ -161,7 +161,6 @@ Update-AzureVM -VM $vmOb.VM -Name "<vm-name>" -ServiceName "<cloud-service-name>
           "variable_2": "value_2",
           "variable_3": "value_3"
         },
-        "hints": {
           "public_fqdn": "[reference(variables('publicIPAddressName')).dnsSettings.fqdn]",
           "vm_name": "[reference(variables('vmName'))]"
         }
