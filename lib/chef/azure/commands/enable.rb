@@ -282,7 +282,7 @@ class EnableChef
     rescue OpenSSL::PKey::RSAError => e
       Chef::Log.error "Chef validation key parsing error. #{e.inspect}"
     end
-    validation_key
+    validation_key.delete("\x00")
   end
 
   def get_client_key(encrypted_text)
