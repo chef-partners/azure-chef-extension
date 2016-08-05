@@ -5,4 +5,5 @@ gemspec
 
 group :development do
   gem 'rake'
+  gem "rack", "< 2.0" # 2.0 requires Ruby 2.2+
 end
