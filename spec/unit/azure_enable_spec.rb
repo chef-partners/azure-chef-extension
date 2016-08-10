@@ -399,7 +399,7 @@ describe EnableChef do
   end
 
   context "get_validation_key on linux" , :unless => (RUBY_PLATFORM =~ /mswin|mingw|windows/) do
-    it "extracts and returns the validation_key from encrypted text." do
+    before do
       @object = Object.new
       allow(File).to receive(:read)
       allow(File).to receive(:exists?).and_return(true)
@@ -407,22 +407,42 @@ describe EnableChef do
       allow(OpenSSL::PKey::RSA).to receive(:new).and_return(@object)
       allow(Base64).to receive(:decode64)
       allow(OpenSSL::PKCS7).to receive(:new).and_return(@object)
+      allow(instance).to receive(:value_from_json_file).and_return('samplevalidationkeytext')
+    end
+    it "extracts and returns the validation_key from encrypted text." do
+      allow(@object).to receive(:to_pem).and_return('samplevalidationkeytext')
       expect(instance).to receive(:handler_settings_file)
-      expect(instance).to receive(:value_from_json_file).twice.and_return('')
       expect(@object).to receive(:decrypt)
-      expect(@object).to receive(:to_pem)
-      instance.send(:get_validation_key, 'encrypted_text', 'format')
+      expect(instance.send(:get_validation_key, 'encrypted_text', 'format')).to eq("samplevalidationkeytext") 
+    end
+
+    it "extracts and returns the validation_key from encrypted text containg null bytes" do
+      allow(@object).to receive(:to_pem).and_return("sample\x00validation\x00keytext\x00")
+      expect(instance).to receive(:handler_settings_file)
+      expect(@object).to receive(:decrypt)
+      expect(instance.send(:get_validation_key, 'encrypted_text', 'format')).to eq("samplevalidationkeytext")
     end
   end
 
   context "get_validation_key on windows" , :if => (RUBY_PLATFORM =~ /mswin|mingw|windows/) do
-    it "extracts and returns the validation_key from encrypted text." do
+    before do
+      @object = Object.new
       allow(File).to receive(:expand_path).and_return(".")
       allow(File).to receive(:dirname)
       allow(instance).to receive(:shell_out).and_return(OpenStruct.new(:exitstatus => 0, :stdout => ""))
+      allow(OpenSSL::PKey::RSA).to receive(:new).and_return(@object)
+      allow(instance).to receive(:value_from_json_file).and_return('samplevalidationkeytext')
+    end
+    it "extracts and returns the validation_key from encrypted text." do
+      allow(@object).to receive(:to_pem).and_return('samplevalidationkeytext')
       expect(instance).to receive(:handler_settings_file)
-      expect(instance).to receive(:value_from_json_file).twice.and_return("")
-      instance.send(:get_validation_key, "encrypted_text", "format")
+      expect(instance.send(:get_validation_key, 'encrypted_text', 'format')).to eq("samplevalidationkeytext")
+    end
+
+    it "extracts and returns the validation_key from encrypted text containg null bytes." do
+      allow(@object).to receive(:to_pem).and_return("sample\x00validation\x00keytext\x00")
+      expect(instance).to receive(:handler_settings_file)
+      expect(instance.send(:get_validation_key, 'encrypted_text', 'format')).to eq("samplevalidationkeytext")
     end
   end
 
