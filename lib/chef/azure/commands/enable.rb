@@ -81,8 +81,25 @@ class EnableChef
     @exit_code
   end
 
+  def load_chef_service_interval
+    value_from_json_file(handler_settings_file, 'runtimeSettings', '0', 'handlerSettings', 'publicSettings', 'chef_service_interval')
+  end
+
   def install_chef_service
-    @exit_code, error_message = ChefService.new.install(@azure_plugin_log_location)
+    chef_service_interval = load_chef_service_interval
+
+    if chef_service_interval.empty?
+      Chef::Config[:interval] = 30
+      @exit_code, error_message = ChefService.new.install(@azure_plugin_log_location)
+    else
+      if chef_service_interval.to_i == 0
+        @exit_code = 0
+      else
+        Chef::Config[:interval] = chef_service_interval.to_i
+        @exit_code, error_message = ChefService.new.install(@azure_plugin_log_location)
+      end
+    end
+
     if @exit_code == 0
       report_status_to_azure "chef-service installed", "success"
     else
@@ -92,7 +109,18 @@ class EnableChef
   end
 
   def enable_chef_service
-    @exit_code, error_message = ChefService.new.enable(@chef_extension_root, bootstrap_directory, @azure_plugin_log_location)
+    chef_service_interval = load_chef_service_interval
+
+    if chef_service_interval.empty?
+      @exit_code, error_message = ChefService.new.enable(@chef_extension_root, bootstrap_directory, @azure_plugin_log_location)
+    else
+      if chef_service_interval.to_i == 0
+        @exit_code = 0
+      else
+        @exit_code, error_message = ChefService.new.enable(@chef_extension_root, bootstrap_directory, @azure_plugin_log_location, chef_service_interval.to_i)
+      end
+    end
+
     if @exit_code == 0
       report_status_to_azure "chef-service enabled", "success"
     else
