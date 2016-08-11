@@ -1,4 +1,10 @@
 # azure-chef-extension Change Log
+
+## Latest Release: 1210.12.105.1001 (2016/08/10)
+* [azure-chef-extension #157](https://github.com/chef-partners/azure-chef-extension/pull/157) Fix for validation.pem file not generating
+* [azure-chef-extension #158](https://github.com/chef-partners/azure-chef-extension/pull/158) Pinned rack to fix travis failure
+
+
 ## Latest Release: 1210.12.105.1000 (2016/06/27)
 * [azure-chef-extension #149](https://github.com/chef-partners/azure-chef-extension/pull/149) Removed unrequired flags for Linux Platforms
 * [azure-chef-extension #150](https://github.com/chef-partners/azure-chef-extension/pull/150) Removed unwanted flags for windows
