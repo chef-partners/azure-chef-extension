@@ -89,14 +89,18 @@ class EnableChef
     chef_service_interval = load_chef_service_interval
 
     if chef_service_interval.empty?
-      Chef::Config[:interval] = 30
       @exit_code, error_message = ChefService.new.install(@azure_plugin_log_location)
     else
       if chef_service_interval.to_i == 0
+        if ChefService.new.is_running?
+          puts "#{Time.now} Deleting the chef-client service on user's choice..."
+          ChefService.new.delete_cron
+        else
+          puts "#{Time.now} Not deploying the chef-client service on user's choice..."
+        end
         @exit_code = 0
       else
-        Chef::Config[:interval] = chef_service_interval.to_i
-        @exit_code, error_message = ChefService.new.install(@azure_plugin_log_location)
+        @exit_code, error_message = ChefService.new.install(@azure_plugin_log_location, chef_service_interval.to_i)
       end
     end
 
@@ -115,6 +119,12 @@ class EnableChef
       @exit_code, error_message = ChefService.new.enable(@chef_extension_root, bootstrap_directory, @azure_plugin_log_location)
     else
       if chef_service_interval.to_i == 0
+        if ChefService.new.is_running?
+          puts "#{Time.now} Deleting the chef-client service on user's choice..."
+          ChefService.new.delete_cron
+        else
+          puts "#{Time.now} Not deploying the chef-client service on user's choice..."
+        end
         @exit_code = 0
       else
         @exit_code, error_message = ChefService.new.enable(@chef_extension_root, bootstrap_directory, @azure_plugin_log_location, chef_service_interval.to_i)
