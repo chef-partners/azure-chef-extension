@@ -14,11 +14,11 @@ class ChefService
   end
 
   def interval_exist?(client_rb_contents)
-    client_rb_contents.any? { |line| line.include?(CLIENT_RB_INTERVAL_ATTRIBUTE_NAME) }
+    client_rb_contents.any? { |line| line.include?(CLIENT_RB_INTERVAL_ATTRIBUTE_NAME + ' ') }
   end
 
   def interval_index(client_rb_contents)
-    client_rb_contents.index { |line| line.include?(CLIENT_RB_INTERVAL_ATTRIBUTE_NAME) }
+    client_rb_contents.index { |line| line.include?(CLIENT_RB_INTERVAL_ATTRIBUTE_NAME + ' ') }
   end
 
   def interval_string(chef_service_interval)
@@ -36,7 +36,7 @@ class ChefService
       interval = interval_index(client_rb_contents)
       client_rb_contents[interval] = interval_string(new_chef_service_interval)
     else
-      client_rb_contents << interval_string
+      client_rb_contents << interval_string(new_chef_service_interval)
     end
 
     write_client_rb(client_rb, client_rb_contents.join)
@@ -58,18 +58,17 @@ class ChefService
         status = shell_out("sc.exe query chef-client")
         if status.exitstatus == 1060 && status.stdout.include?("The specified service does not exist as an installed service.")
           add_or_update_interval_in_client_rb("#{bootstrap_directory}\\client.rb", interval_in_seconds(chef_service_interval))
-          puts "#{Time.now} Installing chef-client service..."
-          params = " -a install -c #{bootstrap_directory}\\client.rb -L #{log_location}\\chef-client.log "
-          result = shell_out("chef-service-manager #{params}")
-          result.error!
-          puts "#{Time.now} Installed chef-client service."
+          deploy_service('install', bootstrap_directory, log_location)
         else
           status.error!
           puts "#{Time.now} chef-client service is already installed."
 
-          if chef_service_interval_changed?(chef_service_interval)
+          if chef_service_interval_changed?(chef_service_interval, "#{bootstrap_directory}\\client.rb")
             puts "#{Time.now} yes..chef-client service interval has been changed by the user..updating the client.rb file with the new interval value of #{chef_service_interval} minutes frequency.."
-            add_or_update_interval_in_client_rb
+            add_or_update_interval_in_client_rb("#{bootstrap_directory}\\client.rb", interval_in_seconds(chef_service_interval))
+            if !is_running?
+              deploy_service('start', bootstrap_directory, log_location)
+            end
           else
             puts "#{Time.now} no..chef-client service interval has not been changed by the user..exiting.."
           end
@@ -88,15 +87,22 @@ class ChefService
     chef_service_interval / 60
   end
 
-  def old_client_rb_interval(client_rb_contents)
-    client_rb_contents[interval].split(' ')[1]
+  def old_client_rb_interval(old_interval_string)
+    old_interval_string.split(' ')[1].strip.to_i
   end
 
-  def chef_service_interval_changed?(new_chef_service_interval)
+  def chef_service_interval_changed?(new_chef_service_interval, client_rb = nil)
     puts "#{Time.now} checking if chef-client service interval has been changed by the user..."
 
     if windows?
-      ## TODO: implementation for Windows platform
+      client_rb_contents = read_client_rb(client_rb)
+
+      if interval_exist?(client_rb_contents)
+        interval = interval_index(client_rb_contents)
+        old_chef_service_interval = old_client_rb_interval(client_rb_contents[interval])
+      else
+        old_chef_service_interval = DEFAULT_CHEF_SERVICE_INTERVAL
+      end
     else
       result = shell_out("crontab -l | grep -A 1 #{AZURE_CHEF_CRON_NAME} | sed -n '2p'")
       old_chef_service_interval = result.stdout.split('/')[1].split(' ')[0].to_i
@@ -129,6 +135,19 @@ class ChefService
 
     puts "Removing chef-cron = \"#{chef_cron}\""
     result = shell_out("chef-apply -e \"#{chef_cron}\"")
+    result.error!
+  end
+
+  def deploy_service(action, bootstrap_directory, log_location)
+    puts "#{Time.now} #{action.capitalize}ing chef-client service..."
+    params = " -a #{action} -c #{bootstrap_directory}\\client.rb -L #{log_location}\\chef-client.log "
+    result = shell_out("chef-service-manager #{params}")
+    result.error!
+    puts "#{Time.now} #{action.capitalize}ed chef-client service."
+  end
+
+  def delete_service
+    result = shell_out("sc.exe stop chef-client")
     result.error!
   end
 
@@ -180,8 +199,7 @@ class ChefService
     begin
       puts "#{Time.now} Disabling chef-client service..."
       if windows?
-        result = shell_out("sc.exe stop chef-client")
-        result.error!
+        delete_service
       else
         delete_cron
       end

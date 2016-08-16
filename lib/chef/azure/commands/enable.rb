@@ -66,9 +66,9 @@ class EnableChef
     begin
       configure_chef_only_once
 
-      install_chef_service if @exit_code == 0
+      install_chef_service if @exit_code == 0 && windows?
 
-      enable_chef_service if @exit_code == 0
+      enable_chef_service if @exit_code == 0 && !windows?
 
     rescue => e
       Chef::Log.error e
@@ -94,7 +94,7 @@ class EnableChef
       if chef_service_interval.to_i == 0
         if ChefService.new.is_running?
           puts "#{Time.now} Deleting the chef-client service on user's choice..."
-          ChefService.new.delete_cron
+          ChefService.new.delete_service
         else
           puts "#{Time.now} Not deploying the chef-client service on user's choice..."
         end
