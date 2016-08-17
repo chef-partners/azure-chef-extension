@@ -93,8 +93,9 @@ class EnableChef
     else
       if chef_service_interval.to_i == 0
         if ChefService.new.is_running?
-          puts "#{Time.now} Deleting the chef-client service on user's choice..."
-          ChefService.new.delete_service
+          ChefService.new.add_or_update_interval_in_client_rb(bootstrap_directory, chef_service_interval.to_i)
+          puts "#{Time.now} Disabling the chef-client service on user's choice..."
+          ChefService.new.disable_service
         else
           puts "#{Time.now} Not deploying the chef-client service on user's choice..."
         end

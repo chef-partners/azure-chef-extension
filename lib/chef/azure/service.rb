@@ -59,11 +59,12 @@ class ChefService
         if status.exitstatus == 1060 && status.stdout.include?("The specified service does not exist as an installed service.")
           add_or_update_interval_in_client_rb("#{bootstrap_directory}\\client.rb", interval_in_seconds(chef_service_interval))
           deploy_service('install', bootstrap_directory, log_location)
+          deploy_service('start', bootstrap_directory, log_location) if !is_running?
         else
           status.error!
           puts "#{Time.now} chef-client service is already installed."
 
-          if chef_service_interval_changed?(chef_service_interval, "#{bootstrap_directory}\\client.rb")
+          if chef_service_interval_changed?(interval_in_seconds(chef_service_interval), "#{bootstrap_directory}\\client.rb")
             puts "#{Time.now} yes..chef-client service interval has been changed by the user..updating the client.rb file with the new interval value of #{chef_service_interval} minutes frequency.."
             add_or_update_interval_in_client_rb("#{bootstrap_directory}\\client.rb", interval_in_seconds(chef_service_interval))
             if !is_running?
@@ -146,7 +147,7 @@ class ChefService
     puts "#{Time.now} #{action.capitalize}ed chef-client service."
   end
 
-  def delete_service
+  def disable_service
     result = shell_out("sc.exe stop chef-client")
     result.error!
   end
@@ -199,7 +200,7 @@ class ChefService
     begin
       puts "#{Time.now} Disabling chef-client service..."
       if windows?
-        delete_service
+        disable_service
       else
         delete_cron
       end
