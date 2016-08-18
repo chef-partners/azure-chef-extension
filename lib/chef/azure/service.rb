@@ -29,7 +29,7 @@ class ChefService
     File.write(client_rb, client_rb_contents)
   end
 
-  def add_or_update_interval_in_client_rb(client_rb, new_chef_service_interval)
+  def self.add_or_update_interval_in_client_rb(client_rb, new_chef_service_interval)
     client_rb_contents = read_client_rb(client_rb)
 
     if interval_exist?(client_rb_contents)
@@ -47,7 +47,7 @@ class ChefService
   end
 
   # TODO - make these methods idempotent
-  def install(log_location, chef_service_interval = DEFAULT_CHEF_SERVICE_INTERVAL)
+  def self.install(log_location, chef_service_interval = DEFAULT_CHEF_SERVICE_INTERVAL)
     log_location = log_location || bootstrap_directory # example default logs go to C:\chef\
     exit_code = 0
     message = "success"
@@ -57,17 +57,17 @@ class ChefService
         puts "#{Time.now} Getting chef-client service status"
         status = shell_out("sc.exe query chef-client")
         if status.exitstatus == 1060 && status.stdout.include?("The specified service does not exist as an installed service.")
-          add_or_update_interval_in_client_rb("#{bootstrap_directory}\\client.rb", interval_in_seconds(chef_service_interval))
+          self.class.add_or_update_interval_in_client_rb("#{bootstrap_directory}\\client.rb", interval_in_seconds(chef_service_interval))
           deploy_service('install', bootstrap_directory, log_location)
-          deploy_service('start', bootstrap_directory, log_location) if !is_running?
+          deploy_service('start', bootstrap_directory, log_location) if !self.class.is_running?
         else
           status.error!
           puts "#{Time.now} chef-client service is already installed."
 
           if chef_service_interval_changed?(interval_in_seconds(chef_service_interval), "#{bootstrap_directory}\\client.rb")
             puts "#{Time.now} yes..chef-client service interval has been changed by the user..updating the client.rb file with the new interval value of #{chef_service_interval} minutes frequency.."
-            add_or_update_interval_in_client_rb("#{bootstrap_directory}\\client.rb", interval_in_seconds(chef_service_interval))
-            if !is_running?
+            self.class.add_or_update_interval_in_client_rb("#{bootstrap_directory}\\client.rb", interval_in_seconds(chef_service_interval))
+            if !self.class.is_running?
               deploy_service('start', bootstrap_directory, log_location)
             end
           else
@@ -130,7 +130,7 @@ class ChefService
     result.error!
   end
 
-  def delete_cron
+  def self.delete_cron
     templates_dir = File.join(File.dirname(__FILE__), "/templates")
     chef_cron = ERBHelpers::ERBCompiler.run(File.read(File.join(templates_dir, "chef-client-cron-delete.erb")), {:name => AZURE_CHEF_CRON_NAME})
 
@@ -147,23 +147,23 @@ class ChefService
     puts "#{Time.now} #{action.capitalize}ed chef-client service."
   end
 
-  def disable_service
+  def self.disable_service
     result = shell_out("sc.exe stop chef-client")
     result.error!
   end
 
-  def enable(extension_root, bootstrap_directory, log_location, chef_service_interval = DEFAULT_CHEF_SERVICE_INTERVAL)
+  def self.enable(extension_root, bootstrap_directory, log_location, chef_service_interval = DEFAULT_CHEF_SERVICE_INTERVAL)
     log_location = log_location || bootstrap_directory
     exit_code = 0
     message = "success"
     error_message = "Error enabling chef-client service"
     begin
-      if is_running?
+      if self.class.is_running?
         puts "#{Time.now} chef-client service is already running..."
 
         if chef_service_interval_changed?(chef_service_interval)
           puts "#{Time.now} yes..chef-client service interval has been changed by the user..deleting and re-deploying the chef-client service with the new interval value of #{chef_service_interval} minutes frequency.."
-          delete_cron
+          self.class.delete_cron
           deploy_cron(extension_root, bootstrap_directory, log_location, chef_service_interval)
         else
           puts "#{Time.now} no..chef-client service interval has not been changed by the user..exiting.."
@@ -192,7 +192,7 @@ class ChefService
     exit_code = 0
     message = "success"
     error_message = "Error disabling chef-client service"
-    if not is_running?
+    if not self.class.is_running?
       puts "#{Time.now} chef-client service is already stopped..."
       return [exit_code, message]
     end
@@ -200,9 +200,9 @@ class ChefService
     begin
       puts "#{Time.now} Disabling chef-client service..."
       if windows?
-        disable_service
+        self.class.disable_service
       else
-        delete_cron
+        self.class.delete_cron
       end
     rescue => e
       Chef::Log.error "#{error_message} (#{e})"
@@ -232,7 +232,7 @@ class ChefService
     end
   end
 
-  def is_running?
+  def self.is_running?
     begin
       if windows?
         result = shell_out("sc.exe query chef-client")
