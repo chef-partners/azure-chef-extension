@@ -94,7 +94,7 @@ class EnableChef
     else
       if chef_service_interval.to_i == 0
         if chef_service.is_running?
-          chef_service.add_or_update_interval_in_client_rb(bootstrap_directory, chef_service_interval.to_i)
+          chef_service.add_or_update_interval_in_client_rb("#{bootstrap_directory}\\client.rb", chef_service_interval.to_i)
           puts "#{Time.now} Disabling the chef-client service on user's choice..."
           chef_service.disable_service
         else
