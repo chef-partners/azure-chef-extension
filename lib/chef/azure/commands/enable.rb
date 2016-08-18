@@ -86,22 +86,23 @@ class EnableChef
   end
 
   def install_chef_service
+    chef_service = ChefService.new
     chef_service_interval = load_chef_service_interval
 
     if chef_service_interval.empty?
-      @exit_code, error_message = ChefService.new.install(@azure_plugin_log_location)
+      @exit_code, error_message = chef_service.install(@azure_plugin_log_location)
     else
       if chef_service_interval.to_i == 0
-        if ChefService.new.is_running?
-          ChefService.new.add_or_update_interval_in_client_rb(bootstrap_directory, chef_service_interval.to_i)
+        if chef_service.is_running?
+          chef_service.add_or_update_interval_in_client_rb(bootstrap_directory, chef_service_interval.to_i)
           puts "#{Time.now} Disabling the chef-client service on user's choice..."
-          ChefService.new.disable_service
+          chef_service.disable_service
         else
           puts "#{Time.now} Not deploying the chef-client service on user's choice..."
         end
         @exit_code = 0
       else
-        @exit_code, error_message = ChefService.new.install(@azure_plugin_log_location, chef_service_interval.to_i)
+        @exit_code, error_message = chef_service.install(@azure_plugin_log_location, chef_service_interval.to_i)
       end
     end
 
@@ -114,21 +115,22 @@ class EnableChef
   end
 
   def enable_chef_service
+    chef_service = ChefService.new
     chef_service_interval = load_chef_service_interval
 
     if chef_service_interval.empty?
-      @exit_code, error_message = ChefService.new.enable(@chef_extension_root, bootstrap_directory, @azure_plugin_log_location)
+      @exit_code, error_message = chef_service.enable(@chef_extension_root, bootstrap_directory, @azure_plugin_log_location)
     else
       if chef_service_interval.to_i == 0
-        if ChefService.new.is_running?
+        if chef_service.is_running?
           puts "#{Time.now} Deleting the chef-client service on user's choice..."
-          ChefService.new.delete_cron
+          chef_service.delete_cron
         else
           puts "#{Time.now} Not deploying the chef-client service on user's choice..."
         end
         @exit_code = 0
       else
-        @exit_code, error_message = ChefService.new.enable(@chef_extension_root, bootstrap_directory, @azure_plugin_log_location, chef_service_interval.to_i)
+        @exit_code, error_message = chef_service.enable(@chef_extension_root, bootstrap_directory, @azure_plugin_log_location, chef_service_interval.to_i)
       end
     end
 
