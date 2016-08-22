@@ -42,7 +42,7 @@ class ChefService
       end
     rescue => e
       Chef::Log.error "#{error_message} (#{e})"
-      message = "#{error_message}- #{e} - Check log file for details", "error"
+      message = "#{error_message} - #{e} - Check log file for details", "error"
       exit_code = 1
     end
     [exit_code, message]
@@ -129,8 +129,7 @@ class ChefService
     puts "#{Time.now} #{action.capitalize}ing chef-client service..."
     params = " -a #{action} -c #{bootstrap_directory}\\client.rb -L #{log_location}\\chef-client.log "
     result = shell_out("chef-service-manager #{params}")
-    result.error!
-    puts "#{Time.now} #{action.capitalize}ed chef-client service."
+    result.error? ? result.error! : (puts "#{Time.now} #{action.capitalize}ed chef-client service.")
   end
 
   def enable_cron(extension_root, bootstrap_directory, log_location, chef_service_interval)
@@ -149,8 +148,7 @@ class ChefService
 
     puts "Adding chef cron = \"#{chef_cron}\""
     result = shell_out("chef-apply -e \"#{chef_cron}\"")
-    result.error!
-    puts "#{Time.now} Started chef-client service..."
+    result.error? ? result.error! : (puts "#{Time.now} Started chef-client service...")
   end
 
   def is_installed?
