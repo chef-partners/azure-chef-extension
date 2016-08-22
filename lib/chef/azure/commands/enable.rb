@@ -66,9 +66,7 @@ class EnableChef
     begin
       configure_chef_only_once
 
-      install_chef_service if @exit_code == 0 && windows?
-
-      enable_chef_service if @exit_code == 0 && !windows?
+      enable_chef_service
 
     rescue => e
       Chef::Log.error e
@@ -85,52 +83,35 @@ class EnableChef
     value_from_json_file(handler_settings_file, 'runtimeSettings', '0', 'handlerSettings', 'publicSettings', 'chef_service_interval')
   end
 
-  def install_chef_service
-    chef_service = ChefService.new
-    chef_service_interval = load_chef_service_interval
-
-    if chef_service_interval.empty?
-      @exit_code, error_message = chef_service.install(@azure_plugin_log_location)
-    else
-      if chef_service_interval.to_i == 0
-        if chef_service.is_running?
-          chef_service.add_or_update_interval_in_client_rb("#{bootstrap_directory}\\client.rb", chef_service_interval.to_i)
-          puts "#{Time.now} Disabling the chef-client service on user's choice..."
-          chef_service.disable_service
-        else
-          puts "#{Time.now} Not deploying the chef-client service on user's choice..."
-        end
-        @exit_code = 0
-      else
-        @exit_code, error_message = chef_service.install(@azure_plugin_log_location, chef_service_interval.to_i)
-      end
-    end
-
-    if @exit_code == 0
-      report_status_to_azure "chef-service installed", "success"
-    else
-      report_status_to_azure "chef-service install failed - #{error_message}", "error"
-    end
-    @exit_code
-  end
-
   def enable_chef_service
     chef_service = ChefService.new
     chef_service_interval = load_chef_service_interval
 
     if chef_service_interval.empty?
-      @exit_code, error_message = chef_service.enable(@chef_extension_root, bootstrap_directory, @azure_plugin_log_location)
+      @exit_code, error_message = chef_service.enable(
+        windows? ? nil : @chef_extension_root,
+        @azure_plugin_log_location
+      )
     else
       if chef_service_interval.to_i == 0
         if chef_service.is_running?
-          puts "#{Time.now} Deleting the chef-client service on user's choice..."
-          chef_service.delete_cron
+          puts "#{Time.now} Disabling the chef-client service on user's choice..."
+          if windows?
+            chef_service.add_or_update_interval_in_client_rb("#{bootstrap_directory}\\client.rb", chef_service_interval.to_i)
+            chef_service.disable_service
+          else
+            chef_service.disable_cron
+          end
         else
-          puts "#{Time.now} Not deploying the chef-client service on user's choice..."
+          puts "#{Time.now} Not enabling the chef-client service on user's choice..."
         end
         @exit_code = 0
       else
-        @exit_code, error_message = chef_service.enable(@chef_extension_root, bootstrap_directory, @azure_plugin_log_location, chef_service_interval.to_i)
+        @exit_code, error_message = chef_service.enable(
+          windows? ? nil : @chef_extension_root,
+          @azure_plugin_log_location,
+          chef_service_interval.to_i
+        )
       end
     end
 
