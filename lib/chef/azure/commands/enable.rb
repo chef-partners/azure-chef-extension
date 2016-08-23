@@ -66,7 +66,7 @@ class EnableChef
     begin
       configure_chef_only_once
 
-      enable_chef_service
+      enable_chef_service if @exit_code == 0
 
     rescue => e
       Chef::Log.error e
@@ -89,7 +89,7 @@ class EnableChef
 
     if chef_service_interval.empty?
       @exit_code, error_message = chef_service.enable(
-        windows? ? nil : @chef_extension_root,
+        @chef_extension_root,
         @azure_plugin_log_location
       )
     else
@@ -108,7 +108,7 @@ class EnableChef
         @exit_code = 0
       else
         @exit_code, error_message = chef_service.enable(
-          windows? ? nil : @chef_extension_root,
+          @chef_extension_root,
           @azure_plugin_log_location,
           chef_service_interval.to_i
         )
