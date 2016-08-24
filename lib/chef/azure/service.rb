@@ -9,7 +9,7 @@ class ChefService
   DEFAULT_CHEF_SERVICE_INTERVAL = 30
   CLIENT_RB_INTERVAL_ATTRIBUTE_NAME = 'interval'
 
-  def enable(extension_root, log_location, chef_service_interval = DEFAULT_CHEF_SERVICE_INTERVAL)
+  def enable(extension_root, bootstrap_directory, log_location, chef_service_interval = DEFAULT_CHEF_SERVICE_INTERVAL)
     log_location = log_location || bootstrap_directory
     exit_code = 0
     message = "success"
@@ -21,9 +21,11 @@ class ChefService
         if chef_service_interval_changed?(chef_service_interval, "#{bootstrap_directory}\\client.rb")
           puts "#{Time.now} yes..chef-client service interval has been changed by the user..updating the interval value to #{chef_service_interval} minutes."
           if windows?
-            add_or_update_interval_in_client_rb("#{bootstrap_directory}\\client.rb", interval_in_seconds(chef_service_interval))
-            enable_service('stop', bootstrap_directory, log_location) if is_running?
-            enable_service('start', bootstrap_directory, log_location)
+            set_interval(
+              "#{bootstrap_directory}\\client.rb",
+              interval_in_seconds(chef_service_interval)
+            )
+            restart_service
           else
             disable_cron
             enable_cron(extension_root, bootstrap_directory, log_location, chef_service_interval)
@@ -33,9 +35,12 @@ class ChefService
         end
       else
         if windows?
-          add_or_update_interval_in_client_rb("#{bootstrap_directory}\\client.rb", interval_in_seconds(chef_service_interval))
-          enable_service('install', bootstrap_directory, log_location)
-          enable_service('start', bootstrap_directory, log_location) if !is_running?
+          set_interval(
+            "#{bootstrap_directory}\\client.rb",
+            interval_in_seconds(chef_service_interval)
+          )
+          enable_service(bootstrap_directory, log_location)
+          start_service if !is_running?
         else
           enable_cron(extension_root, bootstrap_directory, log_location, chef_service_interval)
         end
@@ -48,28 +53,43 @@ class ChefService
     [exit_code, message]
   end
 
-  def disable(log_location)
+  def disable(log_location, bootstrap_directory = nil, chef_service_interval = nil)
     log_location = log_location || bootstrap_directory
     exit_code = 0
     message = "success"
     error_message = "Error disabling chef-client service"
     if not is_running?
-      puts "#{Time.now} chef-client service is already stopped..."
+      if chef_service_interval == 0
+        puts "#{Time.now} Not enabling the chef-client service as per the user's choice..."
+        exit_code = -1
+      else
+        puts "#{Time.now} chef-client service is already stopped..."
+      end
       return [exit_code, message]
     end
 
     begin
       puts "#{Time.now} Disabling chef-client service..."
-      windows? ? disable_service : disable_cron
+      if windows?
+        set_interval(
+          "#{bootstrap_directory}\\client.rb",
+          chef_service_interval
+        ) if chef_service_interval == 0
+        disable_service
+      else
+        disable_cron
+      end
+      exit_code = -1 if chef_service_interval == 0
     rescue => e
       Chef::Log.error "#{error_message} (#{e})"
       message = "#{error_message} - #{e} - Check log file for details", "error"
       exit_code = 1
     end
-    puts "#{Time.now} Disabled chef-client service" if exit_code == 0
+    puts "#{Time.now} Disabled chef-client service" if exit_code == 0 || exit_code == -1
     [exit_code, message]
   end
 
+  private
   def is_running?
     begin
       if windows?
@@ -97,7 +117,12 @@ class ChefService
     return false
   end
 
-  def add_or_update_interval_in_client_rb(client_rb, new_chef_service_interval)
+  def start_service
+    result = shell_out("sc.exe start chef-client")
+    result.error!
+  end
+
+  def set_interval(client_rb, new_chef_service_interval)
     client_rb_contents = read_client_rb(client_rb)
 
     if interval_exist?(client_rb_contents)
@@ -115,6 +140,11 @@ class ChefService
     result.error!
   end
 
+  def restart_service
+    disable_service if is_running?
+    start_service
+  end
+
   def disable_cron
     templates_dir = File.join(File.dirname(__FILE__), "/templates")
     chef_cron = ERBHelpers::ERBCompiler.run(File.read(File.join(templates_dir, "chef-client-cron-delete.erb")), {:name => AZURE_CHEF_CRON_NAME})
@@ -124,12 +154,11 @@ class ChefService
     result.error!
   end
 
-  private
-  def enable_service(action, bootstrap_directory, log_location)
-    puts "#{Time.now} #{action.capitalize}ing chef-client service..."
-    params = " -a #{action} -c #{bootstrap_directory}\\client.rb -L #{log_location}\\chef-client.log "
+  def enable_service(bootstrap_directory, log_location)
+    puts "#{Time.now} Installing chef-client service..."
+    params = " -a install -c #{bootstrap_directory}\\client.rb -L #{log_location}\\chef-client.log "
     result = shell_out("chef-service-manager #{params}")
-    result.error? ? result.error! : (puts "#{Time.now} #{action.capitalize}ed chef-client service.")
+    result.error? ? result.error! : (puts "#{Time.now} Installed chef-client service.")
   end
 
   def enable_cron(extension_root, bootstrap_directory, log_location, chef_service_interval)
