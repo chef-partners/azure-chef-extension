@@ -86,7 +86,9 @@ class EnableChef
   def enable_chef_service
     chef_service = ChefService.new
     chef_service_interval = load_chef_service_interval
+    disable_flag = false
 
+    ## enable chef-service with default value for interval as user has not provided the value ##
     if chef_service_interval.empty?
       @exit_code, error_message = chef_service.enable(
         @chef_extension_root,
@@ -94,13 +96,16 @@ class EnableChef
         @azure_plugin_log_location
       )
     else
+      ## disable chef-service as per the user's choice ##
       if chef_service_interval.to_i == 0
         @exit_code, error_message = chef_service.disable(
           @azure_plugin_log_location,
           bootstrap_directory,
           chef_service_interval.to_i
         )
+        disable_flag = true
       else
+        ## enable chef-service with user provided value for interval ##
         @exit_code, error_message = chef_service.enable(
           @chef_extension_root,
           bootstrap_directory,
@@ -111,11 +116,13 @@ class EnableChef
     end
 
     if @exit_code == 0
-      report_status_to_azure "chef-service enabled", "success"
-    elsif @exit_code == -1
-      report_status_to_azure "chef-service disabled", "success"
+      disable_flag ?
+        report_status_to_azure("chef-service disabled", "success") :
+        report_status_to_azure("chef-service enabled", "success")
     else
-      report_status_to_azure "chef-service enable failed - #{error_message}", "error"
+      disable_flag ?
+      report_status_to_azure("chef-service disable failed - #{error_message}", "error") :
+      report_status_to_azure("chef-service enable failed - #{error_message}", "error")
     end
     @exit_code
   end

@@ -59,12 +59,9 @@ class ChefService
     message = "success"
     error_message = "Error disabling chef-client service"
     if not is_running?
-      if chef_service_interval == 0
-        puts "#{Time.now} Not enabling the chef-client service as per the user's choice..."
-        exit_code = -1
-      else
-        puts "#{Time.now} chef-client service is already stopped..."
-      end
+      chef_service_interval == 0 ?
+        (puts "#{Time.now} Not enabling the chef-client service as per the user's choice...") :
+        (puts "#{Time.now} chef-client service is already stopped...")
       return [exit_code, message]
     end
 
@@ -75,17 +72,16 @@ class ChefService
           "#{bootstrap_directory}\\client.rb",
           chef_service_interval
         ) if chef_service_interval == 0
-        disable_service
+        stop_service
       else
         disable_cron
       end
-      exit_code = -1 if chef_service_interval == 0
     rescue => e
       Chef::Log.error "#{error_message} (#{e})"
       message = "#{error_message} - #{e} - Check log file for details", "error"
       exit_code = 1
     end
-    puts "#{Time.now} Disabled chef-client service" if exit_code == 0 || exit_code == -1
+    puts "#{Time.now} Disabled chef-client service" if exit_code == 0
     [exit_code, message]
   end
 
@@ -122,6 +118,7 @@ class ChefService
     result.error!
   end
 
+  ## add or update interval value in client.rb file on Windows platform ##
   def set_interval(client_rb, new_chef_service_interval)
     client_rb_contents = read_client_rb(client_rb)
 
@@ -135,16 +132,17 @@ class ChefService
     write_client_rb(client_rb, client_rb_contents.join)
   end
 
-  def disable_service
+  def stop_service
     result = shell_out("sc.exe stop chef-client")
     result.error!
   end
 
   def restart_service
-    disable_service if is_running?
+    stop_service if is_running?
     start_service
   end
 
+  ## disable chef cronjob on Linux platform ##
   def disable_cron
     templates_dir = File.join(File.dirname(__FILE__), "/templates")
     chef_cron = ERBHelpers::ERBCompiler.run(File.read(File.join(templates_dir, "chef-client-cron-delete.erb")), {:name => AZURE_CHEF_CRON_NAME})
@@ -154,6 +152,7 @@ class ChefService
     result.error!
   end
 
+  ## enable/install chef-service on Windows platform ##
   def enable_service(bootstrap_directory, log_location)
     puts "#{Time.now} Installing chef-client service..."
     params = " -a install -c #{bootstrap_directory}\\client.rb -L #{log_location}\\chef-client.log "
@@ -161,6 +160,7 @@ class ChefService
     result.error? ? result.error! : (puts "#{Time.now} Installed chef-client service.")
   end
 
+  ## enable chef cronjob on Linux platform ##
   def enable_cron(extension_root, bootstrap_directory, log_location, chef_service_interval)
     # Unix like platform
     puts "#{Time.now} Starting chef-client service..."
