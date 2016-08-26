@@ -31,6 +31,7 @@ class ChefService
             enable_cron(extension_root, bootstrap_directory, log_location, chef_service_interval)
           end
         else
+          start_service if windows? && !is_running?
           puts "#{Time.now} no..chef-client service interval has not been changed by the user..exiting."
         end
       else
