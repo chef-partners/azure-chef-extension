@@ -8,36 +8,6 @@ describe ChefService do
 
   it { expect {instance}.to_not raise_error }
 
-  context "install" do
-    it "installs service successfully for windows" do
-      allow(instance).to receive(:windows?).and_return(true)
-      shellout_output1 = OpenStruct.new(:exitstatus => 1060, :stdout => "The specified service does not exist as an installed service.")
-      shellout_output2 = OpenStruct.new(:exitstatus => 0, :stdout => "", :error => nil)
-      allow(instance).to receive(:shell_out).and_return(shellout_output1, shellout_output2)
-      expect(instance).to receive(:puts).exactly(3).times
-      install_cmd = instance.send(:install, "")
-      expect(install_cmd).to eq([0, "success"])
-    end
-
-    it "doesn't install if chef-client service is already installed on windows" do
-      allow(instance).to receive(:windows?).and_return(true)
-      allow(instance).to receive(:shell_out).and_return(OpenStruct.new(:exitstatus => 1, :stdout => ""))
-      expect(instance).to receive(:puts).twice
-      install_cmd = instance.send(:install, "")
-      expect(install_cmd).to eq([0, "success"])
-    end
-
-    it "fails if shell_out commands fail" do
-      error_message = "Error installing chef-client service"
-      e = "Failure"
-      allow(instance).to receive(:windows?).and_return(true)
-      allow(instance).to receive(:shell_out).and_raise(e)
-      expect(Chef::Log).to receive(:error)
-      install_cmd = instance.send(:install, "")
-      expect(install_cmd).to eq([1, "#{error_message}- #{e} - Check log file for details"])
-    end
-  end
-
   context "enable" do
     it "doesn't enable again if chef-client is already running" do
       allow(instance).to receive(:is_running?).and_return(true)
@@ -99,24 +69,24 @@ describe ChefService do
     it "returns chef pid if pid file exists" do
       allow(File).to receive(:exists?).and_return(true)
       allow(File).to receive(:read).and_return("1")
-      expect(instance.get_chef_pid).to eq(1)
+      expect(instance.send(:get_chef_pid)).to eq(1)
     end
 
     it "returns -1 if pid file doesn't exist" do
       allow(File).to receive(:exists?).and_return(false)
-      expect(instance.get_chef_pid).to eq(-1)
+      expect(instance.send(:get_chef_pid)).to eq(-1)
     end
   end
 
   context "get_chef_pid!" do
     it "returns pid if exists" do
       allow(instance).to receive(:get_chef_pid).and_return(1)
-      expect(instance.get_chef_pid!).to eq(1)
+      expect(instance.send(:get_chef_pid!)).to eq(1)
     end
 
     it "raises error if pid doesn't exist" do
       allow(instance).to receive(:get_chef_pid).and_return(-1)
-      expect{instance.get_chef_pid!}.to raise_error
+      expect{instance.send(:get_chef_pid!)}.to raise_error
     end
   end
 
@@ -124,26 +94,230 @@ describe ChefService do
     it "tells if chef-service is running on windows" do
       allow(instance).to receive(:windows?).and_return(true)
       allow(instance).to receive(:shell_out).with("sc.exe query chef-client").and_return(OpenStruct.new(:exitstatus => 0, :stdout => "RUNNING"))
-      expect(instance.is_running?).to eq(true)
+      expect(instance.send(:is_running?)).to eq(true)
     end
 
     it "tells if chef-service is not running on windows" do
       allow(instance).to receive(:windows?).and_return(true)
       allow(instance).to receive(:shell_out).with("sc.exe query chef-client").and_return(OpenStruct.new(:exitstatus => 1, :stdout => ""))
-      expect(instance.is_running?).to eq(false)
+      expect(instance.send(:is_running?)).to eq(false)
     end
 
     it "tells if chef-service is running on other platforms" do
       allow(instance).to receive(:windows?).and_return(false)
       cron_name = 'azure_chef_extension'
       allow(instance).to receive(:shell_out).with("crontab -l").and_return(OpenStruct.new(:exitstatus => 0, :stdout => cron_name))
-      expect(instance.is_running?).to eq(true)
+      expect(instance.send(:is_running?)).to eq(true)
     end
 
     it "tells if chef-service is not running on other platforms" do
       allow(instance).to receive(:windows?).and_return(false)
       allow(instance).to receive(:shell_out).with("crontab -l").and_return(OpenStruct.new(:exitstatus => 0, :stdout => ""))
-      expect(instance.is_running?).to eq(false)
+      expect(instance.send(:is_running?)).to eq(false)
     end
   end
+
+  describe 'start_service' do
+    context 'service start successful' do
+      it 'does not report any error' do
+        expect(instance).to receive(:shell_out).with(
+          'sc.exe start chef-client').and_return(
+            OpenStruct.new(:exitstatus => 0, :stdout => '', :error! => '')
+        )
+        response = instance.send(:start_service)
+        expect(response.empty?).to be == true
+      end
+    end
+
+    context 'service start un-successful' do
+      it 'reports the error' do
+        expect(instance).to receive(:shell_out).with(
+          'sc.exe start chef-client').and_return(
+            OpenStruct.new(:exitstatus => 1, :stdout => '', :error! => 'Some unknown error occurred.')
+        )
+        response = instance.send(:start_service)
+        expect(response.empty?).to be == false
+        expect(response).to be == 'Some unknown error occurred.'
+      end
+    end
+  end
+
+  describe 'set_interval' do
+    context 'chef_service_interval exists in the client.rb file' do
+      let (:client_rb) { client_rb_with_interval }
+
+      let (:new_client_rb) {
+        ["log_level        :debug\n",
+         "log_location     STDOUT\n",
+         "chef_server_url  \"https://mychefserver.com/organizations/my_org\"\n",
+         "validation_client_name  \"my_org-validator\"\n",
+         "interval 960\n",
+         "node_name \"my-node-01\"\n"
+        ]
+      }
+
+      before do
+        allow(instance).to receive(:read_client_rb).and_return(client_rb)
+      end
+
+      it 'updates the client.rb file with the new interval' do
+        expect(instance).to receive(:write_client_rb).with(
+          '/client.rb', new_client_rb.join
+        )
+        instance.send(:set_interval, '/client.rb', 960)
+      end
+    end
+
+    context 'chef_service_interval does not exist in the client.rb file' do
+      let (:client_rb) { client_rb_without_interval }
+
+      let (:new_client_rb) {
+        ["log_level        :debug\n",
+         "log_location     STDOUT\n",
+         "chef_server_url  \"https://mychefserver.com/organizations/my_org\"\n",
+         "validation_client_name  \"my_org-validator\"\n",
+         "node_name \"my-node-02\"\n",
+         "interval 1380\n"
+        ]
+      }
+
+      before do
+        allow(instance).to receive(:read_client_rb).and_return(client_rb)
+      end
+
+      it 'adds interval in the client.rb file' do
+        expect(instance).to receive(:write_client_rb).with(
+          '/client.rb', new_client_rb.join
+        )
+        instance.send(:set_interval, '/client.rb', 1380)
+      end
+    end
+  end
+
+  describe 'stop_service' do
+    context 'service stop successful' do
+      it 'does not report any error' do
+        expect(instance).to receive(:shell_out).with(
+          'sc.exe stop chef-client').and_return(
+            OpenStruct.new(:exitstatus => 0, :stdout => '', :error! => '')
+        )
+        response = instance.send(:stop_service)
+        expect(response.empty?).to be == true
+      end
+    end
+
+    context 'service stop un-successful' do
+      it 'reports the error' do
+        expect(instance).to receive(:shell_out).with(
+          'sc.exe stop chef-client').and_return(
+            OpenStruct.new(:exitstatus => 1, :stdout => '', :error! => 'Some unknown error occurred.')
+        )
+        response = instance.send(:stop_service)
+        expect(response.empty?).to be == false
+        expect(response).to be == 'Some unknown error occurred.'
+      end
+    end
+  end
+
+  describe 'restart_service' do
+    context 'chef-service is already running' do
+      before do
+        allow(instance).to receive(:is_running?).and_return(true)
+      end
+
+      it 'stops and then starts the chef-service' do
+        expect(instance).to receive(:stop_service)
+        expect(instance).to receive(:start_service)
+        instance.send(:restart_service)
+      end
+    end
+
+    context 'chef-service is not running' do
+      before do
+        allow(instance).to receive(:is_running?).and_return(false)
+      end
+
+      it 'just starts the chef-service' do
+        expect(instance).to_not receive(:stop_service)
+        expect(instance).to receive(:start_service)
+        instance.send(:restart_service)
+      end
+    end
+  end
+
+  describe 'disable_cron' do
+    context 'cronjob disable successful' do
+      it 'does not report any error' do
+        expect(ERBHelpers::ERBCompiler).to receive(:run).and_return('delete_cron')
+        expect(instance).to receive(:puts)
+        expect(instance).to receive(:shell_out).with(
+          'chef-apply -e "delete_cron"').and_return(
+            OpenStruct.new(:exitstatus => 0, :stdout => '', :error! => '')
+        )
+        response = instance.send(:disable_cron)
+        expect(response.empty?).to be == true
+      end
+    end
+
+    context 'cronjob disable un-successful' do
+      it 'reports the error' do
+        expect(ERBHelpers::ERBCompiler).to receive(:run).and_return('delete_cron')
+        expect(instance).to receive(:puts)
+        expect(instance).to receive(:shell_out).with(
+          'chef-apply -e "delete_cron"').and_return(
+            OpenStruct.new(:exitstatus => 1, :stdout => '', :error! => 'Some unknown error occurred.')
+        )
+        response = instance.send(:disable_cron)
+        expect(response.empty?).to be == false
+        expect(response).to be == 'Some unknown error occurred.'
+      end
+    end
+  end
+
+  describe 'enable_service' do
+    context 'chef-service enable successful' do
+      it 'does not report any error' do
+        expect(instance).to receive(:puts).exactly(2).times
+        expect(instance).to receive(:shell_out).with(
+          'chef-service-manager  -a install -c /bootstrap_directory\\client.rb -L /log_location\\chef-client.log ').and_return(
+            OpenStruct.new(:exitstatus => 0, :stdout => '', :error! => '', :error? => false)
+        )
+        instance.send(:enable_service, '/bootstrap_directory', '/log_location')
+      end
+    end
+
+    context 'chef-service enable un-successful' do
+      it 'reports the error' do
+        expect(instance).to receive(:puts).exactly(1).times
+        expect(instance).to receive(:shell_out).with(
+          'chef-service-manager  -a install -c /bootstrap_directory\\client.rb -L /log_location\\chef-client.log ').and_return(
+            OpenStruct.new(:exitstatus => 0, :stdout => '', :error! => 'Some unknown error occurred.', :error? => true)
+        )
+        response = instance.send(:enable_service, '/bootstrap_directory', '/log_location')
+        expect(response.empty?).to be == false
+        expect(response).to be == 'Some unknown error occurred.'
+      end
+    end
+  end
+end
+
+def client_rb_with_interval
+  [
+    "log_level        :debug\n",
+    "log_location     STDOUT\n",
+    "chef_server_url  \"https://mychefserver.com/organizations/my_org\"\n",
+    "validation_client_name  \"my_org-validator\"\n",
+    "interval 1260\n",
+    "node_name \"my-node-01\"\n"
+  ]
+end
+
+def client_rb_without_interval
+  [
+    "log_level        :debug\n",
+    "log_location     STDOUT\n",
+    "chef_server_url  \"https://mychefserver.com/organizations/my_org\"\n",
+    "validation_client_name  \"my_org-validator\"\n",
+    "node_name \"my-node-02\"\n"
+  ]
 end

@@ -120,40 +120,235 @@ describe EnableChef do
     end
   end
 
-  context "enable_chef" do
-    it "configures, installs and enables chef." do
-      expect(instance).to receive(:configure_chef_only_once)
-      expect(instance).to receive(:install_chef_service)
-      expect(instance).to receive(:enable_chef_service)
-      instance.send(:enable_chef)
+  describe 'enable_chef' do
+    context '@exit_code is 0' do
+      it 'calls configure_chef_only_once and enable_chef_service methods' do
+        expect(instance).to receive(:configure_chef_only_once)
+        expect(instance).to receive(:enable_chef_service)
+        expect(Chef::Log).to_not receive(:error)
+        expect(instance).to_not receive(:report_status_to_azure)
+        expect(Chef::Log).to receive(:info)
+        response = instance.send(:enable_chef)
+        expect(response).to be == 0
+      end
+    end
+
+    context '@exit_code is 1' do
+      before do
+        instance.instance_variable_set(:@exit_code, 1)
+      end
+
+      it 'calls configure_chef_only_once method but not enable_chef_service method' do
+        expect(instance).to receive(:configure_chef_only_once)
+        expect(instance).to_not receive(:enable_chef_service)
+        expect(Chef::Log).to_not receive(:error)
+        expect(instance).to_not receive(:report_status_to_azure)
+        expect(Chef::Log).to receive(:info)
+        response = instance.send(:enable_chef)
+        expect(response).to be == 1
+      end
+    end
+
+    context 'some unknown exception occurs in configure_chef_only_once method' do
+      let(:error_msg) { RuntimeError.new('Some exception has occurred while configuring Chef') }
+
+      before do
+        allow(instance).to receive(:configure_chef_only_once).and_raise(error_msg)
+      end
+
+      it 'raises error' do
+        expect(instance).to_not receive(:enable_chef_service)
+        expect(Chef::Log).to receive(:error).with(error_msg)
+        expect(instance).to receive(:report_status_to_azure).with(
+          "#{error_msg} - Check log file for details", 'error'
+        )
+        expect(Chef::Log).to receive(:info)
+        response = instance.send(:enable_chef)
+        expect(response).to be == 1
+      end
+    end
+
+    context 'some unknown exception occurs in enable_chef_service method' do
+      let(:error_msg) { RuntimeError.new('Some exception has occurred while enabling Chef') }
+
+      before do
+        allow(instance).to receive(:enable_chef_service).and_raise(error_msg)
+      end
+
+      it 'raises error' do
+        expect(instance).to receive(:configure_chef_only_once)
+        expect(Chef::Log).to receive(:error).with(error_msg)
+        expect(instance).to receive(:report_status_to_azure).with(
+          "#{error_msg} - Check log file for details", 'error'
+        )
+        expect(Chef::Log).to receive(:info)
+        response = instance.send(:enable_chef)
+        expect(response).to be == 1
+      end
     end
   end
 
-  context "install_chef_service" do
-    it "installs the chef service and returns the status to azure." do
-      expect(instance).to receive(:report_status_to_azure).with("chef-service installed", "success")
-      allow(ChefService).to receive_message_chain(:new, :install).and_return(0)
-      instance.send(:install_chef_service)
+  describe 'load_chef_service_interval' do
+    it 'invokes value_from_json_file and other methods' do
+      expect(instance).to receive(:handler_settings_file)
+      expect(instance).to receive(:value_from_json_file)
+      instance.send(:load_chef_service_interval)
     end
 
-    it "installs the chef service and returns the status to azure." do
-      expect(instance).to receive(:report_status_to_azure).with("chef-service install failed - ", "error")
-      allow(ChefService).to receive_message_chain(:new, :install).and_return(1)
-      instance.send(:install_chef_service)
+    context 'example-1' do
+      before do
+        allow(instance).to receive(:handler_settings_file).and_return(
+          mock_data("handler_settings.settings"))
+      end
+
+      it 'fetches chef_service_interval value from the given json file' do
+        response = instance.send(:load_chef_service_interval)
+        expect(response).to be == '13'
+      end
+    end
+
+    context 'example-2' do
+      before do
+        allow(instance).to receive(:handler_settings_file).and_return(
+          mock_data("handler_settings_1.settings"))
+      end
+
+      it 'fetches chef_service_interval value from the given json file' do
+        response = instance.send(:load_chef_service_interval)
+        expect(response).to be == '0'
+      end
     end
   end
 
-  context "enable_chef_service" do
-    it "enables the chef service and returns the status to azure." do
-      expect(instance).to receive(:report_status_to_azure).with("chef-service enabled", "success")
-      allow(ChefService).to receive_message_chain(:new, :enable).and_return(0)
-      instance.send(:enable_chef_service)
+  describe 'enable_chef_service' do
+    let (:chef_service_instance) { ChefService.new }
+
+    before(:each) do
+      allow(ChefService).to receive(:new).and_return(chef_service_instance)
+      instance.instance_variable_set(:@chef_extension_root, '/chef_extension_root')
+      allow(instance).to receive(:bootstrap_directory).and_return('/bootstrap_directory')
+      instance.instance_variable_set(:@azure_plugin_log_location, '/azure_plugin_log_location')
     end
 
-    it "enables the chef service and returns the status to azure." do
-      expect(instance).to receive(:report_status_to_azure).with("chef-service enable failed - ", "error")
-      allow(ChefService).to receive_message_chain(:new, :enable).and_return(1)
-      instance.send(:enable_chef_service)
+    context 'chef_service_interval option is not given by user, means it is empty' do
+      before(:each) do
+        allow(instance).to receive(:load_chef_service_interval).and_return('')
+        expect(chef_service_instance).to_not receive(:disable)
+      end
+
+      context 'chef-service enable is successful' do
+        it 'calls enable method with no chef_service_interval option and then reports success message to azure' do
+          expect(chef_service_instance).to receive(:enable).with(
+            '/chef_extension_root',
+            '/bootstrap_directory',
+            '/azure_plugin_log_location').and_return([0, nil])
+          expect(instance).to receive(:report_status_to_azure).with(
+            "chef-service enabled", "success"
+          )
+          response = instance.send(:enable_chef_service)
+          expect(response).to be == 0
+        end
+      end
+
+      context 'chef-service enable is un-successful' do
+        it 'calls enable method with no chef_service_interval option and then reports failure message to azure' do
+          expect(chef_service_instance).to receive(:enable).with(
+            '/chef_extension_root',
+            '/bootstrap_directory',
+            '/azure_plugin_log_location').and_return([1, 'Some exception occurred'])
+          expect(instance).to receive(:report_status_to_azure).with(
+            "chef-service enable failed - Some exception occurred", "error"
+          )
+          response = instance.send(:enable_chef_service)
+          expect(response).to be == 1
+        end
+      end
+    end
+
+    context 'chef_service_interval option given by user is 0' do
+      before(:each) do
+        allow(instance).to receive(:load_chef_service_interval).and_return('0')
+        expect(chef_service_instance).to_not receive(:enable)
+      end
+
+      context 'chef-service disable is successful' do
+        it 'calls disable method and then reports success message to azure' do
+          expect(chef_service_instance).to receive(:disable).with(
+            '/azure_plugin_log_location',
+            '/bootstrap_directory',
+            0).and_return([0, nil])
+          expect(instance).to receive(:report_status_to_azure).with(
+            "chef-service disabled", "success"
+          )
+          response = instance.send(:enable_chef_service)
+          expect(response).to be == 0
+        end
+      end
+
+      context 'chef-service disable is un-successful' do
+        it 'calls disable method and then reports failure message to azure' do
+          expect(chef_service_instance).to receive(:disable).with(
+            '/azure_plugin_log_location',
+            '/bootstrap_directory',
+            0).and_return([1, 'Some exception occurred'])
+          expect(instance).to receive(:report_status_to_azure).with(
+            "chef-service disable failed - Some exception occurred", "error"
+          )
+          response = instance.send(:enable_chef_service)
+          expect(response).to be == 1
+        end
+      end
+    end
+
+    context 'chef_service_interval option given by user is non-empty, non-zero and valid' do
+      before(:each) do
+        allow(instance).to receive(:load_chef_service_interval).and_return('13')
+        expect(chef_service_instance).to_not receive(:disable)
+      end
+
+      context 'chef-service enable is successful' do
+        it 'calls enable method with chef_service_interval option and then reports success message to azure' do
+          expect(chef_service_instance).to receive(:enable).with(
+            '/chef_extension_root',
+            '/bootstrap_directory',
+            '/azure_plugin_log_location',
+            13).and_return([0, nil])
+          expect(instance).to receive(:report_status_to_azure).with(
+            "chef-service enabled", "success"
+          )
+          response = instance.send(:enable_chef_service)
+          expect(response).to be == 0
+        end
+      end
+
+      context 'chef-service enable is un-successful' do
+        it 'calls enable method with chef_service_interval option and then reports failure message to azure' do
+          expect(chef_service_instance).to receive(:enable).with(
+            '/chef_extension_root',
+            '/bootstrap_directory',
+            '/azure_plugin_log_location',
+            13).and_return([1, 'Some exception occurred'])
+          expect(instance).to receive(:report_status_to_azure).with(
+            "chef-service enable failed - Some exception occurred", "error"
+          )
+          response = instance.send(:enable_chef_service)
+          expect(response).to be == 1
+        end
+      end
+    end
+
+    context 'chef_service_interval option given by user is non-empty, non-zero and invalid' do
+      before do
+        allow(instance).to receive(:load_chef_service_interval).and_return('-8')
+        expect(chef_service_instance).to_not receive(:disable)
+        expect(chef_service_instance).to_not receive(:enable)
+      end
+
+      it 'raises error' do
+        expect { instance.send(:enable_chef_service) }.to raise_error(
+          'Invalid value for chef_service_interval option.'
+        )
+      end
     end
   end
 

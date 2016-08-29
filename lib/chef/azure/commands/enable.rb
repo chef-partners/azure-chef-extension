@@ -106,6 +106,8 @@ class EnableChef
         disable_flag = true
       else
         ## enable chef-service with user provided value for interval ##
+        raise 'Invalid value for chef_service_interval option.' if chef_service_interval.to_i < 0
+
         @exit_code, error_message = chef_service.enable(
           @chef_extension_root,
           bootstrap_directory,
