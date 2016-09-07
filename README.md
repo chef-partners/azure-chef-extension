@@ -30,6 +30,7 @@ Azure resource extension to enable Chef on Azure virtual machine instances.
   "environment_variables": {
     "< comma separated list of key-value pairs >"
   },
+  "chef_service_interval": "< frequency at which the chef-service runs >",
   "bootstrap_options": {
     "chef_node_name":"< your node name >",
     "chef_server_url":"< your chef server url >",
@@ -47,6 +48,8 @@ It is an ordered list of roles and/or recipes that are run in the exact order de
 `bootstrap_version`: Set the version of `chef-client` that needs to get installed on the VM. This option is supported only for linux extension.
 
 `environment_variables`: Specifies the list of environment variables (like the environment variables for proxy server configuration) to be available to the Chef Extension scripts. This option is currently supported only for `Linux` platforms.
+
+`chef_service_interval`: Specifies the frequency (in minutes) at which the `chef-service` runs. If in case you don't want the `chef-service` to be installed on the Azure VM then set value as `0` in this field. At any time you can change the interval value using the `Set-AzureVMExtension` command with the new interval passed in the `publicconfig.config` file (pass `0` if you want to delete the already installed chef-service on the Azure VM). Default value is `30` minutes.
 
 `bootstrap_options`: Set bootstrap options while adding chef extension to Azure VM. Bootstrap options used by Chef-Client during node converge. It overrides the configuration set in client_rb option. for e.g. node_name option i.e. if you set node_name as "foo" in the client_rb and in bootstrap_option you set chef_node_name as "bar" it will take "bar" as node name instead of "foo".
 
@@ -67,6 +70,7 @@ publicconfig.config example:
     ...
     "variable_n": "value_n"
   },
+  "chef_service_interval": "18",
   "bootstrap_options": {
     "chef_node_name":"mynode3",
     "chef_server_url":"https://api.opscode.com/organizations/some-org",

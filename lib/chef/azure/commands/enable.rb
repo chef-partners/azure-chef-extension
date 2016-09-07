@@ -66,8 +66,6 @@ class EnableChef
     begin
       configure_chef_only_once
 
-      install_chef_service if @exit_code == 0
-
       enable_chef_service if @exit_code == 0
 
     rescue => e
@@ -81,22 +79,52 @@ class EnableChef
     @exit_code
   end
 
-  def install_chef_service
-    @exit_code, error_message = ChefService.new.install(@azure_plugin_log_location)
-    if @exit_code == 0
-      report_status_to_azure "chef-service installed", "success"
-    else
-      report_status_to_azure "chef-service install failed - #{error_message}", "error"
-    end
-    @exit_code
+  def load_chef_service_interval
+    value_from_json_file(handler_settings_file, 'runtimeSettings', '0', 'handlerSettings', 'publicSettings', 'chef_service_interval')
   end
 
   def enable_chef_service
-    @exit_code, error_message = ChefService.new.enable(@chef_extension_root, bootstrap_directory, @azure_plugin_log_location)
-    if @exit_code == 0
-      report_status_to_azure "chef-service enabled", "success"
+    chef_service = ChefService.new
+    chef_service_interval = load_chef_service_interval
+    disable_flag = false
+
+    ## enable chef-service with default value for interval as user has not provided the value ##
+    if chef_service_interval.empty?
+      @exit_code, error_message = chef_service.enable(
+        @chef_extension_root,
+        bootstrap_directory,
+        @azure_plugin_log_location
+      )
     else
-      report_status_to_azure "chef-service enable failed - #{error_message}", "error"
+      ## disable chef-service as per the user's choice ##
+      if chef_service_interval.to_i == 0
+        @exit_code, error_message = chef_service.disable(
+          @azure_plugin_log_location,
+          bootstrap_directory,
+          chef_service_interval.to_i
+        )
+        disable_flag = true
+      else
+        ## enable chef-service with user provided value for interval ##
+        raise 'Invalid value for chef_service_interval option.' if chef_service_interval.to_i < 0
+
+        @exit_code, error_message = chef_service.enable(
+          @chef_extension_root,
+          bootstrap_directory,
+          @azure_plugin_log_location,
+          chef_service_interval.to_i
+        )
+      end
+    end
+
+    if @exit_code == 0
+      disable_flag ?
+        report_status_to_azure("chef-service disabled", "success") :
+        report_status_to_azure("chef-service enabled", "success")
+    else
+      disable_flag ?
+      report_status_to_azure("chef-service disable failed - #{error_message}", "error") :
+      report_status_to_azure("chef-service enable failed - #{error_message}", "error")
     end
     @exit_code
   end
