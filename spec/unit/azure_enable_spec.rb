@@ -370,7 +370,7 @@ describe EnableChef do
           allow(IO).to receive_message_chain(
             :read, :chomp).and_return("template")
           allow(Process).to receive(:detach)
-          @sample_config = {:environment=>"_default", :chef_node_name=>"mynode3", :chef_extension_root=>"./", :user_client_rb=>"", :log_location=>nil, :chef_server_url=>"https://api.opscode.com/organizations/clochefacc", :validation_client_name=>"clochefacc-validator", :secret=>nil}
+          @sample_config = {:environment=>"_default", :chef_node_name=>"mynode3", :chef_extension_root=>"./", :user_client_rb=>"", :log_location=>nil, :chef_server_url=>"https://api.opscode.com/organizations/clochefacc", :validation_client_name=>"clochefacc-validator", :secret=>nil, :first_boot_attributes => {}}
           @sample_runlist = ["recipe[getting-started]", "recipe[apt]"]
         end
 
@@ -408,7 +408,7 @@ describe EnableChef do
         end
       end
 
-      context "extended_logs set to true and ohai_hints passed" do
+      context "extended_logs set to true and ohai_hints passed and first boot json attr passed" do
         before do
           allow(File).to receive(:exists?).and_return(false)
           allow(instance).to receive(:puts)
@@ -424,7 +424,7 @@ describe EnableChef do
           allow(IO).to receive_message_chain(
             :read, :chomp).and_return("template")
           allow(Process).to receive(:detach)
-          @sample_config = {:environment=>"_default", :chef_node_name=>"mynode3", :chef_extension_root=>"./", :user_client_rb=>"", :log_location=>nil, :chef_server_url=>"https://api.opscode.com/organizations/clochefacc", :validation_client_name=>"clochefacc-validator", :secret=>nil}
+          @sample_config = {:environment=>"_default", :chef_node_name=>"mynode3", :chef_extension_root=>"./", :user_client_rb=>"", :log_location=>nil, :chef_server_url=>"https://api.opscode.com/organizations/clochefacc", :validation_client_name=>"clochefacc-validator", :secret=>nil, :first_boot_attributes => {"container_service"=>{"chef-init-test"=>{"command"=>"C:\\opscode\\chef\\bin"}}} }
           @sample_runlist = ["recipe[getting-started]", "recipe[apt]"]
         end
 
@@ -506,8 +506,6 @@ describe EnableChef do
         expect(response).to be == './logs_other/chef-client.log'
       end
     end
-
-
   end
 
   describe "fetch_chef_client_logs" do
@@ -561,8 +559,8 @@ describe EnableChef do
 
   context "load_settings" do
     it "loads the settings from the handler settings file." do
-      expect(instance).to receive(:handler_settings_file).exactly(6).times
-      expect(instance).to receive(:value_from_json_file).exactly(6).times
+      expect(instance).to receive(:handler_settings_file).exactly(7).times
+      expect(instance).to receive(:value_from_json_file).exactly(7).times
       expect(instance).to receive(:get_validation_key)
       allow(instance).to receive(:get_client_key).and_return("")
       allow(instance).to receive(:get_chef_server_ssl_cert).and_return("")
@@ -608,7 +606,7 @@ describe EnableChef do
       allow(@object).to receive(:to_pem).and_return('samplevalidationkeytext')
       expect(instance).to receive(:handler_settings_file)
       expect(@object).to receive(:decrypt)
-      expect(instance.send(:get_validation_key, 'encrypted_text', 'format')).to eq("samplevalidationkeytext") 
+      expect(instance.send(:get_validation_key, 'encrypted_text', 'format')).to eq("samplevalidationkeytext")
     end
 
     it "extracts and returns the validation_key from encrypted text containg null bytes" do

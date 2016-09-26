@@ -21,6 +21,10 @@ class Chef
           @chef_config[:chef_server_ssl_cert_content]
         end
 
+        def first_boot
+          Hash(@config[:first_boot_attributes]).merge(:run_list => @run_list)
+        end
+
         def config_content
           client_rb = ""
           # Add user provided client_rb to the beginning of a file.
