@@ -173,6 +173,7 @@ class EnableChef
         config[:node_ssl_verify_mode] =  bootstrap_options['node_ssl_verify_mode'] if bootstrap_options['node_ssl_verify_mode']
         runlist = @run_list.empty? ? [] : escape_runlist(@run_list)
         load_cloud_attributes_in_hints if ! @ohai_hints.empty?
+        config[:first_boot_attributes] = @first_boot_attributes
 
         if windows?
           context = Chef::Knife::Core::WindowsBootstrapContext.new(config, runlist, Chef::Config, config[:secret])
@@ -265,6 +266,7 @@ class EnableChef
     @run_list = value_from_json_file(handler_settings_file, 'runtimeSettings', '0', 'handlerSettings', 'publicSettings', 'runlist')
     @extended_logs = value_from_json_file(handler_settings_file, 'runtimeSettings', '0', 'handlerSettings', 'publicSettings', 'extendedLogs')
     @ohai_hints = value_from_json_file(handler_settings_file, 'runtimeSettings', '0', 'handlerSettings', 'publicSettings', 'hints')
+    @first_boot_attributes = JSON.parse(value_from_json_file(handler_settings_file, 'runtimeSettings', '0', 'handlerSettings', 'publicSettings', 'custom_json_attr').gsub("=>", ":")) rescue nil || {}
   end
 
   def handler_settings_file
