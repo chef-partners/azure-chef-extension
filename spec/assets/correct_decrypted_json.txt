@@ -24,4 +24,4 @@ v6wn7Kb/gd4RXcazJbUVmGZcHg8XlJV2QkMnp42NHTw5sKYzJmnFBRS+vIsW15Wz
 EiXe3DUCgYBs5rybZh3fWP/coPNk2XbTeDDUkkOqJpNl1DBrlOj0+Kb82MSN9y7r
 32yY2RCAllKyZS6rLEiYlsw3VVB+t7QBEBhjxy7toiRrtjIYZ4/7mo0+ozh5Misl
 QPiEjnbyzJNnplpeDiZ0tGaoC8SZAuedCAPS7G+BuTWgygI6IyDlYw==
------END RSA PRIVATE KEY-----" }
+-----END RSA PRIVATE KEY-----", "secret" : "secret_key" }

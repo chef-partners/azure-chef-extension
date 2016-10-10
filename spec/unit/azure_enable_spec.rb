@@ -381,8 +381,9 @@ describe EnableChef do
           allow(Erubis::Eruby).to receive(:new).and_return("template")
           expect(Erubis::Eruby.new).to receive(:evaluate)
           expect(instance).to receive(:shell_out).and_return(
-            OpenStruct.new(:exitstatus => 0, :stdout => ""))
+            OpenStruct.new(:exitstatus => 0, :stdout => "")).thrice
           expect(instance).to_not receive(:load_cloud_attributes_in_hints)
+          expect(instance).to receive(:secret_key)
           expect(FileUtils).to receive(:rm)
           expect(Process).to receive(:spawn).with("chef-client -c #{@bootstrap_directory}/client.rb -j #{@bootstrap_directory}/first-boot.json -E #{@sample_config[:environment]} -L #{@sample_config[:log_location]}/chef-client.log --once ").and_return(123)
           instance.send(:configure_chef_only_once)
@@ -394,6 +395,7 @@ describe EnableChef do
         it "runs chef-client for the first time on linux" do
           allow(instance).to receive(:windows?).and_return(false)
           expect(instance).to_not receive(:load_cloud_attributes_in_hints)
+          expect(instance).to receive(:secret_key)
           expect(Chef::Knife::Core::BootstrapContext).to receive(
             :new).with(@sample_config, @sample_runlist, any_args)
           allow(Erubis::Eruby).to receive(:new).and_return("template")
@@ -435,8 +437,9 @@ describe EnableChef do
           allow(Erubis::Eruby).to receive(:new).and_return("template")
           expect(Erubis::Eruby.new).to receive(:evaluate)
           expect(instance).to receive(:shell_out).and_return(
-            OpenStruct.new(:exitstatus => 0, :stdout => ""))
+            OpenStruct.new(:exitstatus => 0, :stdout => "")).thrice
           expect(instance).to receive(:load_cloud_attributes_in_hints)
+          expect(instance).to receive(:secret_key)
           expect(FileUtils).to receive(:rm)
           expect(Process).to receive(:spawn).with("chef-client -c #{@bootstrap_directory}/client.rb -j #{@bootstrap_directory}/first-boot.json -E #{@sample_config[:environment]} -L #{@sample_config[:log_location]}/chef-client.log --once  && touch c:\\chef_client_success").and_return(789)
           instance.send(:configure_chef_only_once)
@@ -448,6 +451,7 @@ describe EnableChef do
         it "runs chef-client for the first time on linux" do
           allow(instance).to receive(:windows?).and_return(false)
           expect(instance).to receive(:load_cloud_attributes_in_hints)
+          expect(instance).to receive(:secret_key)
           expect(Chef::Knife::Core::BootstrapContext).to receive(
             :new).with(@sample_config, @sample_runlist, any_args)
           allow(Erubis::Eruby).to receive(:new).and_return("template")
@@ -559,11 +563,12 @@ describe EnableChef do
 
   context "load_settings" do
     it "loads the settings from the handler settings file." do
-      expect(instance).to receive(:handler_settings_file).exactly(7).times
-      expect(instance).to receive(:value_from_json_file).exactly(7).times
+      expect(instance).to receive(:handler_settings_file).exactly(8).times
+      expect(instance).to receive(:value_from_json_file).exactly(8).times
       expect(instance).to receive(:get_validation_key)
       allow(instance).to receive(:get_client_key).and_return("")
       allow(instance).to receive(:get_chef_server_ssl_cert).and_return("")
+      allow(instance).to receive(:secret_key).and_return("")
       instance.send(:load_settings)
     end
   end
@@ -604,16 +609,12 @@ describe EnableChef do
     end
     it "extracts and returns the validation_key from encrypted text." do
       allow(@object).to receive(:to_pem).and_return('samplevalidationkeytext')
-      expect(instance).to receive(:handler_settings_file)
-      expect(@object).to receive(:decrypt)
-      expect(instance.send(:get_validation_key, 'encrypted_text', 'format')).to eq("samplevalidationkeytext")
+      expect(instance.send(:get_validation_key, 'decrypted_text', 'format')).to eq("samplevalidationkeytext")
     end
 
     it "extracts and returns the validation_key from encrypted text containg null bytes" do
       allow(@object).to receive(:to_pem).and_return("sample\x00validation\x00keytext\x00")
-      expect(instance).to receive(:handler_settings_file)
-      expect(@object).to receive(:decrypt)
-      expect(instance.send(:get_validation_key, 'encrypted_text', 'format')).to eq("samplevalidationkeytext")
+      expect(instance.send(:get_validation_key, 'decrypted_text', 'format')).to eq("samplevalidationkeytext")
     end
   end
 
@@ -628,14 +629,12 @@ describe EnableChef do
     end
     it "extracts and returns the validation_key from encrypted text." do
       allow(@object).to receive(:to_pem).and_return('samplevalidationkeytext')
-      expect(instance).to receive(:handler_settings_file)
-      expect(instance.send(:get_validation_key, 'encrypted_text', 'format')).to eq("samplevalidationkeytext")
+      expect(instance.send(:get_validation_key, 'decrypted_text', 'format')).to eq("samplevalidationkeytext")
     end
 
     it "extracts and returns the validation_key from encrypted text containg null bytes." do
       allow(@object).to receive(:to_pem).and_return("sample\x00validation\x00keytext\x00")
-      expect(instance).to receive(:handler_settings_file)
-      expect(instance.send(:get_validation_key, 'encrypted_text', 'format')).to eq("samplevalidationkeytext")
+      expect(instance.send(:get_validation_key, 'decrypted_text', 'format')).to eq("samplevalidationkeytext")
     end
   end
 

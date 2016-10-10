@@ -168,7 +168,7 @@ class EnableChef
         config[:chef_server_url] = bootstrap_options['chef_server_url'] if bootstrap_options['chef_server_url']
         config[:validation_client_name] =  bootstrap_options['validation_client_name'] if bootstrap_options['validation_client_name']
         template_file = File.expand_path(File.dirname(File.dirname(__FILE__)))
-        config[:secret] =  bootstrap_options['secret'] || bootstrap_options['encrypted_data_bag_secret']
+        config[:secret] =  @secret
         config[:node_verify_api_cert] =  bootstrap_options['node_verify_api_cert'] if bootstrap_options['node_verify_api_cert']
         config[:node_ssl_verify_mode] =  bootstrap_options['node_ssl_verify_mode'] if bootstrap_options['node_ssl_verify_mode']
         runlist = @run_list.empty? ? [] : escape_runlist(@run_list)
@@ -257,11 +257,13 @@ class EnableChef
   end
 
   def load_settings
-    protected_settings = value_from_json_file(handler_settings_file,'runtimeSettings','0','handlerSettings', 'protectedSettings')
+    encrypted_protected_settings = value_from_json_file(handler_settings_file,'runtimeSettings','0','handlerSettings', 'protectedSettings')
+    decrypted_protected_settings = get_decrypted_key(encrypted_protected_settings)
     validation_key_format = value_from_json_file(handler_settings_file,'runtimeSettings','0','handlerSettings', 'publicSettings', 'validation_key_format')
-    @validation_key = get_validation_key(protected_settings, validation_key_format)
-    @client_key = get_client_key(protected_settings)
-    @chef_server_ssl_cert = get_chef_server_ssl_cert(protected_settings)
+    @validation_key = get_validation_key(decrypted_protected_settings, validation_key_format)
+    @client_key = get_client_key(decrypted_protected_settings)
+    @chef_server_ssl_cert = get_chef_server_ssl_cert(decrypted_protected_settings)
+    @secret = secret_key(decrypted_protected_settings)
     @client_rb = value_from_json_file(handler_settings_file, 'runtimeSettings', '0', 'handlerSettings', 'publicSettings', 'client_rb')
     @run_list = value_from_json_file(handler_settings_file, 'runtimeSettings', '0', 'handlerSettings', 'publicSettings', 'runlist')
     @extended_logs = value_from_json_file(handler_settings_file, 'runtimeSettings', '0', 'handlerSettings', 'publicSettings', 'extendedLogs')
@@ -302,8 +304,7 @@ class EnableChef
     parsedRunlist
   end
 
-  def get_validation_key(encrypted_text, validation_key_format)
-    decrypted_text = get_decrypted_key(encrypted_text)
+  def get_validation_key(decrypted_text, validation_key_format)
     #extract validation_key from decrypted hash
     validation_key = value_from_json_file(decrypted_text, "validation_key")
     begin
@@ -315,9 +316,7 @@ class EnableChef
     validation_key.delete("\x00")
   end
 
-  def get_client_key(encrypted_text)
-    decrypted_text = get_decrypted_key(encrypted_text)
-
+  def get_client_key(decrypted_text)
     #extract client_key from decrypted hash
     client_key = value_from_json_file(decrypted_text, "client_pem")
     begin
@@ -328,9 +327,7 @@ class EnableChef
     client_key
   end
 
-  def get_chef_server_ssl_cert(encrypted_text)
-    decrypted_text = get_decrypted_key(encrypted_text)
-
+  def get_chef_server_ssl_cert(decrypted_text)
     #extract chef_server_ssl_cert from decrypted hash
     chef_server_ssl_cert = value_from_json_file(decrypted_text, "chef_server_crt")
     begin
@@ -339,6 +336,18 @@ class EnableChef
       Chef::Log.error "Chef Server SSL certificate parsing error. #{e.inspect}"
     end
     chef_server_ssl_cert
+  end
+
+  def secret_key(decrypted_text)
+    #extract secret from decrypted hash
+    secret = value_from_json_file(decrypted_text, "secret")
+    secret = secret || value_from_json_file(decrypted_text, "encrypted_data_bag_secret")
+    begin
+      secret = OpenSSL::PKey::RSA.new(secret.squeeze("\n")).to_pem
+    rescue OpenSSL::PKey::RSAError => e
+      Chef::Log.error "Secret key parsing error. #{e.inspect}"
+    end
+    secret
   end
 
   def get_decrypted_key(encrypted_text)

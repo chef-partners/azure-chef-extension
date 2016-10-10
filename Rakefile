@@ -458,7 +458,7 @@ begin
   desc "Run all specs in spec directory"
   RSpec::Core::RakeTask.new(:spec) do |t|
     t.rspec_opts = ["--format", "documentation"]
-    t.pattern = 'spec/unit/**/*_spec.rb'
+    t.pattern = 'spec/**/**/*_spec.rb'
   end
 rescue LoadError
   STDERR.puts "\n*** RSpec not available. (sudo) gem install rspec to run unit tests. ***\n\n"
