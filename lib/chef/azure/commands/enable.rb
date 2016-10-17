@@ -340,14 +340,19 @@ class EnableChef
 
   def secret_key(decrypted_text)
     #extract secret from decrypted hash
-    secret = value_from_json_file(decrypted_text, "secret")
-    secret = secret || value_from_json_file(decrypted_text, "encrypted_data_bag_secret")
-    begin
-      secret = OpenSSL::PKey::RSA.new(secret.squeeze("\n")).to_pem
-    rescue OpenSSL::PKey::RSAError => e
-      Chef::Log.error "Secret key parsing error. #{e.inspect}"
+    secret = value_from_json_file(decrypted_text, "secret").empty? ?
+      value_from_json_file(decrypted_text, "encrypted_data_bag_secret") :
+      value_from_json_file(decrypted_text, "secret")
+    if secret.empty?
+      nil
+    else
+      begin
+        secret = OpenSSL::PKey::RSA.new(secret.squeeze("\n")).to_pem
+      rescue OpenSSL::PKey::RSAError => e
+        Chef::Log.error "Secret key parsing error. #{e.inspect}"
+      end
+      secret
     end
-    secret
   end
 
   def get_decrypted_key(encrypted_text)
