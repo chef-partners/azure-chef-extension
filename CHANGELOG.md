@@ -1,5 +1,12 @@
 # azure-chef-extension Change Log
 
+## Latest Release: 1210.12.106.1000 (2016/10/19)
+* [azure-chef-extension #161](https://github.com/chef-partners/azure-chef-extension/pull/161)Added code to read chef_service_interval from extension config file and process it.
+* [azure-chef-extension #167](https://github.com/chef-partners/azure-chef-extension/pull/167)Adding support for setting custom json attributes in first_boot.json
+* [azure-chef-extension #169](https://github.com/chef-partners/azure-chef-extension/pull/169)Fetching secret from protectedSettings instead of publicSettings
+* [azure-chef-extension #172](https://github.com/chef-partners/azure-chef-extension/pull/172)Fixed bug to not generate empty encrypted_data_bag_secret file.
+
+
 ## Latest Release: 1210.12.105.1001 (2016/08/10)
 * [azure-chef-extension #157](https://github.com/chef-partners/azure-chef-extension/pull/157) Fix for validation.pem file not generating
 * [azure-chef-extension #158](https://github.com/chef-partners/azure-chef-extension/pull/158) Pinned rack to fix travis failure
