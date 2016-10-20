@@ -31,6 +31,9 @@ Azure resource extension to enable Chef on Azure virtual machine instances.
     "< comma separated list of key-value pairs >"
   },
   "chef_service_interval": "< frequency at which the chef-service runs >",
+  "custom_json_attr": {
+    "< comma separated list of key-value pairs >"
+  },
   "bootstrap_options": {
     "chef_node_name":"< your node name >",
     "chef_server_url":"< your chef server url >",
@@ -51,9 +54,11 @@ It is an ordered list of roles and/or recipes that are run in the exact order de
 
 `chef_service_interval`: Specifies the frequency (in minutes) at which the `chef-service` runs. If in case you don't want the `chef-service` to be installed on the Azure VM then set value as `0` in this field. At any time you can change the interval value using the `Set-AzureVMExtension` command with the new interval passed in the `publicconfig.config` file (pass `0` if you want to delete the already installed chef-service on the Azure VM). Default value is `30` minutes.
 
+`custom_json_attr`: Specifies a JSON string to be added to the first run of chef-client.
+
 `bootstrap_options`: Set bootstrap options while adding chef extension to Azure VM. Bootstrap options used by Chef-Client during node converge. It overrides the configuration set in client_rb option. for e.g. node_name option i.e. if you set node_name as "foo" in the client_rb and in bootstrap_option you set chef_node_name as "bar" it will take "bar" as node name instead of "foo".
 
-***Supported options in bootstrap_options json:***  `chef_node_name`, `chef_server_url`, `validation_client_name`, `environment`, `chef_node_name`, `secret`
+***Supported options in bootstrap_options json:***  `chef_node_name`, `chef_server_url`, `validation_client_name`, `environment`, `secret`
 
 ***Note***: chef_server_url and validation_client_name are mandatory to pass for the node to bootstrap.
 
@@ -71,6 +76,9 @@ publicconfig.config example:
     "variable_n": "value_n"
   },
   "chef_service_interval": "18",
+  "custom_json_attr": {
+    "container_service": { "chef-init-test": { "command": "C:\\opscode\\chef\\bin" } }
+  },
   "bootstrap_options": {
     "chef_node_name":"mynode3",
     "chef_server_url":"https://api.opscode.com/organizations/some-org",
@@ -82,7 +90,8 @@ publicconfig.config example:
 #####Options that can be set in privateconfig.config
 ```javascript
 {
-  "validation_key": "<your chef organisation validation key as a JSON escaped string>"
+  "validation_key": "<your chef organisation validation key as a JSON escaped string>",
+  "secret": "<your encrypted data bag secret key contents>"
 }
 ```
 
@@ -165,12 +174,18 @@ Update-AzureVM -VM $vmOb.VM -Name "<vm-name>" -ServiceName "<cloud-service-name>
           "variable_2": "value_2",
           "variable_3": "value_3"
         },
+        "chef_service_interval": "18",
+        "custom_json_attr": {
+          "container_service": { "chef-init-test": { "command": "C:\\opscode\\chef\\bin" } }
+        },
+        "hints": {
           "public_fqdn": "[reference(variables('publicIPAddressName')).dnsSettings.fqdn]",
           "vm_name": "[reference(variables('vmName'))]"
         }
       },
       "protectedSettings": {
-        "validation_key": "[parameters('validation_key')]"
+        "validation_key": "[parameters('validation_key')]",
+        "secret": "[parameters('secret')]"
       }
     }
   }
