@@ -41,7 +41,7 @@ function Install-ChefClient {
       ## Get chef_pkg by matching "chef client" string with $_.Name
       $chef_pkg = Get-ChefPackage
       if (-Not $chef_pkg) {
-        iex (new-object net.webclient).downloadstring('https://omnitruck.chef.io/install.ps1');install
+        iex (new-object net.webclient).downloadstring('https://omnitruck.chef.io/install.ps1');install -daemon service
       }
       $completed = $true
     }
