@@ -31,7 +31,7 @@ class ChefService
             enable_cron(extension_root, bootstrap_directory, log_location, chef_service_interval)
           end
         else
-          start_service if windows? && !is_running?
+          start_service(bootstrap_directory, log_location) if windows? && !is_running?
           puts "#{Time.now} no..chef-client service interval has not been changed by the user..exiting."
         end
       else
@@ -40,8 +40,8 @@ class ChefService
             "#{bootstrap_directory}\\client.rb",
             interval_in_seconds(chef_service_interval)
           )
-          enable_service(bootstrap_directory, log_location)
-          start_service if !is_running?
+          install_service
+          start_service(bootstrap_directory, log_location) if !is_running?
         else
           enable_cron(extension_root, bootstrap_directory, log_location, chef_service_interval)
         end
@@ -114,8 +114,10 @@ class ChefService
     return false
   end
 
-  def start_service
-    result = shell_out("sc.exe start chef-client")
+  def start_service(bootstrap_directory, log_location)
+    puts "#{Time.now} Starting chef-client service ...."
+    params = " -c #{bootstrap_directory}\\client.rb -L #{log_location}\\chef-client.log "
+    result = shell_out("sc.exe start chef-client #{params}")
     result.error!
   end
 
@@ -140,7 +142,8 @@ class ChefService
 
   def restart_service
     stop_service if is_running?
-    start_service
+    result = shell_out("sc.exe start chef-client")
+    result.error!
   end
 
   ## disable chef cronjob on Linux platform ##
@@ -154,10 +157,9 @@ class ChefService
   end
 
   ## enable/install chef-service on Windows platform ##
-  def enable_service(bootstrap_directory, log_location)
+  def install_service
     puts "#{Time.now} Installing chef-client service..."
-    params = " -a install -c #{bootstrap_directory}\\client.rb -L #{log_location}\\chef-client.log "
-    result = shell_out("chef-service-manager #{params}")
+    result = shell_out("chef-service-manager -a install")
     result.error? ? result.error! : (puts "#{Time.now} Installed chef-client service.")
   end
 

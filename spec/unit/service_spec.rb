@@ -82,9 +82,9 @@ describe ChefService do
             expect(instance).to receive(:interval_in_seconds).and_return(300)
             expect(instance).to receive(:set_interval).with(
               '/bootstrap_directory\\client.rb', 300)
-            expect(instance).to receive(:enable_service).with(
+            expect(instance).to receive(:install_service)
+            expect(instance).to receive(:start_service).with(
               '/bootstrap_directory', '/log_location')
-            expect(instance).to receive(:start_service)
             response = instance.send(:enable, '/extension_root', '/bootstrap_directory', '/log_location', 5)
             expect(response).to be == [0, 'success']
           end
@@ -99,9 +99,9 @@ describe ChefService do
             expect(instance).to receive(:interval_in_seconds).and_return(1800)
             expect(instance).to receive(:set_interval).with(
               '/bootstrap_directory\\client.rb', 1800)
-            expect(instance).to receive(:enable_service).with(
+            expect(instance).to receive(:install_service)
+            expect(instance).to_not receive(:start_service).with(
               '/bootstrap_directory', '/log_location')
-            expect(instance).to_not receive(:start_service)
             response = instance.send(:enable, '/extension_root', '/bootstrap_directory', '/log_location')
             expect(response).to be == [0, 'success']
           end
@@ -327,10 +327,10 @@ describe ChefService do
     context 'service start successful' do
       it 'does not report any error' do
         expect(instance).to receive(:shell_out).with(
-          'sc.exe start chef-client').and_return(
+          'sc.exe start chef-client  -c /bootstrap_directory\\client.rb -L /log_location\\chef-client.log ').and_return(
             OpenStruct.new(:exitstatus => 0, :stdout => '', :error! => '')
         )
-        response = instance.send(:start_service)
+        response = instance.send(:start_service, '/bootstrap_directory', '/log_location')
         expect(response.empty?).to be == true
       end
     end
@@ -338,10 +338,10 @@ describe ChefService do
     context 'service start un-successful' do
       it 'reports the error' do
         expect(instance).to receive(:shell_out).with(
-          'sc.exe start chef-client').and_return(
+          'sc.exe start chef-client  -c /bootstrap_directory\\client.rb -L /log_location\\chef-client.log ').and_return(
             OpenStruct.new(:exitstatus => 1, :stdout => '', :error! => 'Some unknown error occurred.')
         )
-        response = instance.send(:start_service)
+        response = instance.send(:start_service, '/bootstrap_directory', '/log_location')
         expect(response.empty?).to be == false
         expect(response).to be == 'Some unknown error occurred.'
       end
@@ -433,7 +433,10 @@ describe ChefService do
 
       it 'stops and then starts the chef-service' do
         expect(instance).to receive(:stop_service)
-        expect(instance).to receive(:start_service)
+        expect(instance).to receive(:shell_out).with(
+          'sc.exe start chef-client').and_return(
+            OpenStruct.new(:exitstatus => 0, :stdout => '', :error! => '')
+        )
         instance.send(:restart_service)
       end
     end
@@ -445,7 +448,10 @@ describe ChefService do
 
       it 'just starts the chef-service' do
         expect(instance).to_not receive(:stop_service)
-        expect(instance).to receive(:start_service)
+        expect(instance).to receive(:shell_out).with(
+          'sc.exe start chef-client').and_return(
+            OpenStruct.new(:exitstatus => 0, :stdout => '', :error! => '')
+        )
         instance.send(:restart_service)
       end
     end
@@ -488,26 +494,26 @@ describe ChefService do
     end
   end
 
-  describe 'enable_service' do
+  describe 'install_service' do
     context 'chef-service enable successful' do
       it 'does not report any error' do
         expect(instance).to receive(:puts).exactly(2).times
         expect(instance).to receive(:shell_out).with(
-          'chef-service-manager  -a install -c /bootstrap_directory\\client.rb -L /log_location\\chef-client.log ').and_return(
+          'chef-service-manager -a install').and_return(
             OpenStruct.new(:exitstatus => 0, :stdout => '', :error! => '', :error? => false)
         )
-        instance.send(:enable_service, '/bootstrap_directory', '/log_location')
+        instance.send(:install_service)
       end
     end
 
-    context 'chef-service enable un-successful' do
+    context 'chef-service install un-successful' do
       it 'reports the error' do
         expect(instance).to receive(:puts).exactly(1).times
         expect(instance).to receive(:shell_out).with(
-          'chef-service-manager  -a install -c /bootstrap_directory\\client.rb -L /log_location\\chef-client.log ').and_return(
+          'chef-service-manager -a install').and_return(
             OpenStruct.new(:exitstatus => 0, :stdout => '', :error! => 'Some unknown error occurred.', :error? => true)
         )
-        response = instance.send(:enable_service, '/bootstrap_directory', '/log_location')
+        response = instance.send(:install_service)
         expect(response.empty?).to be == false
         expect(response).to be == 'Some unknown error occurred.'
       end
