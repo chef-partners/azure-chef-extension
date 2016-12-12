@@ -327,7 +327,7 @@ describe ChefService do
     context 'service start successful' do
       it 'does not report any error' do
         expect(instance).to receive(:shell_out).with(
-          'chef-service-manager  -a start -c /bootstrap_directory\\client.rb -L /log_location\\chef-client.log ').and_return(
+          'sc.exe start chef-client  -c /bootstrap_directory\\client.rb -L /log_location\\chef-client.log ').and_return(
             OpenStruct.new(:exitstatus => 0, :stdout => '', :error! => '')
         )
         response = instance.send(:start_service, '/bootstrap_directory', '/log_location')
@@ -338,7 +338,7 @@ describe ChefService do
     context 'service start un-successful' do
       it 'reports the error' do
         expect(instance).to receive(:shell_out).with(
-          'chef-service-manager  -a start -c /bootstrap_directory\\client.rb -L /log_location\\chef-client.log ').and_return(
+          'sc.exe start chef-client  -c /bootstrap_directory\\client.rb -L /log_location\\chef-client.log ').and_return(
             OpenStruct.new(:exitstatus => 1, :stdout => '', :error! => 'Some unknown error occurred.')
         )
         response = instance.send(:start_service, '/bootstrap_directory', '/log_location')
@@ -433,7 +433,10 @@ describe ChefService do
 
       it 'stops and then starts the chef-service' do
         expect(instance).to receive(:stop_service)
-        expect(instance).to receive(:start_service)
+        expect(instance).to receive(:shell_out).with(
+          'sc.exe start chef-client').and_return(
+            OpenStruct.new(:exitstatus => 0, :stdout => '', :error! => '')
+        )
         instance.send(:restart_service)
       end
     end
@@ -445,7 +448,10 @@ describe ChefService do
 
       it 'just starts the chef-service' do
         expect(instance).to_not receive(:stop_service)
-        expect(instance).to receive(:start_service)
+        expect(instance).to receive(:shell_out).with(
+          'sc.exe start chef-client').and_return(
+            OpenStruct.new(:exitstatus => 0, :stdout => '', :error! => '')
+        )
         instance.send(:restart_service)
       end
     end

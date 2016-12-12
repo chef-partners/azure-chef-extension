@@ -116,8 +116,8 @@ class ChefService
 
   def start_service(bootstrap_directory, log_location)
     puts "#{Time.now} Starting chef-client service ...."
-    params = " -a start -c #{bootstrap_directory}\\client.rb -L #{log_location}\\chef-client.log "
-    result = shell_out("chef-service-manager #{params}")
+    params = " -c #{bootstrap_directory}\\client.rb -L #{log_location}\\chef-client.log "
+    result = shell_out("sc.exe start chef-client #{params}")
     result.error!
   end
 
@@ -142,7 +142,8 @@ class ChefService
 
   def restart_service
     stop_service if is_running?
-    start_service
+    result = shell_out("sc.exe start chef-client")
+    result.error!
   end
 
   ## disable chef cronjob on Linux platform ##
