@@ -23,6 +23,7 @@ describe "EnableChef" do
       allow(instance).to receive(:puts)
       allow(instance).to receive(:load_env)
       allow(instance).to receive(:report_heart_beat_to_azure)
+      allow(instance).to receive(:report_status_to_azure)
       allow(File).to receive(:exists?).and_return(false)
       allow(instance).to receive(:bootstrap_directory).and_return(@temp_directory)
       allow(instance).to receive(:copy_settings_file)

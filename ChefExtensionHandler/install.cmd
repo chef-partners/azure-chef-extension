@@ -1,6 +1,7 @@
 
-set CHEF_EXT_DIR=%~dp0
+REM Moved the installation steps into enable phase for windows
+REM Because n.settings file is not available during install phase.
+REM We need to read some values like bootstrap_version(chef-client version)
+REM And daemon from n.settings during install
 
-echo %CHEF_EXT_DIR%
-
-powershell -nologo -noprofile -executionpolicy unrestricted Import-Module %CHEF_EXT_DIR%bin\chef-install.psm1;Install-ChefClient
+ECHO "Doing Nothing in Install phase"
