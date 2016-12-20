@@ -30,6 +30,47 @@ function Get-ChefPackage {
   Get-WmiObject -Class Win32_Product | Where-Object { $_.Name.contains("Chef Client") }
 }
 
+function Get-PublicSettings-From-Config-Json($key) {
+  Try
+  {
+    $azure_config_file = Get-Azure-Config-Path
+    $json_contents = Get-Content $azure_config_file
+    $normalized_json = normalize_json($json_contents)
+    $value = ($normalized_json | ConvertFrom-Json | Select -expand runtimeSettings | Select -expand handlerSettings | Select -expand publicSettings).$key
+    $value
+  }
+  Catch
+  {
+    echo "Error in Get-PublicSettings-From-Config-Json. Couldn't parse $azure_config_file"
+    exit 1
+  }
+}
+
+function normalize_json($json) {
+  $json -Join " "
+}
+
+function Get-Azure-Config-Path {
+  $chefExtensionRoot = Chef-GetExtensionRoot
+
+  Try
+  {
+    # Reading chef_extension_root/HandlerEnvironment.json file
+    $handler_file = "$chefExtensionRoot\\HandlerEnvironment.json"
+    $config_folder = (((Get-Content $handler_file) | ConvertFrom-Json)[0] | Select -expand handlerEnvironment).configFolder
+
+    # Get the last .settings file
+    $config_file = (get-childitem $config_folder -recurse | where {$_.extension -eq ".settings"})[-1].Name
+
+    "$config_folder\$config_file"
+  }
+  Catch
+  {
+    echo "Error in Get-Azure-Config-Path. Couldn't parse the HandlerEnvironment.json file"
+    exit 1
+  }
+}
+
 function Install-ChefClient {
   $retries = 3
   $retrycount = 0
@@ -41,7 +82,18 @@ function Install-ChefClient {
       ## Get chef_pkg by matching "chef client" string with $_.Name
       $chef_pkg = Get-ChefPackage
       if (-Not $chef_pkg) {
-        iex (new-object net.webclient).downloadstring('https://omnitruck.chef.io/install.ps1');install -daemon service
+        $chef_package_version = Get-PublicSettings-From-Config-Json("bootstrap_version")
+        $daemon = Get-PublicSettings-From-Config-Json("daemon")
+
+        if (-Not $chef_package_version) {
+          $chef_package_version = "latest"
+        }
+
+        if (-Not $daemon) {
+          $daemon = "service"
+        }
+
+        iex (new-object net.webclient).downloadstring('https://omnitruck.chef.io/install.ps1');install -daemon $daemon -version $chef_package_version
       }
       $completed = $true
     }

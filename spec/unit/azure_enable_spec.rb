@@ -123,10 +123,12 @@ describe EnableChef do
   describe 'enable_chef' do
     context '@exit_code is 0' do
       it 'calls configure_chef_only_once and enable_chef_service methods' do
+        allow(instance).to receive(:handler_settings_file)
+        allow(instance).to receive(:value_from_json_file).and_return("service")
         expect(instance).to receive(:configure_chef_only_once)
         expect(instance).to receive(:enable_chef_service)
         expect(Chef::Log).to_not receive(:error)
-        expect(instance).to_not receive(:report_status_to_azure)
+        expect(instance).to receive(:report_status_to_azure)
         expect(Chef::Log).to receive(:info)
         response = instance.send(:enable_chef)
         expect(response).to be == 0
@@ -139,6 +141,8 @@ describe EnableChef do
       end
 
       it 'calls configure_chef_only_once method but not enable_chef_service method' do
+        allow(instance).to receive(:handler_settings_file)
+        allow(instance).to receive(:value_from_json_file).and_return("service")
         expect(instance).to receive(:configure_chef_only_once)
         expect(instance).to_not receive(:enable_chef_service)
         expect(Chef::Log).to_not receive(:error)
@@ -172,15 +176,15 @@ describe EnableChef do
       let(:error_msg) { RuntimeError.new('Some exception has occurred while enabling Chef') }
 
       before do
+        allow(instance).to receive(:handler_settings_file)
+        allow(instance).to receive(:value_from_json_file).and_return("service")
         allow(instance).to receive(:enable_chef_service).and_raise(error_msg)
       end
 
       it 'raises error' do
         expect(instance).to receive(:configure_chef_only_once)
         expect(Chef::Log).to receive(:error).with(error_msg)
-        expect(instance).to receive(:report_status_to_azure).with(
-          "#{error_msg} - Check log file for details", 'error'
-        )
+        expect(instance).to receive(:report_status_to_azure).twice
         expect(Chef::Log).to receive(:info)
         response = instance.send(:enable_chef)
         expect(response).to be == 1

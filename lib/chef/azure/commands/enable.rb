@@ -66,7 +66,14 @@ class EnableChef
     begin
       configure_chef_only_once
 
-      enable_chef_service if @exit_code == 0
+      if @exit_code == 0
+        report_status_to_azure("chef-extension enabled", "success")
+        daemon = value_from_json_file(handler_settings_file, 'runtimeSettings', '0', 'handlerSettings', 'publicSettings', 'daemon')
+        daemon = "service" if (daemon.nil? || daemon.empty?)
+        if(daemon == "service" || !windows?)
+          enable_chef_service
+        end
+      end
 
     rescue => e
       Chef::Log.error e
