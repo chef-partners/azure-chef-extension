@@ -1,5 +1,11 @@
 # azure-chef-extension Change Log
 
+## Latest Release: 1210.12.107.1000 (2016/12/26)
+* [azure-chef-extension #178](https://github.com/chef-partners/azure-chef-extension/pull/178) Added -daemon option in chef-client service install
+* [azure-chef-extension #181](https://github.com/chef-partners/azure-chef-extension/pull/181) Moving install steps to enable
+* [azure-chef-extension #183](https://github.com/chef-partners/azure-chef-extension/pull/183) Skipping reading azure config json file for powershell V2.0
+* [azure-chef-extension #184](https://github.com/chef-partners/azure-chef-extension/pull/184) Accepting daemon=none instead of auto
+
 ## Latest Release: 1210.12.106.1000 (2016/10/19)
 * [azure-chef-extension #161](https://github.com/chef-partners/azure-chef-extension/pull/161) Added code to read chef_service_interval from extension config file and process it.
 * [azure-chef-extension #167](https://github.com/chef-partners/azure-chef-extension/pull/167) Adding support for setting custom json attributes in first_boot.json
