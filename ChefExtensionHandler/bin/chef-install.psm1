@@ -72,6 +72,10 @@ function Get-Azure-Config-Path {
 }
 
 function Install-ChefClient {
+  # Source the shared PS
+  . $(Get-SharedHelper)
+  $powershellVersion = Get-PowershellVersion
+
   $retries = 3
   $retrycount = 0
   $completed = $false
@@ -82,8 +86,12 @@ function Install-ChefClient {
       ## Get chef_pkg by matching "chef client" string with $_.Name
       $chef_pkg = Get-ChefPackage
       if (-Not $chef_pkg) {
-        $chef_package_version = Get-PublicSettings-From-Config-Json("bootstrap_version")
-        $daemon = Get-PublicSettings-From-Config-Json("daemon")
+        if ( $powershellVersion -ge 3 ) {
+          $chef_package_version = Get-PublicSettings-From-Config-Json("bootstrap_version")
+          $daemon = Get-PublicSettings-From-Config-Json("daemon")
+        } else {
+          echo "Powershell version is less than 3. Hence skipping reading the azure config file. Downloading the latest version of chef-client."
+        }
 
         if (-Not $chef_package_version) {
           $chef_package_version = "latest"
@@ -115,6 +123,11 @@ function Install-ChefClient {
   $env:Path = "C:\\opscode\\chef\\bin;C:\\opscode\\chef\\embedded\\bin;" + $env:Path
   $chefExtensionRoot = Chef-GetExtensionRoot
   Install-AzureChefExtensionGem $chefExtensionRoot
+}
+
+function Get-SharedHelper {
+  $chefExtensionRoot = Chef-GetExtensionRoot
+  "$chefExtensionRoot\\bin\\shared.ps1"
 }
 
 Export-ModuleMember -Function Install-ChefClient
