@@ -41,8 +41,10 @@ function Get-PublicSettings-From-Config-Json($key) {
   }
   Catch
   {
-    echo "Error in Get-PublicSettings-From-Config-Json. Couldn't parse $azure_config_file"
-    exit 1
+    $ErrorMessage = $_.Exception.Message
+    $FailedItem = $_.Exception.ItemName
+    echo "Failed to read file: $FailedItem. The error message was $ErrorMessage"
+    throw "Error in Get-PublicSettings-From-Config-Json. Couldn't parse $azure_config_file"
   }
 }
 
@@ -66,8 +68,10 @@ function Get-Azure-Config-Path {
   }
   Catch
   {
-    echo "Error in Get-Azure-Config-Path. Couldn't parse the HandlerEnvironment.json file"
-    exit 1
+    $ErrorMessage = $_.Exception.Message
+    $FailedItem = $_.Exception.ItemName
+    echo "Failed to read file: $FailedItem. The error message was $ErrorMessage"
+    throw "Error in Get-Azure-Config-Path. Couldn't parse the HandlerEnvironment.json file"
   }
 }
 
