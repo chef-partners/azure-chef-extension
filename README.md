@@ -27,6 +27,7 @@ Azure resource extension to enable Chef on Azure virtual machine instances.
   "runlist":"< your run list >",
   "validation_key_format": "< plaintext|base64encoded >",
   "bootstrap_version": "< version of chef-client >",
+  "daemon": "< none/service>"
   "environment_variables": {
     "< comma separated list of key-value pairs >"
   },
@@ -48,7 +49,11 @@ It is an ordered list of roles and/or recipes that are run in the exact order de
 
 `validation_key_format`: Specifies the format in which `validation_key` is set in the `privateconfig.config` file. Supported values are `plaintext` and `base64encoded`. Default value is `plaintext`.
 
-`bootstrap_version`: Set the version of `chef-client` that needs to get installed on the VM. This option is supported only for linux extension.
+`bootstrap_version`: Set the version of `chef-client` to be installed on the VM. This option is supported on linux/Windows 2012 and onwards.
+
+`daemon`: Supported only on Windows 2012 and onwards. Configures the chef-client service for unattended execution. Supported values are `none` and `service`. Default is `service`.
+`none` prevents the chef-client service from being configured as a service.
+`service` configures chef-client as a service.
 
 `environment_variables`: Specifies the list of environment variables (like the environment variables for proxy server configuration) to be available to the Chef Extension scripts. This option is currently supported only for `Linux` platforms.
 
@@ -76,6 +81,7 @@ publicconfig.config example:
     "variable_n": "value_n"
   },
   "chef_service_interval": "18",
+  "daemon": "none",
   "custom_json_attr": {
     "container_service": { "chef-init-test": { "command": "C:\\opscode\\chef\\bin" } }
   },
@@ -175,6 +181,7 @@ Update-AzureVM -VM $vmOb.VM -Name "<vm-name>" -ServiceName "<cloud-service-name>
           "variable_3": "value_3"
         },
         "chef_service_interval": "18",
+        "daemon" : "service",
         "custom_json_attr": {
           "container_service": { "chef-init-test": { "command": "C:\\opscode\\chef\\bin" } }
         },

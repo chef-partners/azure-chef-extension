@@ -6,8 +6,8 @@ Example Note:
 ## Example Heading
 Details about the thing that changed that needs to get included in the Release Notes in markdown.
 -->
-# azure-chef-extension 1210.12.106.1000 release notes:
-In this release, we have added the support for `chef_service_interval` option which will allow users to specify the frequency at which the `chef-service` runs. Also, added support for `custom_json_attr` to be set for the first run of `chef-client`. One of the enhancement made in this release is that `secret` will now be read from `protected_settings` instead of `public_settings`.
+# Windows azure-chef-extension 1210.12.107.1000 release notes:
+In this release, we have moved the installation steps to Enable phase for Windows extension. This is done because `n.settings` file is not available during install phase. We need to read some values like bootstrap_version(chef-client version) and daemon from n.settings during install.
 
 See the [CHANGELOG](https://github.com/chef-partners/azure-chef-extension/blob/master/CHANGELOG.md) for a list of all changes in this release, and review.
 
@@ -17,14 +17,14 @@ More information on the contribution process for Chef projects can be found in t
 https://github.com/chef-partners/azure-chef-extension
 
 
-##Features added in azure-chef-extension 1210.12.106.1000
-* Added code to read chef_service_interval from extension config file and process it. [Feature 161](https://github.com/chef-partners/azure-chef-extension/pull/161)
-* Adding support for setting custom json attributes in first_boot.json [Feature 167](https://github.com/chef-partners/azure-chef-extension/pull/167)
+##Features added in azure-chef-extension 1210.12.107.1000
+* Added -daemon option in chef-client service install. [Feature 178](https://github.com/chef-partners/azure-chef-extension/pull/178)
+**Note**: This feature is supported only on Windows 2012 onwards.
+* Moving install steps to enable [Feature 181](https://github.com/chef-partners/azure-chef-extension/pull/181)
 
 
-##Enhancements made in azure-chef-extension 1210.12.106.1000
-* Fetching secret from protectedSettings instead of publicSettings [Enhancement 169](https://github.com/chef-partners/azure-chef-extension/pull/169)
+##Issues fixed in azure-chef-extension 1210.12.107.1000
+* Support bootstrap_version for Windows Installs. [Issue 175](https://github.com/chef-partners/azure-chef-extension/pull/175)
 
-
-##Issues fixed in azure-chef-extension 1210.12.106.1000
-* Fixed bug to not generate empty encrypted_data_bag_secret file. [Issue 172](https://github.com/chef-partners/azure-chef-extension/pull/172)
+##Known issue
+* Extension fails intermittently for Windows 2008 with timeout error.
