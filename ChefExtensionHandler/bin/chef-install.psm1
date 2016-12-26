@@ -93,6 +93,10 @@ function Install-ChefClient {
         if ( $powershellVersion -ge 3 ) {
           $chef_package_version = Get-PublicSettings-From-Config-Json("bootstrap_version")
           $daemon = Get-PublicSettings-From-Config-Json("daemon")
+
+          if ( $daemon -eq "none" ) {
+            $daemon = "auto"
+          }
         } else {
           echo "Powershell version is less than 3. Hence skipping reading the azure config file. Downloading the latest version of chef-client."
         }
