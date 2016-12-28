@@ -30,13 +30,20 @@ function Get-ChefPackage {
   Get-WmiObject -Class Win32_Product | Where-Object { $_.Name.contains("Chef Client") }
 }
 
-function Get-PublicSettings-From-Config-Json($key) {
+function Get-PublicSettings-From-Config-Json($key, $powershellVersion) {
   Try
   {
-    $azure_config_file = Get-Azure-Config-Path
+    $azure_config_file = Get-Azure-Config-Path($powershellVersion)
     $json_contents = Get-Content $azure_config_file
     $normalized_json = normalize_json($json_contents)
-    $value = ($normalized_json | ConvertFrom-Json | Select -expand runtimeSettings | Select -expand handlerSettings | Select -expand publicSettings).$key
+
+    if ( $powershellVersion -ge 3 ) {
+      $value = ($normalized_json | ConvertFrom-Json | Select -expand runtimeSettings | Select -expand handlerSettings | Select -expand publicSettings).$key
+    }
+    else {
+      $ser = New-Object System.Web.Script.Serialization.JavaScriptSerializer
+      $value = $ser.DeserializeObject($normalized_json).runtimeSettings[0].handlerSettings.publicSettings.$key
+    }
     $value
   }
   Catch
@@ -52,19 +59,33 @@ function normalize_json($json) {
   $json -Join " "
 }
 
-function Get-Azure-Config-Path {
+function Get-Azure-Config-Path($powershellVersion) {
   $chefExtensionRoot = Chef-GetExtensionRoot
 
   Try
   {
     # Reading chef_extension_root/HandlerEnvironment.json file
     $handler_file = "$chefExtensionRoot\\HandlerEnvironment.json"
-    $config_folder = (((Get-Content $handler_file) | ConvertFrom-Json)[0] | Select -expand handlerEnvironment).configFolder
+
+    if ( $powershellVersion -ge 3 ) {
+      $config_folder = (((Get-Content $handler_file) | ConvertFrom-Json)[0] | Select -expand handlerEnvironment).configFolder
+    }
+    else {
+      $ser = New-Object System.Web.Script.Serialization.JavaScriptSerializer
+      $config_folder = ($ser.DeserializeObject($(Get-Content $handler_file)))[0].handlerEnvironment.configFolder
+    }
 
     # Get the last .settings file
-    $config_file = (get-childitem $config_folder -recurse | where {$_.extension -eq ".settings"})[-1].Name
+    $config_files = get-childitem $config_folder -recurse | where {$_.extension -eq ".settings"}
 
-    "$config_folder\$config_file"
+    if($config_files -is [system.array]) {
+      $config_file_name = $config_files[-1].Name
+    }
+    else {
+      $config_file_name = $config_files.Name
+    }
+
+    "$config_folder\$config_file_name"
   }
   Catch
   {
@@ -80,6 +101,12 @@ function Install-ChefClient {
   . $(Get-SharedHelper)
   $powershellVersion = Get-PowershellVersion
 
+  # Run PowerShell with the .NET 4 runtime if powershell version is less than 3
+  if ( $powershellVersion -lt 3 ) {
+    Run-Powershell-With-Dot-Net4
+  }
+
+  # Install Chef Client
   $retries = 3
   $retrycount = 0
   $completed = $false
@@ -90,21 +117,15 @@ function Install-ChefClient {
       ## Get chef_pkg by matching "chef client" string with $_.Name
       $chef_pkg = Get-ChefPackage
       if (-Not $chef_pkg) {
-        if ( $powershellVersion -ge 3 ) {
-          $chef_package_version = Get-PublicSettings-From-Config-Json("bootstrap_version")
-          $daemon = Get-PublicSettings-From-Config-Json("daemon")
+        $chef_package_version = Get-PublicSettings-From-Config-Json("bootstrap_version", $powershellVersion)
+        $daemon = Get-PublicSettings-From-Config-Json("daemon", $powershellVersion)
 
-          if ( $daemon -eq "none" ) {
-            $daemon = "auto"
-          }
-        } else {
-          echo "Powershell version is less than 3. Hence skipping reading the azure config file. Downloading the latest version of chef-client."
+        if ( $daemon -eq "none" ) {
+          $daemon = "auto"
         }
-
         if (-Not $chef_package_version) {
           $chef_package_version = "latest"
         }
-
         if (-Not $daemon) {
           $daemon = "service"
         }
@@ -136,6 +157,27 @@ function Install-ChefClient {
 function Get-SharedHelper {
   $chefExtensionRoot = Chef-GetExtensionRoot
   "$chefExtensionRoot\\bin\\shared.ps1"
+}
+
+function Get-ReloadPowershellSession {
+  $chefExtensionRoot = Chef-GetExtensionRoot
+  "$chefExtensionRoot\\bin\\reload_powershell_session.ps1"
+}
+
+# Run PowerShell with the .NET 4 runtime if powershell version is less than 3
+# This is required because at times powershell is pointing to .NET 3.5 by default
+# powershell versions less than 3 don't support functions like `ConvertFrom-Json`.
+# For supporting json parsing, we need to add assembly `system.web.extensions`
+# and this assembly is supported by .NET 4 version only
+
+function Run-Powershell-With-Dot-Net4 {
+  reg add hklm\software\microsoft\.netframework /v OnlyUseLatestCLR /t REG_DWORD /d 1
+  reg add hklm\software\wow6432node\microsoft\.netframework /v OnlyUseLatestCLR /t REG_DWORD /d 1
+
+  . $(Get-ReloadPowershellSession)
+  Restart-PowerShell
+
+  add-type -assembly system.web.extensions
 }
 
 Export-ModuleMember -Function Install-ChefClient
