@@ -71,6 +71,7 @@ function Get-Azure-Config-Path($powershellVersion) {
       $config_folder = (((Get-Content $handler_file) | ConvertFrom-Json)[0] | Select -expand handlerEnvironment).configFolder
     }
     else {
+      add-type -assembly system.web.extensions
       $ser = New-Object System.Web.Script.Serialization.JavaScriptSerializer
       $config_folder = ($ser.DeserializeObject($(Get-Content $handler_file)))[0].handlerEnvironment.configFolder
     }
@@ -117,8 +118,8 @@ function Install-ChefClient {
       ## Get chef_pkg by matching "chef client" string with $_.Name
       $chef_pkg = Get-ChefPackage
       if (-Not $chef_pkg) {
-        $chef_package_version = Get-PublicSettings-From-Config-Json("bootstrap_version", $powershellVersion)
-        $daemon = Get-PublicSettings-From-Config-Json("daemon", $powershellVersion)
+        $chef_package_version = Get-PublicSettings-From-Config-Json "bootstrap_version" $powershellVersion
+        $daemon = Get-PublicSettings-From-Config-Json "daemon"  $powershellVersion
 
         if ( $daemon -eq "none" ) {
           $daemon = "auto"
@@ -171,13 +172,8 @@ function Get-ReloadPowershellSession {
 # and this assembly is supported by .NET 4 version only
 
 function Run-Powershell-With-Dot-Net4 {
-  reg add hklm\software\microsoft\.netframework /v OnlyUseLatestCLR /t REG_DWORD /d 1
-  reg add hklm\software\wow6432node\microsoft\.netframework /v OnlyUseLatestCLR /t REG_DWORD /d 1
-
-  . $(Get-ReloadPowershellSession)
-  Restart-PowerShell
-
-  add-type -assembly system.web.extensions
+  reg add hklm\software\microsoft\.netframework /v OnlyUseLatestCLR /t REG_DWORD /d 1 /f
+  reg add hklm\software\wow6432node\microsoft\.netframework /v OnlyUseLatestCLR /t REG_DWORD /d 1 /f
 }
 
 Export-ModuleMember -Function Install-ChefClient
