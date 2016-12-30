@@ -102,11 +102,6 @@ function Install-ChefClient {
   . $(Get-SharedHelper)
   $powershellVersion = Get-PowershellVersion
 
-  # Run PowerShell with the .NET 4 runtime if powershell version is less than 3
-  if ( $powershellVersion -lt 3 ) {
-    Run-Powershell-With-Dot-Net4
-  }
-
   # Install Chef Client
   $retries = 3
   $retrycount = 0
@@ -160,20 +155,19 @@ function Get-SharedHelper {
   "$chefExtensionRoot\\bin\\shared.ps1"
 }
 
-function Get-ReloadPowershellSession {
-  $chefExtensionRoot = Chef-GetExtensionRoot
-  "$chefExtensionRoot\\bin\\reload_powershell_session.ps1"
-}
+# This method is called separetely from enable.cmd before calling Install-ChefClient
+# Sourcing the script again refreshes the powershell console and the changes
+# of registry key become available
+function Run-Powershell2-With-Dot-Net4 {
+  # Source the shared PS
+  . $(Get-SharedHelper)
+  $powershellVersion = Get-PowershellVersion
 
-# Run PowerShell with the .NET 4 runtime if powershell version is less than 3
-# This is required because at times powershell is pointing to .NET 3.5 by default
-# powershell versions less than 3 don't support functions like `ConvertFrom-Json`.
-# For supporting json parsing, we need to add assembly `system.web.extensions`
-# and this assembly is supported by .NET 4 version only
-
-function Run-Powershell-With-Dot-Net4 {
-  reg add hklm\software\microsoft\.netframework /v OnlyUseLatestCLR /t REG_DWORD /d 1 /f
-  reg add hklm\software\wow6432node\microsoft\.netframework /v OnlyUseLatestCLR /t REG_DWORD /d 1 /f
+  if ( $powershellVersion -lt 3 ) {
+    reg add hklm\software\microsoft\.netframework /v OnlyUseLatestCLR /t REG_DWORD /d 1 /f
+    reg add hklm\software\wow6432node\microsoft\.netframework /v OnlyUseLatestCLR /t REG_DWORD /d 1 /f
+  }
 }
 
 Export-ModuleMember -Function Install-ChefClient
+Export-ModuleMember -Function Run-Powershell2-With-Dot-Net4
