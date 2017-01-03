@@ -49,9 +49,9 @@ It is an ordered list of roles and/or recipes that are run in the exact order de
 
 `validation_key_format`: Specifies the format in which `validation_key` is set in the `privateconfig.config` file. Supported values are `plaintext` and `base64encoded`. Default value is `plaintext`.
 
-`bootstrap_version`: Set the version of `chef-client` to be installed on the VM. This option is supported on linux/Windows 2012 and onwards.
+`bootstrap_version`: Set the version of `chef-client` to be installed on the VM.
 
-`daemon`: Supported only on Windows 2012 and onwards. Configures the chef-client service for unattended execution. Supported values are `none` and `service`. Default is `service`.
+`daemon`: Supported only on Windows extension. Configures the chef-client service for unattended execution. Supported values are `none` and `service`. Default is `service`.
 `none` prevents the chef-client service from being configured as a service.
 `service` configures chef-client as a service.
 

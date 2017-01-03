@@ -1,24 +1,27 @@
 # azure-chef-extension Change Log
 
-## Latest Release: 1210.12.107.1000 (2016/12/26)
+## Latest Release: 1210.12.107.1001 (2017/01/03)
+* [azure-chef-extension #185](https://github.com/chef-partners/azure-chef-extension/pull/185) Parsing json on Windows 2008
+
+## Release: 1210.12.107.1000 (2016/12/26)
 * [azure-chef-extension #178](https://github.com/chef-partners/azure-chef-extension/pull/178) Added -daemon option in chef-client service install
 * [azure-chef-extension #181](https://github.com/chef-partners/azure-chef-extension/pull/181) Moving install steps to enable
 * [azure-chef-extension #183](https://github.com/chef-partners/azure-chef-extension/pull/183) Skipping reading azure config json file for powershell V2.0
 * [azure-chef-extension #184](https://github.com/chef-partners/azure-chef-extension/pull/184) Accepting daemon=none instead of auto
 
-## Latest Release: 1210.12.106.1000 (2016/10/19)
+## Release: 1210.12.106.1000 (2016/10/19)
 * [azure-chef-extension #161](https://github.com/chef-partners/azure-chef-extension/pull/161) Added code to read chef_service_interval from extension config file and process it.
 * [azure-chef-extension #167](https://github.com/chef-partners/azure-chef-extension/pull/167) Adding support for setting custom json attributes in first_boot.json
 * [azure-chef-extension #169](https://github.com/chef-partners/azure-chef-extension/pull/169) Fetching secret from protectedSettings instead of publicSettings
 * [azure-chef-extension #172](https://github.com/chef-partners/azure-chef-extension/pull/172) Fixed bug to not generate empty encrypted_data_bag_secret file.
 
 
-## Latest Release: 1210.12.105.1001 (2016/08/10)
+## Release: 1210.12.105.1001 (2016/08/10)
 * [azure-chef-extension #157](https://github.com/chef-partners/azure-chef-extension/pull/157) Fix for validation.pem file not generating
 * [azure-chef-extension #158](https://github.com/chef-partners/azure-chef-extension/pull/158) Pinned rack to fix travis failure
 
 
-## Latest Release: 1210.12.105.1000 (2016/06/27)
+## Release: 1210.12.105.1000 (2016/06/27)
 * [azure-chef-extension #149](https://github.com/chef-partners/azure-chef-extension/pull/149) Removed unrequired flags for Linux Platforms
 * [azure-chef-extension #150](https://github.com/chef-partners/azure-chef-extension/pull/150) Removed unwanted flags for windows
 
