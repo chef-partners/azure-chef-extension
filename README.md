@@ -101,14 +101,14 @@ publicconfig.config example:
 }
 ```
 
-**Following are the References to doc for different Azure command line tools**
+####Following are the References to doc for different Azure command line tools
 
 1. [Azure portal](https://docs.chef.io/azure_portal.html)
 2. [Azure Powershell cmdlets](examples/azure-powershell-examples.md)
 3. [Azure Xplat CLI](examples/azure-xplat-cli-examples.md)
 4. [Knife Azure Plugin](examples/knife-azure-plugin-examples.md)
 
-**Powershell script to try Azure Chef Extension by using Set-AzureVMExtension cmdlet:**
+####Powershell script to try Azure Chef Extension by using Set-AzureVMExtension cmdlet:
 
 ```javascript
 $vm1 = "<VM name>"
@@ -131,7 +131,7 @@ New-AzureVM -Location 'West US' -ServiceName $svc -VM $vObj1
 # Look into your hosted chef account to verify the registerd node(VM)
 ```
 
-**Updating Extension manually**
+####Updating Extension manually
 
 1. Suppose you have a VM with extension version 1205 .12
 2. `$vmm = Get-AzureVM -Name "<vm-name>" -ServiceName "<cloud-service-name>"`
@@ -142,7 +142,7 @@ $vmOb = Set-AzureVMExtension -VM $vmm -ExtensionName 'ChefClient' -Publisher ‘
 Update-AzureVM -VM $vmOb.VM -Name "<vm-name>" -ServiceName "<cloud-service-name>
 ```
 
-**ARM commands for Azure Chef Extension**
+####ARM commands for Azure Chef Extension
 
 1. Please refer https://github.com/Azure/azure-quickstart-templates/tree/master/chef-json-parameters-linux-vm of creating the ARM template files.
 
