@@ -21,34 +21,29 @@ get_config_settings_file() {
   echo $config_file_name
 }
 
-extract_environment_variables_list() {
-  env_vars_list=$(sed ':a;N;$!ba;s/\n//g' $1 | tr -d ' ' | sed 's/.*environment_variables":{\(.*\)}/\1/g' | awk -F\} '{print $1}' | awk '{n=split($0,arr,",");for(i=1;i<=n;i++) print arr[i]}')
-
-  echo $env_vars_list
+get_file_path_to_parse_env_variables(){
+  path_to_parse_env_variables="$1/bin/parse_env_variables.py"
+  echo $path_to_parse_env_variables
 }
 
 export_env_vars() {
-  eval "export $1=$2"
+  comands="`python $path_to_parse_env_variables \"$1\"`"
+  eval $comands
 }
 
 read_environment_variables(){
   echo "[$(date)] Reading environment variables"
   config_file_name=$(get_config_settings_file $1)
+  path_to_parse_env_variables=$(get_file_path_to_parse_env_variables $1)
 
   if [ -z "$config_file_name" ]; then
     echo "Configuration error. Azure chef extension's config/settings file missing."
     exit 1
   else
     if cat $config_file_name 2>/dev/null | grep -q "environment_variables"; then
-      env_vars_list=$(extract_environment_variables_list $config_file_name)
-
-      for i in $env_vars_list
-      do
-        env_var_name=$(echo $i | awk -F':' '{print $1}')
-        env_var_value=$(echo $i | awk -F':' '{OFS=":";$1="";print $0}' | sed 's/^:*//g;s/^ *//g;s/ *$//g')
-        export_env_vars $env_var_name $env_var_value
-      done
+      export_env_vars $config_file_name
       echo "[$(date)] Environment variables read operation completed"
+      echo "`env`"
     else
       echo "[$(date)] No environment variables found"
     fi
