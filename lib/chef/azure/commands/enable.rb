@@ -3,6 +3,7 @@
 require 'chef'
 require 'chef/azure/helpers/shared'
 require 'chef/azure/service'
+require 'chef/azure/task'
 require 'chef/azure/helpers/parse_json'
 require 'openssl'
 require 'base64'
@@ -72,6 +73,8 @@ class EnableChef
         daemon = "service" if (daemon.nil? || daemon.empty?)
         if(daemon == "service" || !windows?)
           enable_chef_service
+        elsif daemon == "task" && windows?
+          enable_chef_sch_task
         end
       end
 
@@ -88,6 +91,18 @@ class EnableChef
 
   def load_chef_service_interval
     value_from_json_file(handler_settings_file, 'runtimeSettings', '0', 'handlerSettings', 'publicSettings', 'chef_service_interval')
+  end
+
+  def update_chef_status(option_name, disable_flag)
+    if @exit_code == 0
+      disable_flag ?
+        report_status_to_azure("chef-#{option_name} disabled", "success") :
+        report_status_to_azure("chef-#{option_name} enabled", "success")
+    else
+      disable_flag ?
+        report_status_to_azure("chef-#{option_name} disable failed - #{error_message}", "error") :
+        report_status_to_azure("chef-#{option_name} enable failed - #{error_message}", "error")
+    end
   end
 
   def enable_chef_service
@@ -124,15 +139,39 @@ class EnableChef
       end
     end
 
-    if @exit_code == 0
-      disable_flag ?
-        report_status_to_azure("chef-service disabled", "success") :
-        report_status_to_azure("chef-service enabled", "success")
+    update_chef_status("service", disable_flag)
+    @exit_code
+  end
+
+  def enable_chef_sch_task
+    chef_task = ChefTask.new
+    chef_service_interval = load_chef_service_interval
+    disable_flag = false
+
+    ## enable chef-sch-task with default value for interval as user has not provided the value ##
+    if chef_service_interval.empty?
+      @exit_code, error_message = chef_task.enable(
+        bootstrap_directory,
+        @azure_plugin_log_location
+      )
     else
-      disable_flag ?
-      report_status_to_azure("chef-service disable failed - #{error_message}", "error") :
-      report_status_to_azure("chef-service enable failed - #{error_message}", "error")
+      ## disable chef-sch-task as per the user's choice ##
+      if chef_service_interval.to_i == 0
+        @exit_code, error_message = chef_task.disable
+        disable_flag = true
+      else
+        ## enable chef-sch-task with user provided value for interval ##
+        raise 'Invalid value for chef_service_interval option.' if chef_service_interval.to_i < 0
+
+        @exit_code, error_message = chef_task.enable(
+          bootstrap_directory,
+          @azure_plugin_log_location,
+          chef_service_interval.to_i
+        )
+      end
     end
+
+    update_chef_status("sch-task", disable_flag)
     @exit_code
   end
 
