@@ -29,12 +29,12 @@ class ChefTask
       puts "#{Time.now} Getting chef-client scheduled task status"
       if is_installed?
         puts "#{Time.now} chef-client scheduled task is already installed."
-        if chef_sch_task_interval_changed?(chef_service_interval, "#{bootstrap_directory}\\client.rb")
+        if chef_sch_task_interval_changed?(chef_service_interval)
           puts "#{Time.now} yes..chef-client service interval has been changed by the user..updating the interval value to #{chef_service_interval} minutes."
-          update_chef_sch_task
+          update_chef_sch_task(chef_service_interval)
         end
       else
-        install_service
+        install_service(bootstrap_directory, log_location, chef_service_interval)
       end
     rescue => e
       Chef::Log.error "#{error_message} (#{e})"
@@ -46,7 +46,7 @@ class ChefTask
 
   def disable
     puts "#{Time.now} Disabling chef-client scheduled task..."
-    result = shell_out("SCHTASKS.EXE  /END /TN \"chef-client\"")
+    result = shell_out("SCHTASKS.EXE /CHANGE /TN \"chef-client\" /DISABLE")
     result.error? ? result.error! : (puts "#{Time.now} Disabled chef-client scheduled task.")
   end
 
@@ -54,13 +54,36 @@ class ChefTask
 
   def is_installed?
     puts "#{Time.now} Checking chef-client scheduled task install status..."
-    result = shell_out("SCHTASKS.EXE  /QUERY /TN \"chef-client\"")
+    result = shell_out("SCHTASKS.EXE /QUERY /TN \"chef-client\"")
     result.error? ? false : true
   end
 
-  def install_service
+  def install_service(bootstrap_directory, log_location, chef_service_interval)
     puts "#{Time.now} Installing chef-client scheduled task..."
-    result = shell_out("SCHTASKS.EXE  /CREATE /TN \"chef-client\" /F /SC \"MINUTE\" /MO \"#{chef_service_interval}\" /TR \"cmd /c \"ruby chef-client -L #{log_location}/chef-client.log -c #{bootstrap_directory}/client.rb\" \" /RU \"NT Authority\System\" /RP /RL \"HIGHEST\"")
+    result = shell_out("SCHTASKS.EXE /CREATE /TN \"chef-client\" /F /SC \"MINUTE\" /MO \"#{chef_service_interval}\" /TR \"cmd /c 'ruby chef-client -L #{log_location}/chef-client.log -c #{bootstrap_directory}/client.rb'\" /RU \"NT Authority\\System\" /RP /RL \"HIGHEST\"")
     result.error? ? result.error! : (puts "#{Time.now} Installed chef-client scheduled task.")
+  end
+
+  def update_chef_sch_task(chef_service_interval)
+    puts "#{Time.now} Updating chef-client scheduled task..."
+    result = shell_out("SCHTASKS.EXE /CHANGE /TN \"chef-client\" /RI #{chef_service_interval} /RU \"NT Authority\\System\" /RP /RL \"HIGHEST\"")
+    result.error? ? result.error! : (puts "#{Time.now} Updated chef-client scheduled task.")
+  end
+
+  def chef_sch_task_interval_changed?(new_chef_service_interval)
+    puts "#{Time.now} Checking if chef-client scheduled task interval has been changed by the user or not..."
+    old_chef_service_interval = fetch_old_chef_service_interval
+    old_chef_service_interval != new_chef_service_interval
+  end
+
+  def fetch_old_chef_service_interval
+    hours_str, minutes_str = shell_out("(SCHTASKS.EXE /CHANGE /TN \"chef-client\" /FO LIST /V | grep \"Repeat: Every\").replace(' ','') | %{ $_.split(':')[-1] } | %{ $_.split(',') }")
+    hours = shell_out("(#{hours_str}) -replace '(\d+)\D+', '$1'")
+    minutes = shell_out("(#{minutes_str}) -replace '(\d+)\D+', '$1'")
+    total_minutes(hours, minutes)
+  end
+
+  def total_minutes(hours, minutes)
+    (hours * 60) + minutes
   end
 end
