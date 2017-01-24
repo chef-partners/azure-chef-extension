@@ -42,14 +42,15 @@ class DisableChef
     # Disabling Chef involves following steps:
     # - Stop the Chef service   
     begin
-      @exit_code, error_message = ChefService.new.disable(@azure_plugin_log_location)
-      if @exit_code == 0
-        report_status_to_azure "chef-service disabled", "success"
-      else
-        report_status_to_azure "chef-service disable failed - #{error_message}", "error"
+      daemon = value_from_json_file(handler_settings_file, 'runtimeSettings', '0', 'handlerSettings', 'publicSettings', 'daemon')
+      daemon = "service" if (daemon.nil? || daemon.empty?)
+      if(daemon == "service" || !windows?)
+        @exit_code, error_message = ChefService.new.disable(@azure_plugin_log_location)
+        update_chef_status("service")
+      elsif daemon == "task" && windows?
+        @exit_code, error_message = ChefTask.new.disable
+        update_chef_status("sch-task")
       end
-      @exit_code
-
     rescue => e
       Chef::Log.error e
       report_status_to_azure "#{e} - Check log file for details", "error"
@@ -59,6 +60,14 @@ class DisableChef
       Chef::Log.info "Process completed (pid: #{Process.pid})"
     end
     @exit_code
+  end
+
+  def update_chef_status(option_name)
+    if @exit_code == 0
+      report_status_to_azure "chef-#{option_name} disabled", "success"
+    else
+      report_status_to_azure "chef-#{option_name} disable failed - #{error_message}", "error"
+    end
   end
 end
 

@@ -23,6 +23,12 @@ function Uninstall-ChefService {
   Write-Host("[$(Get-Date)] $result")
 }
 
+function Uninstall-ChefSchTask {
+  Write-Host("[$(Get-Date)] Uninstalling chef scheduled task...")
+  $result = schtasks /delete /tn "chef-client" /f
+  Write-Host("[$(Get-Date)] $result")
+}
+
 function Uninstall-AzureChefExtensionGem {
   Write-Host("[$(Get-Date)] Uninstalling Azure-Chef-Extension gem...")
   # Uninstall the custom gem
