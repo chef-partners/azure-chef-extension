@@ -27,8 +27,8 @@ get_file_path_to_parse_env_variables(){
 }
 
 export_env_vars() {
-  comands="`python $path_to_parse_env_variables \"$1\"`"
-  eval $comands
+  commands="`python $path_to_parse_env_variables \"$1\"`"
+  eval $commands
 }
 
 read_environment_variables(){

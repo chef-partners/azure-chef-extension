@@ -3,7 +3,7 @@ import sys
 with open(sys.argv[1]) as data_file:
     data = json.load(data_file, strict=False)
 data = data['runtimeSettings'][0]['handlerSettings']['publicSettings']['environment_variables']
-comands=""
+commands=""
 for key, value in data.items():
-    comands=comands+'export '+key+'="'+value+'";'
-print comands
+    commands=commands+'export '+key+'="'+value+'";'
+print commands
