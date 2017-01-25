@@ -207,8 +207,6 @@ function normalize_json($json) {
 }
 
 function Get-Azure-Config-Path($powershellVersion) {
-  $chefExtensionRoot = Chef-GetExtensionRoot
-
   Try
   {
     # Reading chef_extension_root/HandlerEnvironment.json file
@@ -257,3 +255,5 @@ function Run-Powershell2-With-Dot-Net4 {
     reg add hklm\software\wow6432node\microsoft\.netframework /v OnlyUseLatestCLR /t REG_DWORD /d 1 /f
   }
 }
+
+Export-ModuleMember -Function Run-Powershell2-With-Dot-Net4

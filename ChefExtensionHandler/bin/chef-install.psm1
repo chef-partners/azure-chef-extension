@@ -89,4 +89,3 @@ function Get-SharedHelper {
 }
 
 Export-ModuleMember -Function Install-ChefClient
-Export-ModuleMember -Function Run-Powershell2-With-Dot-Net4

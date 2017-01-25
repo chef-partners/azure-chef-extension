@@ -40,7 +40,8 @@ class DisableChef
 
   def disable_chef
     # Disabling Chef involves following steps:
-    # - Stop the Chef service   
+    # - Stop the Chef service OR
+    # - Disable the Chef scheduled task
     begin
       daemon = value_from_json_file(handler_settings_file, 'runtimeSettings', '0', 'handlerSettings', 'publicSettings', 'daemon')
       daemon = "service" if (daemon.nil? || daemon.empty?)
