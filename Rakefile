@@ -25,6 +25,7 @@ PESTER_SANDBOX = './PESTER_SANDBOX'
 LINUX_PACKAGE_LIST = [
   {"ChefExtensionHandler/*.sh" => "#{CHEF_BUILD_DIR}/"},
   {"ChefExtensionHandler/bin/*.sh" => "#{CHEF_BUILD_DIR}/bin"},
+  {"ChefExtensionHandler/bin/*.py" => "#{CHEF_BUILD_DIR}/bin"},
   {"ChefExtensionHandler/bin/*.rb" => "#{CHEF_BUILD_DIR}/bin"},
   {"ChefExtensionHandler/bin/chef-client" => "#{CHEF_BUILD_DIR}/bin"},
   {"*.gem" => "#{CHEF_BUILD_DIR}/gems"},
