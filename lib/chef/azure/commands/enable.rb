@@ -317,22 +317,6 @@ class EnableChef
     @first_boot_attributes = JSON.parse(value_from_json_file(handler_settings_file, 'runtimeSettings', '0', 'handlerSettings', 'publicSettings', 'custom_json_attr').gsub("=>", ":")) rescue nil || {}
   end
 
-  def handler_settings_file
-    @handler_settings_file ||=
-    begin
-      files = Dir.glob("#{File.expand_path(@azure_config_folder)}/*.settings").sort
-      if files and not files.empty?
-        files.last
-      else
-        error_message = "Configuration error. Azure chef extension Settings file missing."
-        Chef::Log.error error_message
-        report_status_to_azure error_message, "error"
-        @exit_code = 1
-        raise error_message
-      end
-    end
-  end
-
   def escape_runlist(run_list)
     parsedRunlist = []
     run_list.split(/,\s*|\s/).reject(&:empty?).each do |item|

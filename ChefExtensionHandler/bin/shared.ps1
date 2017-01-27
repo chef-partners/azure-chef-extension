@@ -246,8 +246,6 @@ function Get-Azure-Config-Path($powershellVersion) {
 # Sourcing the script again refreshes the powershell console and the changes
 # of registry key become available
 function Run-Powershell2-With-Dot-Net4 {
-  # Source the shared PS
-  . $(Get-SharedHelper)
   $powershellVersion = Get-PowershellVersion
 
   if ( $powershellVersion -lt 3 ) {
@@ -255,5 +253,3 @@ function Run-Powershell2-With-Dot-Net4 {
     reg add hklm\software\wow6432node\microsoft\.netframework /v OnlyUseLatestCLR /t REG_DWORD /d 1 /f
   }
 }
-
-Export-ModuleMember -Function Run-Powershell2-With-Dot-Net4

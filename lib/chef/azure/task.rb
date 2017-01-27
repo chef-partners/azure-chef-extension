@@ -77,7 +77,7 @@ class ChefTask
   end
 
   def fetch_old_chef_service_interval
-    hours_str, minutes_str = shell_out("(SCHTASKS.EXE /CHANGE /TN \"chef-client\" /FO LIST /V | grep \"Repeat: Every\").replace(' ','') | %{ $_.split(':')[-1] } | %{ $_.split(',') }")
+    hours_str, minutes_str = shell_out("(SCHTASKS.EXE /QUERY /TN \"chef-client\" /FO LIST /V | Select-String \"Repeat: Every\") -replace ' ','' | %{ $_.split(':')[-1] } | %{ $_.split(',') }")
     hours = shell_out("(#{hours_str}) -replace '(\d+)\D+', '$1'")
     minutes = shell_out("(#{minutes_str}) -replace '(\d+)\D+', '$1'")
     total_minutes(hours, minutes)

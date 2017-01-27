@@ -4,6 +4,7 @@
 require 'chef'
 require 'chef/azure/helpers/shared'
 require 'chef/azure/service'
+require 'chef/azure/helpers/parse_json'
 
 class DisableChef
   include ChefAzure::Shared
@@ -51,6 +52,8 @@ class DisableChef
       elsif daemon == "task" && windows?
         @exit_code, error_message = ChefTask.new.disable
         update_chef_status("sch-task")
+      elsif daemon == "none"
+        update_chef_status("extension")
       end
     rescue => e
       Chef::Log.error e
