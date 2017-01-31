@@ -1,5 +1,8 @@
 # azure-chef-extension Change Log
 
+## Latest Release: 1210.12.106.1001 (2017/01/30)
+* [azure-chef-extension #187](https://github.com/chef-partners/azure-chef-extension/pull/187) add python script to parse env variables
+
 ## Latest Release: 1210.12.107.1001 (2017/01/03)
 * [azure-chef-extension #185](https://github.com/chef-partners/azure-chef-extension/pull/185) Parsing json on Windows 2008
 
