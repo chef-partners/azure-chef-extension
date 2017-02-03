@@ -46,8 +46,19 @@ class ChefTask
 
   def disable
     puts "#{Time.now} Disabling chef-client scheduled task..."
-    result = shell_out("SCHTASKS.EXE /CHANGE /TN \"chef-client\" /DISABLE")
-    result.error? ? result.error! : (puts "#{Time.now} Disabled chef-client scheduled task.")
+    exit_code = 0
+    message = "success"
+    error_message = "Error disabling chef-client scheduled task"
+    begin
+      result = shell_out("SCHTASKS.EXE /CHANGE /TN \"chef-client\" /DISABLE")
+      result.error? ? result.error! : (puts "#{Time.now} Disabled chef-client scheduled task.")
+    rescue => e
+      Chef::Log.error "#{error_message} (#{e})"
+      message = "#{error_message} - #{e} - Check log file for details", "error"
+      exit_code = 1
+    end
+    puts "#{Time.now} Disabled chef-client service" if exit_code == 0
+    [exit_code, message]
   end
 
   private
@@ -77,10 +88,10 @@ class ChefTask
   end
 
   def fetch_old_chef_service_interval
-    hours_str, minutes_str = shell_out("(SCHTASKS.EXE /QUERY /TN \"chef-client\" /FO LIST /V | Select-String \"Repeat: Every\") -replace ' ','' | %{ $_.split(':')[-1] } | %{ $_.split(',') }")
-    hours = shell_out("(#{hours_str}) -replace '(\d+)\D+', '$1'")
-    minutes = shell_out("(#{minutes_str}) -replace '(\d+)\D+', '$1'")
-    total_minutes(hours, minutes)
+    frequency_str = shell_out("powershell.exe -Command \"(SCHTASKS.EXE /QUERY /TN 'chef-client' /FO LIST /V | Select-String 'Repeat: Every') -replace ' ','' | %{ $_.split(':')[-1] } | %{ $_.split(',') }\"").stdout.strip().split("\r\n")
+    hours = frequency_str[0].split("Hour").first
+    minutes = frequency_str[1].split("Minute").first
+    total_minutes(hours.to_i, minutes.to_i)
   end
 
   def total_minutes(hours, minutes)

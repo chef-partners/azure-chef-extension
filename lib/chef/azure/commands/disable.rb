@@ -4,6 +4,7 @@
 require 'chef'
 require 'chef/azure/helpers/shared'
 require 'chef/azure/service'
+require 'chef/azure/task'
 require 'chef/azure/helpers/parse_json'
 
 class DisableChef
@@ -47,10 +48,10 @@ class DisableChef
       daemon = value_from_json_file(handler_settings_file, 'runtimeSettings', '0', 'handlerSettings', 'publicSettings', 'daemon')
       daemon = "service" if (daemon.nil? || daemon.empty?)
       if(daemon == "service" || !windows?)
-        @exit_code, error_message = ChefService.new.disable(@azure_plugin_log_location)
+        @exit_code, @error_message = ChefService.new.disable(@azure_plugin_log_location)
         update_chef_status("service")
       elsif daemon == "task" && windows?
-        @exit_code, error_message = ChefTask.new.disable
+        @exit_code, @error_message = ChefTask.new.disable
         update_chef_status("sch-task")
       elsif daemon == "none"
         update_chef_status("extension")
@@ -70,7 +71,7 @@ class DisableChef
     if @exit_code == 0
       report_status_to_azure "chef-#{option_name} disabled", "success"
     else
-      report_status_to_azure "chef-#{option_name} disable failed - #{error_message}", "error"
+      report_status_to_azure "chef-#{option_name} disable failed - #{@error_message}", "error"
     end
   end
 end
