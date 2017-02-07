@@ -100,8 +100,8 @@ class EnableChef
         report_status_to_azure("chef-#{option_name} enabled", "success")
     else
       disable_flag ?
-        report_status_to_azure("chef-#{option_name} disable failed - #{error_message}", "error") :
-        report_status_to_azure("chef-#{option_name} enable failed - #{error_message}", "error")
+        report_status_to_azure("chef-#{option_name} disable failed - #{@error_message}", "error") :
+        report_status_to_azure("chef-#{option_name} enable failed - #{@error_message}", "error")
     end
   end
 
@@ -112,7 +112,7 @@ class EnableChef
 
     ## enable chef-service with default value for interval as user has not provided the value ##
     if chef_service_interval.empty?
-      @exit_code, error_message = chef_service.enable(
+      @exit_code, @error_message = chef_service.enable(
         @chef_extension_root,
         bootstrap_directory,
         @azure_plugin_log_location
@@ -120,7 +120,7 @@ class EnableChef
     else
       ## disable chef-service as per the user's choice ##
       if chef_service_interval.to_i == 0
-        @exit_code, error_message = chef_service.disable(
+        @exit_code, @error_message = chef_service.disable(
           @azure_plugin_log_location,
           bootstrap_directory,
           chef_service_interval.to_i
@@ -130,7 +130,7 @@ class EnableChef
         ## enable chef-service with user provided value for interval ##
         raise 'Invalid value for chef_service_interval option.' if chef_service_interval.to_i < 0
 
-        @exit_code, error_message = chef_service.enable(
+        @exit_code, @error_message = chef_service.enable(
           @chef_extension_root,
           bootstrap_directory,
           @azure_plugin_log_location,
@@ -150,20 +150,20 @@ class EnableChef
 
     ## enable chef-sch-task with default value for interval as user has not provided the value ##
     if chef_service_interval.empty?
-      @exit_code, error_message = chef_task.enable(
+      @exit_code, @error_message = chef_task.enable(
         bootstrap_directory,
         @azure_plugin_log_location
       )
     else
       ## disable chef-sch-task as per the user's choice ##
       if chef_service_interval.to_i == 0
-        @exit_code, error_message = chef_task.disable
+        @exit_code, @error_message = chef_task.disable
         disable_flag = true
       else
         ## enable chef-sch-task with user provided value for interval ##
         raise 'Invalid value for chef_service_interval option.' if chef_service_interval.to_i < 0
 
-        @exit_code, error_message = chef_task.enable(
+        @exit_code, @error_message = chef_task.enable(
           bootstrap_directory,
           @azure_plugin_log_location,
           chef_service_interval.to_i
