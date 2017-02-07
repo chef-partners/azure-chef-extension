@@ -29,10 +29,8 @@ class ChefTask
       puts "#{Time.now} Getting chef-client scheduled task status"
       if is_installed?
         puts "#{Time.now} chef-client scheduled task is already installed."
-        if chef_sch_task_interval_changed?(chef_service_interval)
-          puts "#{Time.now} yes..chef-client service interval has been changed by the user..updating the interval value to #{chef_service_interval} minutes."
-          update_chef_sch_task(chef_service_interval)
-        end
+        puts "#{Time.now} Enabling chef scheduled task with interval #{chef_service_interval} minutes."
+        update_chef_sch_task(chef_service_interval)
       else
         install_service(bootstrap_directory, log_location, chef_service_interval)
       end
@@ -77,21 +75,8 @@ class ChefTask
 
   def update_chef_sch_task(chef_service_interval)
     puts "#{Time.now} Updating chef-client scheduled task..."
-    result = shell_out("SCHTASKS.EXE /CHANGE /TN \"chef-client\" /RI #{chef_service_interval} /RU \"NT Authority\\System\" /RP /RL \"HIGHEST\"")
+    result = shell_out("SCHTASKS.EXE /CHANGE /TN \"chef-client\" /RI #{chef_service_interval} /RU \"NT Authority\\System\" /RP /RL \"HIGHEST\" /ENABLE")
     result.error? ? result.error! : (puts "#{Time.now} Updated chef-client scheduled task.")
-  end
-
-  def chef_sch_task_interval_changed?(new_chef_service_interval)
-    puts "#{Time.now} Checking if chef-client scheduled task interval has been changed by the user or not..."
-    old_chef_service_interval = fetch_old_chef_service_interval
-    old_chef_service_interval != new_chef_service_interval
-  end
-
-  def fetch_old_chef_service_interval
-    frequency_str = shell_out("powershell.exe -Command \"(SCHTASKS.EXE /QUERY /TN 'chef-client' /FO LIST /V | Select-String 'Repeat: Every') -replace ' ','' | %{ $_.split(':')[-1] } | %{ $_.split(',') }\"").stdout.strip().split("\r\n")
-    hours = frequency_str[0].split("Hour").first
-    minutes = frequency_str[1].split("Minute").first
-    total_minutes(hours.to_i, minutes.to_i)
   end
 
   def total_minutes(hours, minutes)
