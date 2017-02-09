@@ -193,6 +193,7 @@ describe EnableChef do
 
     context "when daemon=task" do
       before do
+        allow(instance).to receive(:windows?).and_return(true)
         allow(instance).to receive(:value_from_json_file).and_return("task")
         allow(instance).to receive(:handler_settings_file)
       end

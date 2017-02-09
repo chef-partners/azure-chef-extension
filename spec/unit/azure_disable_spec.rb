@@ -25,6 +25,10 @@ describe DisableChef do
   end
 
   describe "#disable_chef" do
+    before do
+      allow(instance).to receive(:windows?).and_return(true)
+    end
+
     context "when daemon is not passed" do
       context "when disable is successful" do
         it "disables chef service and returns the status to azure with success." do
