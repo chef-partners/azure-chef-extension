@@ -213,8 +213,8 @@ New-AzureResourceGroupDeployment -Name <deployment_name> -TemplateParameterFile 
 ```
 
 **References:**
-http://azure.microsoft.com/en-us/documentation/templates/chef-json-parameters-ubuntu-vm/
-http://azure.microsoft.com/en-us/documentation/templates/multi-vm-chef-template-ubuntu-vm/
+https://azure.microsoft.com/en-us/resources/templates/chef-json-parameters-linux-vm/
+https://azure.microsoft.com/en-us/resources/templates/multi-vm-chef-template-ubuntu-vm/
 
 
 
