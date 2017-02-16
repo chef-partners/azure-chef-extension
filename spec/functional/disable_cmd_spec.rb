@@ -19,29 +19,30 @@ describe "DisableChef" do
   end
 
   context "for windows" do
-    it "disables chef service if it's not already stopped" do
-      allow(instance).to receive(:puts)
-      allow(instance).to receive(:load_env)
-      allow(instance).to receive(:report_heart_beat_to_azure)
-      allow(instance).to receive(:report_status_to_azure)
-      allow_any_instance_of(ChefService).to receive(:puts)
-      allow_any_instance_of(ChefService).to receive(:bootstrap_directory).and_return(@temp_directory)
-      allow_any_instance_of(ChefService).to receive(:is_running?).and_return(true)
-      allow_any_instance_of(ChefService).to receive(:windows?).and_return(true)
-      expect_any_instance_of(ChefService).to receive(:shell_out).with("sc.exe stop chef-client").and_return(OpenStruct.new(:exitstatus => 0, :stdout => "", :error => nil))
-      instance.run
-    end
+    context "when daemon is not specified" do
+      before do
+        allow(instance).to receive(:puts)
+        allow(instance).to receive(:load_env)
+        allow(instance).to receive(:report_heart_beat_to_azure)
+        allow(instance).to receive(:report_status_to_azure)
+        allow(instance).to receive(:handler_settings_file)
+        allow(instance).to receive(:value_from_json_file)
+        allow_any_instance_of(ChefService).to receive(:puts)
+        allow_any_instance_of(ChefService).to receive(:bootstrap_directory).and_return(@temp_directory)
+      end
 
-    it "does nothing if chef service is already stopped" do
-      allow(instance).to receive(:puts)
-      allow(instance).to receive(:load_env)
-      allow(instance).to receive(:report_heart_beat_to_azure)
-      allow(instance).to receive(:report_status_to_azure)
-      allow_any_instance_of(ChefService).to receive(:puts)
-      allow_any_instance_of(ChefService).to receive(:bootstrap_directory).and_return(@temp_directory)
-      allow_any_instance_of(ChefService).to receive(:is_running?).and_return(false)
-      expect_any_instance_of(ChefService).to receive(:disable).and_return([0, "success"])
-      instance.run
+      it "disables chef service if it's not already stopped" do
+        allow_any_instance_of(ChefService).to receive(:is_running?).and_return(true)
+        allow_any_instance_of(ChefService).to receive(:windows?).and_return(true)
+        expect_any_instance_of(ChefService).to receive(:shell_out).with("sc.exe stop chef-client").and_return(OpenStruct.new(:exitstatus => 0, :stdout => "", :error => nil))
+        instance.run
+      end
+
+      it "does nothing if chef service is already stopped" do
+        allow_any_instance_of(ChefService).to receive(:is_running?).and_return(false)
+        expect_any_instance_of(ChefService).to receive(:disable).and_return([0, "success"])
+        instance.run
+      end
     end
   end
 
@@ -51,6 +52,8 @@ describe "DisableChef" do
       allow(instance).to receive(:load_env)
       allow(instance).to receive(:report_heart_beat_to_azure)
       allow(instance).to receive(:report_status_to_azure)
+      allow(instance).to receive(:handler_settings_file)
+      allow(instance).to receive(:value_from_json_file)
       allow_any_instance_of(ChefService).to receive(:puts)
       allow_any_instance_of(ChefService).to receive(:bootstrap_directory).and_return(@temp_directory)
       allow_any_instance_of(ChefService).to receive(:is_running?).and_return(true)

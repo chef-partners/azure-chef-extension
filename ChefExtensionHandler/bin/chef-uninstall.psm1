@@ -23,6 +23,12 @@ function Uninstall-ChefService {
   Write-Host("[$(Get-Date)] $result")
 }
 
+function Uninstall-ChefSchTask {
+  Write-Host("[$(Get-Date)] Uninstalling chef scheduled task...")
+  $result = schtasks /delete /tn "chef-client" /f
+  Write-Host("[$(Get-Date)] $result")
+}
+
 function Uninstall-AzureChefExtensionGem {
   Write-Host("[$(Get-Date)] Uninstalling Azure-Chef-Extension gem...")
   # Uninstall the custom gem
@@ -61,7 +67,14 @@ function Uninstall-ChefClient {
   if (!(Test-ChefExtensionRegistry)) {
     if ($logStatus) {  Write-ChefStatus "uninstalling-chef-extension" "transitioning" "Uninstalling Chef Extension" }
 
-    Uninstall-ChefService
+    $daemon = Get-PublicSettings-From-Config-Json "daemon" $powershellVersion
+
+    if ( -Not $daemon -Or $daemon -eq "service") {
+      Uninstall-ChefService
+    }
+    if ( $daemon -eq "task" ) {
+      Uninstall-ChefSchTask
+    }
 
     Uninstall-AzureChefExtensionGem
 

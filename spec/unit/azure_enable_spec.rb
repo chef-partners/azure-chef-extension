@@ -9,7 +9,7 @@ describe EnableChef do
 
   it { expect {instance}.to_not raise_error }
 
-  context "run" do
+  context "#run" do
     context "chef service is enabled" do
       context "chef-client run was successful" do
         it "reports chef service enabled to heartbeat" do
@@ -113,43 +113,117 @@ describe EnableChef do
     end
   end
 
-  context "load_env" do
+  context "#load_env" do
     it "loads azure specific environment configurations from config file." do
       expect(instance).to receive(:read_config)
       instance.send(:load_env)
     end
   end
 
-  describe 'enable_chef' do
-    context '@exit_code is 0' do
-      it 'calls configure_chef_only_once and enable_chef_service methods' do
+  describe '#enable_chef' do
+    context "when daemon is not provided" do
+      before do
+        allow(instance).to receive(:value_from_json_file)
         allow(instance).to receive(:handler_settings_file)
-        allow(instance).to receive(:value_from_json_file).and_return("service")
-        expect(instance).to receive(:configure_chef_only_once)
-        expect(instance).to receive(:enable_chef_service)
-        expect(Chef::Log).to_not receive(:error)
-        expect(instance).to receive(:report_status_to_azure)
-        expect(Chef::Log).to receive(:info)
-        response = instance.send(:enable_chef)
-        expect(response).to be == 0
+      end
+
+      context '@exit_code is 0' do
+        it 'calls configure_chef_only_once and enable_chef_service methods' do
+          expect(instance).to receive(:configure_chef_only_once)
+          expect(instance).to receive(:enable_chef_service)
+          expect(Chef::Log).to_not receive(:error)
+          expect(instance).to receive(:report_status_to_azure)
+          expect(Chef::Log).to receive(:info)
+          response = instance.send(:enable_chef)
+          expect(response).to be == 0
+        end
+      end
+
+      context '@exit_code is 1' do
+        before do
+          instance.instance_variable_set(:@exit_code, 1)
+        end
+
+        it 'calls configure_chef_only_once method but not enable_chef_service method' do
+          expect(instance).to receive(:configure_chef_only_once)
+          expect(instance).to_not receive(:enable_chef_service)
+          expect(Chef::Log).to_not receive(:error)
+          expect(instance).to_not receive(:report_status_to_azure)
+          expect(Chef::Log).to receive(:info)
+          response = instance.send(:enable_chef)
+          expect(response).to be == 1
+        end
       end
     end
 
-    context '@exit_code is 1' do
+    context "when daemon=service" do
       before do
-        instance.instance_variable_set(:@exit_code, 1)
+        allow(instance).to receive(:value_from_json_file).and_return("service")
+        allow(instance).to receive(:handler_settings_file)
       end
 
-      it 'calls configure_chef_only_once method but not enable_chef_service method' do
+      context '@exit_code is 0' do
+        it 'calls configure_chef_only_once and enable_chef_service methods' do
+          expect(instance).to receive(:configure_chef_only_once)
+          expect(instance).to receive(:enable_chef_service)
+          expect(Chef::Log).to_not receive(:error)
+          expect(instance).to receive(:report_status_to_azure)
+          expect(Chef::Log).to receive(:info)
+          response = instance.send(:enable_chef)
+          expect(response).to be == 0
+        end
+      end
+
+      context '@exit_code is 1' do
+        before do
+          instance.instance_variable_set(:@exit_code, 1)
+        end
+
+        it 'calls configure_chef_only_once method but not enable_chef_service method' do
+          expect(instance).to receive(:configure_chef_only_once)
+          expect(instance).to_not receive(:enable_chef_service)
+          expect(Chef::Log).to_not receive(:error)
+          expect(instance).to_not receive(:report_status_to_azure)
+          expect(Chef::Log).to receive(:info)
+          response = instance.send(:enable_chef)
+          expect(response).to be == 1
+        end
+      end
+    end
+
+    context "when daemon=task" do
+      before do
+        allow(instance).to receive(:windows?).and_return(true)
+        allow(instance).to receive(:value_from_json_file).and_return("task")
         allow(instance).to receive(:handler_settings_file)
-        allow(instance).to receive(:value_from_json_file).and_return("service")
-        expect(instance).to receive(:configure_chef_only_once)
-        expect(instance).to_not receive(:enable_chef_service)
-        expect(Chef::Log).to_not receive(:error)
-        expect(instance).to_not receive(:report_status_to_azure)
-        expect(Chef::Log).to receive(:info)
-        response = instance.send(:enable_chef)
-        expect(response).to be == 1
+      end
+
+      context '@exit_code is 0' do
+        it 'calls configure_chef_only_once and enable_chef_service methods' do
+          expect(instance).to receive(:configure_chef_only_once)
+          expect(instance).to receive(:enable_chef_sch_task)
+          expect(Chef::Log).to_not receive(:error)
+          expect(instance).to receive(:report_status_to_azure)
+          expect(Chef::Log).to receive(:info)
+          response = instance.send(:enable_chef)
+          expect(response).to be == 0
+        end
+      end
+
+      context '@exit_code is 1' do
+        before do
+          instance.instance_variable_set(:@exit_code, 1)
+        end
+
+        it 'calls configure_chef_only_once method but not enable_chef_service method' do
+          expect(instance).to receive(:configure_chef_only_once)
+          expect(instance).to_not receive(:enable_chef_sch_task)
+          expect(Chef::Log).to_not receive(:error)
+          expect(instance).to_not receive(:report_status_to_azure)
+          expect(Chef::Log).to receive(:info)
+          response = instance.send(:enable_chef)
+          expect(response).to be == 1
+        end
       end
     end
 
@@ -192,7 +266,7 @@ describe EnableChef do
     end
   end
 
-  describe 'load_chef_service_interval' do
+  describe '#load_chef_service_interval' do
     it 'invokes value_from_json_file and other methods' do
       expect(instance).to receive(:handler_settings_file)
       expect(instance).to receive(:value_from_json_file)
@@ -224,7 +298,7 @@ describe EnableChef do
     end
   end
 
-  describe 'enable_chef_service' do
+  describe '#enable_chef_service' do
     let (:chef_service_instance) { ChefService.new }
 
     before(:each) do
@@ -356,7 +430,7 @@ describe EnableChef do
     end
   end
 
-  describe "configure_chef_only_once" do
+  describe "#configure_chef_only_once" do
     context "first chef-client run" do
       context "extended_logs set to false and ohai_hints not passed" do
         before do
@@ -486,7 +560,7 @@ describe EnableChef do
     end
   end
 
-  describe "chef_client_log_path" do
+  describe "#chef_client_log_path" do
     context "log_location defined in chef_config read from chef config file" do
       before do
         allow(instance).to receive(:chef_config)
@@ -516,7 +590,7 @@ describe EnableChef do
     end
   end
 
-  describe "fetch_chef_client_logs" do
+  describe "#fetch_chef_client_logs" do
     context "for windows" do
       before do
         instance.instance_variable_set(:@chef_extension_root, 'c:\\extension_root')
@@ -565,7 +639,7 @@ describe EnableChef do
     end
   end
 
-  context "load_settings" do
+  context "#load_settings" do
     it "loads the settings from the handler settings file." do
       expect(instance).to receive(:handler_settings_file).exactly(8).times
       expect(instance).to receive(:value_from_json_file).exactly(8).times
@@ -577,7 +651,7 @@ describe EnableChef do
     end
   end
 
-  context "handler_settings_file" do
+  context "#handler_settings_file" do
     it "returns the handler settings file when the settings file is present." do
       allow(Dir).to receive_message_chain(:glob, :sort).and_return ["test"]
       expect(File).to receive(:expand_path)
@@ -594,13 +668,13 @@ describe EnableChef do
     end
   end
 
-  context "escape_runlist" do
+  context "#escape_runlist" do
     it "escapes and formats the runlist." do
       instance.send(:escape_runlist, "test")
     end
   end
 
-  context "get_validation_key on linux" , :unless => (RUBY_PLATFORM =~ /mswin|mingw|windows/) do
+  context "#get_validation_key on linux" , :unless => (RUBY_PLATFORM =~ /mswin|mingw|windows/) do
     before do
       @object = Object.new
       allow(File).to receive(:read)
@@ -622,7 +696,7 @@ describe EnableChef do
     end
   end
 
-  context "get_validation_key on windows" , :if => (RUBY_PLATFORM =~ /mswin|mingw|windows/) do
+  context "#get_validation_key on windows" , :if => (RUBY_PLATFORM =~ /mswin|mingw|windows/) do
     before do
       @object = Object.new
       allow(File).to receive(:expand_path).and_return(".")
@@ -707,7 +781,7 @@ describe EnableChef do
     end
   end
 
-  context "load_cloud_attributes_in_hints" do
+  context "#load_cloud_attributes_in_hints" do
     before do
       hints = "{\"public_ip\"=>\"my_public_ip\",\"vm_name\"=>\"my_vm_name\",
         \"public_fqdn\"=>\"my_public_fqdn\",\"port\"=>\"my_port\",
@@ -723,6 +797,104 @@ describe EnableChef do
       expect(hints['public_fqdn']).to eq 'my_public_fqdn'
       expect(hints['port']).to eq 'my_port'
       expect(hints['platform']).to eq 'my_platform'
+    end
+  end
+
+  describe "#update_chef_status" do
+    context "for enable" do
+      context "when operation is successful" do
+        it "displays the success message according to the option passed" do
+          instance.instance_variable_set("@exit_code", 0)
+          option_name = "service"
+          disable_flag = false
+          expect(instance).to receive(:report_status_to_azure).with("chef-#{option_name} enabled", "success")
+          instance.send(:update_chef_status, option_name, disable_flag)
+        end
+      end
+
+      context "when operation is unsuccessful" do
+        it "displays the failure message according to the option passed" do
+          instance.instance_variable_set("@exit_code", 1)
+          instance.instance_variable_set("@error_message", "error")
+          error_message = "error"
+          option_name = "task"
+          disable_flag = false
+          expect(instance).to receive(:report_status_to_azure).with("chef-#{option_name} enable failed - #{error_message}", "error")
+          instance.send(:update_chef_status, option_name, disable_flag)
+        end
+      end
+    end
+
+    context "for disable" do
+      context "when operation is successful" do
+        it "displays the success message according to the option passed" do
+          instance.instance_variable_set("@exit_code", 0)
+          option_name = "service"
+          disable_flag = true
+          expect(instance).to receive(:report_status_to_azure).with("chef-#{option_name} disabled", "success")
+          instance.send(:update_chef_status, option_name, disable_flag)
+        end
+      end
+
+      context "when operation is unsuccessful" do
+        it "displays the failure message according to the option passed" do
+          instance.instance_variable_set("@exit_code", 1)
+          instance.instance_variable_set("@error_message", "error")
+          error_message = "error"
+          option_name = "task"
+          disable_flag = true
+          expect(instance).to receive(:report_status_to_azure).with("chef-#{option_name} disable failed - #{error_message}", "error")
+          instance.send(:update_chef_status, option_name, disable_flag)
+        end
+      end
+    end
+  end
+
+  describe "#enable_chef_sch_task" do
+    context "when chef_service_interval is empty" do
+      before do
+        allow(instance).to receive(:load_chef_service_interval).and_return("")
+      end
+
+      it "creates the chef scheduled task with default interval" do
+        expect_any_instance_of(ChefTask).to receive(:enable)
+        expect(instance).to receive(:update_chef_status)
+        instance.send(:enable_chef_sch_task)
+      end
+    end
+
+    context "when chef_service_interval = 0" do
+      before do
+        allow(instance).to receive(:load_chef_service_interval).and_return("0")
+      end
+
+      it "disables the chef scheduled task" do
+        expect_any_instance_of(ChefTask).to receive(:disable)
+        expect(instance).to receive(:update_chef_status)
+        instance.send(:enable_chef_sch_task)
+      end
+    end
+
+    context "when chef_service_interval < 0" do
+      before do
+        allow(instance).to receive(:load_chef_service_interval).and_return("-2")
+      end
+
+      it "raises error" do
+        expect { instance.send(:enable_chef_sch_task) }.to raise_error("Invalid value for chef_service_interval option.")
+      end
+    end
+
+    context "when chef_service_interval > 0" do
+      before do
+        allow(instance).to receive(:load_chef_service_interval).and_return("34")
+      end
+
+      it "creates the chef scheduled task with the given interval" do
+        expect_any_instance_of(ChefTask).to receive(:enable)
+        expect(instance).to receive(:update_chef_status)
+        instance.send(:enable_chef_sch_task)
+      end
     end
   end
 end

@@ -82,6 +82,21 @@ module ChefAzure
       end
     end
 
+    def handler_settings_file
+      @handler_settings_file ||=
+      begin
+        files = Dir.glob("#{File.expand_path(@azure_config_folder)}/*.settings").sort
+        if files and not files.empty?
+          files.last
+        else
+          error_message = "Configuration error. Azure chef extension Settings file missing."
+          Chef::Log.error error_message
+          report_status_to_azure error_message, "error"
+          @exit_code = 1
+          raise error_message
+        end
+      end
+    end
   end
 
   module Config

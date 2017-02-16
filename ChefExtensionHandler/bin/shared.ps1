@@ -176,3 +176,80 @@ function Get-autoUpdateClientSetting{
 
   Get-JsonValueUsingRuby "$chefExtensionParent\\$extensionPreviousVersion\\RuntimeSettings\\$latestSettingFile" "runtimeSettings" 0 "handlerSettings" "publicSettings" "autoUpdateClient"
 }
+
+function Get-PublicSettings-From-Config-Json($key, $powershellVersion) {
+  Try
+  {
+    $azure_config_file = Get-Azure-Config-Path($powershellVersion)
+    $json_contents = Get-Content $azure_config_file
+    $normalized_json = normalize_json($json_contents)
+
+    if ( $powershellVersion -ge 3 ) {
+      $value = ($normalized_json | ConvertFrom-Json | Select -expand runtimeSettings | Select -expand handlerSettings | Select -expand publicSettings).$key
+    }
+    else {
+      $ser = New-Object System.Web.Script.Serialization.JavaScriptSerializer
+      $value = $ser.DeserializeObject($normalized_json).runtimeSettings[0].handlerSettings.publicSettings.$key
+    }
+    $value
+  }
+  Catch
+  {
+    $ErrorMessage = $_.Exception.Message
+    $FailedItem = $_.Exception.ItemName
+    echo "Failed to read file: $FailedItem. The error message was $ErrorMessage"
+    throw "Error in Get-PublicSettings-From-Config-Json. Couldn't parse $azure_config_file"
+  }
+}
+
+function normalize_json($json) {
+  $json -Join " "
+}
+
+function Get-Azure-Config-Path($powershellVersion) {
+  Try
+  {
+    # Reading chef_extension_root/HandlerEnvironment.json file
+    $handler_file = "$chefExtensionRoot\\HandlerEnvironment.json"
+
+    if ( $powershellVersion -ge 3 ) {
+      $config_folder = (((Get-Content $handler_file) | ConvertFrom-Json)[0] | Select -expand handlerEnvironment).configFolder
+    }
+    else {
+      add-type -assembly system.web.extensions
+      $ser = New-Object System.Web.Script.Serialization.JavaScriptSerializer
+      $config_folder = ($ser.DeserializeObject($(Get-Content $handler_file)))[0].handlerEnvironment.configFolder
+    }
+
+    # Get the last .settings file
+    $config_files = get-childitem $config_folder -recurse | where {$_.extension -eq ".settings"}
+
+    if($config_files -is [system.array]) {
+      $config_file_name = $config_files[-1].Name
+    }
+    else {
+      $config_file_name = $config_files.Name
+    }
+
+    "$config_folder\$config_file_name"
+  }
+  Catch
+  {
+    $ErrorMessage = $_.Exception.Message
+    $FailedItem = $_.Exception.ItemName
+    echo "Failed to read file: $FailedItem. The error message was $ErrorMessage"
+    throw "Error in Get-Azure-Config-Path. Couldn't parse the HandlerEnvironment.json file"
+  }
+}
+
+# This method is called separetely from enable.cmd before calling Install-ChefClient
+# Sourcing the script again refreshes the powershell console and the changes
+# of registry key become available
+function Run-Powershell2-With-Dot-Net4 {
+  $powershellVersion = Get-PowershellVersion
+
+  if ( $powershellVersion -lt 3 ) {
+    reg add hklm\software\microsoft\.netframework /v OnlyUseLatestCLR /t REG_DWORD /d 1 /f
+    reg add hklm\software\wow6432node\microsoft\.netframework /v OnlyUseLatestCLR /t REG_DWORD /d 1 /f
+  }
+}
