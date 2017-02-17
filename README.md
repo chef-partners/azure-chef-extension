@@ -27,11 +27,11 @@ Azure resource extension to enable Chef on Azure virtual machine instances.
   "runlist":"< your run list >",
   "validation_key_format": "< plaintext|base64encoded >",
   "bootstrap_version": "< version of chef-client >",
-  "daemon": "< none/service>"
+  "daemon": "< none/service/task >"
   "environment_variables": {
     "< comma separated list of key-value pairs >"
   },
-  "chef_service_interval": "< frequency at which the chef-service runs >",
+  "chef_service_interval": "< frequency at which the chef-client runs as service or as scheduled task >",
   "custom_json_attr": {
     "< comma separated list of key-value pairs >"
   },
@@ -51,13 +51,14 @@ It is an ordered list of roles and/or recipes that are run in the exact order de
 
 `bootstrap_version`: Set the version of `chef-client` to be installed on the VM.
 
-`daemon`: Supported only on Windows extension. Configures the chef-client service for unattended execution. Supported values are `none` and `service`. Default is `service`.
+`daemon`: Supported only on Windows extension. Configures the chef-client as service or as scheduled task for unattended execution. Supported values are `none`, `service` and 'task'. Default is `service`.
 `none` prevents the chef-client service from being configured as a service.
 `service` configures chef-client as a service.
+`task` configures chef-client as a scheduled task for defined interval. Default value is 30 mins.
 
 `environment_variables`: Specifies the list of environment variables (like the environment variables for proxy server configuration) to be available to the Chef Extension scripts. This option is currently supported only for `Linux` platforms.
 
-`chef_service_interval`: Specifies the frequency (in minutes) at which the `chef-service` runs. If in case you don't want the `chef-service` to be installed on the Azure VM then set value as `0` in this field. At any time you can change the interval value using the `Set-AzureVMExtension` command with the new interval passed in the `publicconfig.config` file (pass `0` if you want to delete the already installed chef-service on the Azure VM). Default value is `30` minutes.
+`chef_service_interval`: Specifies the frequency (in minutes) at which the `chef-client` runs as `service` or as `scheduled task`. If in case you don't want the `chef-service` or `scheduled task` to be installed on the Azure VM then set value as `0` in this field. At any time you can change the interval value using the `Set-AzureVMExtension` command with the new interval passed in the `publicconfig.config` file (pass `0` if you want to delete the already installed chef-service on the Azure VM). Default value is `30` minutes.
 
 `custom_json_attr`: Specifies a JSON string to be added to the first run of chef-client.
 
