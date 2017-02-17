@@ -1,6 +1,6 @@
 # azure-chef-extension Change Log
 
-## Latest Release: 1210.12.108.1000 (2017/02/16)
+## Latest Release: 1210.12.108.1000 (2017/02/17)
 * [azure-chef-extension #188](https://github.com/chef-partners/azure-chef-extension/pull/188) Add support for chef-client scheduled task
 
 ## Latest Release: 1210.12.106.1001 (2017/01/30)
