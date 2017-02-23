@@ -22,6 +22,10 @@ Set this flag to enable auto chef client update in azure chef extension. This fl
 Determines whether Chef configuration files removed when Azure removes the Chef resource extension from the VM. This option is only valid for the 'cloud-api' bootstrap protocol. The default is false.
 * --bootstrap-version
 Applicable for only ubuntu and centos. Chef-client's version to be installed on the VM can be specified with this option. By default chef-client's latest version gets installed.
+* --daemon 
+Supported only on Windows extension. Configures the chef-client to run as a service or as a scheduled task for unattended execution. Supported values are `none`, `service` and `task`. Default is `service`.
+* --chef_service_interval
+Specifies the frequency (in minutes) at which the `chef-client` runs as `service` or as `scheduled task`. If in case you don't want the `chef-service` or `scheduled task` to be installed on the Azure VM then set value as `0` in this field. At any time you can change the interval value using the `Set-AzureVMExtension` command with the new interval passed in the `publicconfig.config` file (pass `0` if you want to delete the already installed chef-service on the Azure VM). Default value is `30` minutes. 
 
 Supported bootstrap_options from knife azure:
   * --environment

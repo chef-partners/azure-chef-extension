@@ -26,6 +26,10 @@ Chef client pem file path i.e required in validator less bootstrap
 Bootstrap options in JSON format. Ex: -j '{"chef_node_name":"test_node"}'
 * -D or --delete-chef-config
 Delete chef config files during update/uninstall extension
+* --daemon 
+Supported only on Windows extension. Configures the chef-client to run as a service or as a scheduled task for unattended execution. Supported values are `none`, `service` and `task`. Default is `service`.
+* --chef_service_interval
+Specifies the frequency (in minutes) at which the `chef-client` runs as `service` or as `scheduled task`. If in case you don't want the `chef-service` or `scheduled task` to be installed on the Azure VM then set value as `0` in this field. At any time you can change the interval value using the `Set-AzureVMExtension` command with the new interval passed in the `publicconfig.config` file (pass `0` if you want to delete the already installed chef-service on the Azure VM). Default value is `30` minutes. 
 
 
 ##### Example:

@@ -4,7 +4,7 @@ This project provides a set of PowerShell cmdlets for developers and IT administ
 
 ## Chef related Azure PowerShell Cmdlets:
 #### Set-AzureVMChefExtension
-#####Set-AzureVMChefExtension -ValidationPem \<string\> -Windows -VM \<IPersistentVM\> [-Version \<string\>] [-ClientRb \<string\>] [-BootstrapOptions \<string\>] [-RunList \<string\>] [-ChefServerUrl \<string\>] [-ValidationClientName \<string\>] [-OrganizationName \<string\>] [-AutoUpdateChefClient] [-DeleteChefConfig]
+#####Set-AzureVMChefExtension -ValidationPem \<string\> -Windows -VM \<IPersistentVM\> [-Version \<string\>] [-ClientRb \<string\>] [-BootstrapOptions \<string\>] [-RunList \<string\>] [-ChefServerUrl \<string\>] [-ValidationClientName \<string\>] [-OrganizationName \<string\>] [-AutoUpdateChefClient] [-DeleteChefConfig] [-Daemon \< none/service/task \>] [-ChefServiceInterval \< integer \>]
 This cmdlets is used to Set Chef Extension on given azure VM.
 ##### Options:
 * -RunList
@@ -31,6 +31,10 @@ The Extension Version. Default is the latest available version
 Set extension for Windows.
 * -Linux
 Set extension for Linux.
+* -Daemon
+Supported only on Windows extension. Configures the chef-client to run as a service or as a scheduled task for unattended execution. Supported values are `none`, `service` and `task`. Default is `service`.
+* -ChefServiceInterval
+Specifies the frequency (in minutes) at which the `chef-client` runs as `service` or as `scheduled task`. If in case you don't want the `chef-service` or `scheduled task` to be installed on the Azure VM then set value as `0` in this field. At any time you can change the interval value using the `Set-AzureVMExtension` command with the new interval passed in the `publicconfig.config` file (pass `0` if you want to delete the already installed chef-service on the Azure VM). Default value is `30` minutes.
 
 ##### Example 1: Create Windows VM with Chef Extension -
 ```bash
