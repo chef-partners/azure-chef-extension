@@ -30,6 +30,14 @@ function Get-ChefPackage {
   Get-WmiObject -Class Win32_Product | Where-Object { $_.Name.contains("Chef Client") }
 }
 
+function Read-Environment-Variables {
+  $powershellVersion = Get-PowershellVersion
+  $environment_variables = Get-PublicSettings-From-Config-Json "environment_variables"  $powershellVersion
+  if ( $environment_variables ){
+    Chef-SetCustomEnvPath($environment_variables)
+  }
+}
+
 function Install-ChefClient {
   # Source the shared PS
   . $(Get-SharedHelper)
@@ -79,6 +87,7 @@ function Install-ChefClient {
     }
   }
   $env:Path = "C:\\opscode\\chef\\bin;C:\\opscode\\chef\\embedded\\bin;" + $env:Path
+  Read-Environment-Variables
   $chefExtensionRoot = Chef-GetExtensionRoot
   Install-AzureChefExtensionGem $chefExtensionRoot
 }

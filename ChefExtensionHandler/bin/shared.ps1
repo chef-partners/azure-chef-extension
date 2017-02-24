@@ -68,6 +68,15 @@ function Chef-AddToPath($folderPath)
   [Environment]::SetEnvironmentVariable("Path", "$folderPath;$currentPath", "Process")
 }
 
+function Chef-SetCustomEnvPath($envHash)
+{
+  $props=Get-Member -InputObject $envHash -MemberType NoteProperty
+  foreach($prop in $props) {
+    $propValue=$envHash | Select-Object -ExpandProperty $prop.Name
+    [Environment]::SetEnvironmentVariable($prop.Name, $propValue, "User")
+  }
+}
+
 function Get-PowershellVersion {
   $PSVersionTable.PSVersion.Major
 }
