@@ -74,36 +74,32 @@ class JSONFileReader
 end
 
 def escape_unescaped_content(file_content)
-   lines = file_content.lines.to_a
-   # convert tabs to spaces -- technically invalidates content, but
-   # if we know the content in question treats tabs and spaces the
-   # same, we can do this.
-   untabified_lines = lines.map { | line | line.gsub(/\t/," ") }
+  lines = file_content.lines.to_a
+  # convert tabs to spaces -- technically invalidates content, but
+  # if we know the content in question treats tabs and spaces the
+  # same, we can do this.
+  untabified_lines = lines.map { | line | line.gsub(/\t/," ") }
 
-   # remove whitespace and trailing newline
-   stripped_lines = untabified_lines.map { | line | line.strip }
-   escaped_content = ""
-   line_index = 0
+  # remove whitespace and trailing newline
+  stripped_lines = untabified_lines.map { | line | line.strip }
+    escaped_content = ""
+    line_index = 0
 
-   stripped_lines.each do | line |
-     escaped_line = line
+    stripped_lines.each do | line |
+    escaped_line = line
 
-     # assume lines ending in json delimiters are not content,
-     # and that lines followed by a line that starts with ','
-     # are not content
-     if !!(line[line.length - 1] =~ /[\,\}\]]/) ||
-         (line_index < (lines.length - 1) && lines[line_index + 1][0] == ',')
-       escaped_line += "\n"
-     else
-       escaped_line += "\\n"
-     end
+    # assume lines ending in json delimiters are not content,
+    # and that lines followed by a line that starts with ','
+    # are not content
+    if !!(line[line.length - 1] =~ /[\,\}\]]/) || (line_index < (lines.length - 1) && lines[line_index + 1][0] == ',')
+      escaped_line += "\n"
+    end
 
-     escaped_content += escaped_line
-     line_index += 1
-   end
-
-   escaped_content
- end
+    escaped_content += escaped_line
+    line_index += 1
+  end
+  escaped_content
+end
 
 def get_jsonreader_object(file_name, *keys)
   file = file_name

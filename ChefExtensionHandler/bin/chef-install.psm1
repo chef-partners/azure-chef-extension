@@ -34,7 +34,9 @@ function Read-Environment-Variables {
   $powershellVersion = Get-PowershellVersion
   $environment_variables = Get-PublicSettings-From-Config-Json "environment_variables"  $powershellVersion
   if ( $environment_variables ){
-    Chef-SetCustomEnvPath($environment_variables)
+    Chef-SetCustomEnvVariables($environment_variables)
+  } else {
+    echo "Environment variables not passed."
   }
 }
 
@@ -87,9 +89,9 @@ function Install-ChefClient {
     }
   }
   $env:Path = "C:\\opscode\\chef\\bin;C:\\opscode\\chef\\embedded\\bin;" + $env:Path
-  Read-Environment-Variables
   $chefExtensionRoot = Chef-GetExtensionRoot
   Install-AzureChefExtensionGem $chefExtensionRoot
+  Read-Environment-Variables
 }
 
 function Get-SharedHelper {

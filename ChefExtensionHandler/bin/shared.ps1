@@ -68,12 +68,16 @@ function Chef-AddToPath($folderPath)
   [Environment]::SetEnvironmentVariable("Path", "$folderPath;$currentPath", "Process")
 }
 
-function Chef-SetCustomEnvPath($envHash)
+function Chef-SetCustomEnvVariables($envHash)
 {
   $props=Get-Member -InputObject $envHash -MemberType NoteProperty
   foreach($prop in $props) {
     $propValue=$envHash | Select-Object -ExpandProperty $prop.Name
-    [Environment]::SetEnvironmentVariable($prop.Name, $propValue, "User")
+    if (-not (Test-Path Env:$prop.Name)){
+      [Environment]::SetEnvironmentVariable($prop.Name, $propValue, "Machine")
+      [Environment]::SetEnvironmentVariable($prop.Name, $propValue, "User")
+      [Environment]::SetEnvironmentVariable($prop.Name, $propValue, "Process")
+    }
   }
 }
 
