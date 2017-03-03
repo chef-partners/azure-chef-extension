@@ -10,6 +10,7 @@ describe "get_chef_server_ssl_cert" do
     @decrypted_protected_settings = mock_data('ssl_certs/decrypted_protected_settings.txt')
     chefserver_ssl_cert = mock_data('ssl_certs/chefserver_ssl_cert.txt')
     @actual_ssl_cert = OpenSSL::X509::Certificate.new(chefserver_ssl_cert.squeeze("\n")).to_pem
+    @actual_ssl_cert.delete!("\n")
   end
 
   let(:extension_root) { "./" }

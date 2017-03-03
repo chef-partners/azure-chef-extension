@@ -56,7 +56,7 @@ It is an ordered list of roles and/or recipes that are run in the exact order de
 `service` configures chef-client as a service.
 `task` configures chef-client as a scheduled task for defined interval. Default value is 30 mins.
 
-`environment_variables`: Specifies the list of environment variables (like the environment variables for proxy server configuration) to be available to the Chef Extension scripts. This option is currently supported for `Linux` and `windows` platforms.
+`environment_variables`: Specifies the list of environment variables (like the environment variables for proxy server configuration) to be available to the Chef Extension scripts.
 
 `chef_service_interval`: Specifies the frequency (in minutes) at which the `chef-client` runs as `service` or as `scheduled task`. If in case you don't want the `chef-service` or `scheduled task` to be installed on the Azure VM then set value as `0` in this field. At any time you can change the interval value using the `Set-AzureVMExtension` command with the new interval passed in the `publicconfig.config` file (pass `0` if you want to delete the already installed chef-service on the Azure VM). Default value is `30` minutes.
 
@@ -148,7 +148,7 @@ Update-AzureVM -VM $vmOb.VM -Name "<vm-name>" -ServiceName "<cloud-service-name>
 1. Please refer https://github.com/Azure/azure-quickstart-templates/tree/master/chef-json-parameters-linux-vm of creating the ARM template files.
 
 2. Find below some advanced options that can be set in the Azure ARM template file `azuredeploy.json`:
-  - `environment_variables`: Specifies the list of environment variables (like the environment variables for proxy server configuration) to be available to the Chef Extension scripts. This option is currently supported for `Linux` and `windows` platforms.
+  - `environment_variables`: Specifies the list of environment variables (like the environment variables for proxy server configuration) to be available to the Chef Extension scripts.
   - `hints`: Specifies the Ohai Hints to be set in the Ohai configuration of the target node.
 
   ***Note***: Set both these options under `properties` --> `settings` section of the `Microsoft.Compute/virtualMachines/extensions` resource type as shown in the below example:
