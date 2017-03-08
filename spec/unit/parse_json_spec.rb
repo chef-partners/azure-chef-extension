@@ -51,6 +51,11 @@ describe "escape_unescaped_content" do
 end
 
 describe "value_from_json_file" do
+  before do
+    @multi_lined = "first line\nsecond line\nthird line\n"
+    @multi_lined.delete!("\n")
+  end
+
   it "returns json value from the supplied json file_content." do
     file_content = '[{ "name": "Test", "version": "1.0" }]'
     expect(value_from_json_file(file_content, "name")).to eq "Test"
@@ -61,11 +66,11 @@ describe "value_from_json_file" do
     second line
     third line
     " }]'
-    expect(value_from_json_file(file_content, "data")).to eq "first line\nsecond line\nthird line\n"
+    expect(value_from_json_file(file_content, "data")).to eq @multi_lined
   end
 
   it "returns json multi-lined value from the supplied json file." do
     file =  File.expand_path(File.dirname("spec/assets/*"))+"/test_json_file.json"
-    expect(value_from_json_file(file, "data")).to eq "first line\nsecond line\nthird line\n"
+    expect(value_from_json_file(file, "data")).to eq @multi_lined
   end
 end
