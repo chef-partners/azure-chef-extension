@@ -1,5 +1,8 @@
 # azure-chef-extension Change Log
 
+## Latest Release: 1210.12.109.1000 (2017/03/17)
+* [azure-chef-extension #193](https://github.com/chef-partners/azure-chef-extension/pull/193) Added support for environment_variables in windows extension.
+
 ## Latest Release: 1210.12.108.1000 (2017/02/17)
 * [azure-chef-extension #188](https://github.com/chef-partners/azure-chef-extension/pull/188) Add support for chef-client scheduled task
 
