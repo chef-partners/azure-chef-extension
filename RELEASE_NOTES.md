@@ -8,8 +8,8 @@ Details about the thing that changed that needs to get included in the Release N
 -->
 
 
-# Windows azure-chef-extension 1210.12.108.1000 release notes:
-In this release, we have added the support for chef-client scheduled task for the Windows chef extension.
+# Windows azure-chef-extension 1210.12.109.1000 release notes:
+In this release, we have added support for environment variables in windows chef extension.
 
 See the [CHANGELOG](https://github.com/chef-partners/azure-chef-extension/blob/master/CHANGELOG.md) for a list of all changes in this release, and review.
 
@@ -19,10 +19,8 @@ More information on the contribution process for Chef projects can be found in t
 https://github.com/chef-partners/azure-chef-extension
 
 
-##Feature added in Windows azure-chef-extension 1210.12.108.1000
-* Add support for chef-client scheduled task [Issue 188](https://github.com/chef-partners/azure-chef-extension/pull/188)
+##Feature added in Windows azure-chef-extension 1210.12.109.1000
+* Add support for environment variables in windows chef extension [Issue 193](https://github.com/chef-partners/azure-chef-extension/pull/193)
 
 ##Known issue
-* Extension fails intermittently for Windows 2008 with timeout error, usually with powershell ASM commands.
-
-
+* Extension works fine for the latest windows 2008 images. 
