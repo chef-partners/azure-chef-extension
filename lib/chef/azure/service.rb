@@ -6,10 +6,10 @@ class ChefService
   include ChefAzure::Shared
   AZURE_CHEF_SERVICE_PID_FILE = "azure-chef-client.pid"
   AZURE_CHEF_CRON_NAME = 'azure_chef_extension'
-  DEFAULT_CHEF_SERVICE_INTERVAL = 30
+  DEFAULT_CHEF_DAEMON_INTERVAL = 30
   CLIENT_RB_INTERVAL_ATTRIBUTE_NAME = 'interval'
 
-  def enable(extension_root, bootstrap_directory, log_location, chef_service_interval = DEFAULT_CHEF_SERVICE_INTERVAL)
+  def enable(extension_root, bootstrap_directory, log_location, chef_daemon_interval = DEFAULT_CHEF_DAEMON_INTERVAL)
     log_location = log_location || bootstrap_directory
     exit_code = 0
     message = "success"
@@ -18,17 +18,17 @@ class ChefService
       puts "#{Time.now} Getting chef-client service status"
       if is_installed?
         puts "#{Time.now} chef-client service is already installed."
-        if chef_service_interval_changed?(chef_service_interval, "#{bootstrap_directory}\\client.rb")
-          puts "#{Time.now} yes..chef-client service interval has been changed by the user..updating the interval value to #{chef_service_interval} minutes."
+        if chef_daemon_interval_changed?(chef_daemon_interval, "#{bootstrap_directory}\\client.rb")
+          puts "#{Time.now} yes..chef-client service interval has been changed by the user..updating the interval value to #{chef_daemon_interval} minutes."
           if windows?
             set_interval(
               "#{bootstrap_directory}\\client.rb",
-              interval_in_seconds(chef_service_interval)
+              interval_in_seconds(chef_daemon_interval)
             )
             restart_service
           else
             disable_cron
-            enable_cron(extension_root, bootstrap_directory, log_location, chef_service_interval)
+            enable_cron(extension_root, bootstrap_directory, log_location, chef_daemon_interval)
           end
         else
           start_service(bootstrap_directory, log_location) if windows? && !is_running?
@@ -38,12 +38,12 @@ class ChefService
         if windows?
           set_interval(
             "#{bootstrap_directory}\\client.rb",
-            interval_in_seconds(chef_service_interval)
+            interval_in_seconds(chef_daemon_interval)
           )
           install_service
           start_service(bootstrap_directory, log_location) if !is_running?
         else
-          enable_cron(extension_root, bootstrap_directory, log_location, chef_service_interval)
+          enable_cron(extension_root, bootstrap_directory, log_location, chef_daemon_interval)
         end
       end
     rescue => e
@@ -54,13 +54,13 @@ class ChefService
     [exit_code, message]
   end
 
-  def disable(log_location, bootstrap_directory = nil, chef_service_interval = nil)
+  def disable(log_location, bootstrap_directory = nil, chef_daemon_interval = nil)
     log_location = log_location || bootstrap_directory
     exit_code = 0
     message = "success"
     error_message = "Error disabling chef-client service"
     if not is_running?
-      chef_service_interval == 0 ?
+      chef_daemon_interval == 0 ?
         (puts "#{Time.now} Not enabling the chef-client service as per the user's choice...") :
         (puts "#{Time.now} chef-client service is already stopped...")
       return [exit_code, message]
@@ -71,8 +71,8 @@ class ChefService
       if windows?
         set_interval(
           "#{bootstrap_directory}\\client.rb",
-          chef_service_interval
-        ) if chef_service_interval == 0
+          chef_daemon_interval
+        ) if chef_daemon_interval == 0
         stop_service
       else
         disable_cron
@@ -122,14 +122,14 @@ class ChefService
   end
 
   ## add or update interval value in client.rb file on Windows platform ##
-  def set_interval(client_rb, new_chef_service_interval)
+  def set_interval(client_rb, new_chef_daemon_interval)
     client_rb_contents = read_client_rb(client_rb)
 
     if interval_exist?(client_rb_contents)
       interval = interval_index(client_rb_contents)
-      client_rb_contents[interval] = interval_string(new_chef_service_interval)
+      client_rb_contents[interval] = interval_string(new_chef_daemon_interval)
     else
-      client_rb_contents << interval_string(new_chef_service_interval)
+      client_rb_contents << interval_string(new_chef_daemon_interval)
     end
 
     write_client_rb(client_rb, client_rb_contents.join)
@@ -164,7 +164,7 @@ class ChefService
   end
 
   ## enable chef cronjob on Linux platform ##
-  def enable_cron(extension_root, bootstrap_directory, log_location, chef_service_interval)
+  def enable_cron(extension_root, bootstrap_directory, log_location, chef_daemon_interval)
     # Unix like platform
     puts "#{Time.now} Starting chef-client service..."
     chef_pid_file = "#{bootstrap_directory}/#{AZURE_CHEF_SERVICE_PID_FILE}"
@@ -174,7 +174,7 @@ class ChefService
       File.read(File.join(templates_dir, "chef-client-cron-create.erb")),
         {:name => AZURE_CHEF_CRON_NAME, :extension_root => extension_root,
          :bootstrap_directory => bootstrap_directory, :log_location =>  log_location,
-         :interval => chef_service_interval, :sleep_time => (chef_config[:splay] || 0), :chef_pid_file => chef_pid_file
+         :interval => chef_daemon_interval, :sleep_time => (chef_config[:splay] || 0), :chef_pid_file => chef_pid_file
         }
       )
 
@@ -204,27 +204,27 @@ class ChefService
     client_rb_contents.index { |line| line.include?(CLIENT_RB_INTERVAL_ATTRIBUTE_NAME + ' ') }
   end
 
-  def interval_string(chef_service_interval)
-    "#{CLIENT_RB_INTERVAL_ATTRIBUTE_NAME} #{chef_service_interval}\n"
+  def interval_string(chef_daemon_interval)
+    "#{CLIENT_RB_INTERVAL_ATTRIBUTE_NAME} #{chef_daemon_interval}\n"
   end
 
   def write_client_rb(client_rb, client_rb_contents)
     File.write(client_rb, client_rb_contents)
   end
 
-  def interval_in_seconds(chef_service_interval)
-    chef_service_interval * 60
+  def interval_in_seconds(chef_daemon_interval)
+    chef_daemon_interval * 60
   end
 
-  def interval_in_minutes(chef_service_interval)
-    chef_service_interval / 60
+  def interval_in_minutes(chef_daemon_interval)
+    chef_daemon_interval / 60
   end
 
   def old_client_rb_interval(old_interval_string)
     old_interval_string.split(' ')[1].strip.to_i
   end
 
-  def chef_service_interval_changed?(new_chef_service_interval, client_rb = nil)
+  def chef_daemon_interval_changed?(new_chef_daemon_interval, client_rb = nil)
     puts "#{Time.now} checking if chef-client service interval has been changed by the user..."
 
     if windows?
@@ -232,18 +232,18 @@ class ChefService
 
       if interval_exist?(client_rb_contents)
         interval = interval_index(client_rb_contents)
-        old_chef_service_interval = interval_in_minutes(
+        old_chef_daemon_interval = interval_in_minutes(
           old_client_rb_interval(client_rb_contents[interval])
         )
       else
-        old_chef_service_interval = DEFAULT_CHEF_SERVICE_INTERVAL
+        old_chef_daemon_interval = DEFAULT_CHEF_DAEMON_INTERVAL
       end
     else
       result = shell_out("crontab -l | grep -A 1 #{AZURE_CHEF_CRON_NAME} | sed -n '2p'")
-      old_chef_service_interval = result.stdout.split('/')[1].split(' ')[0].to_i
+      old_chef_daemon_interval = result.stdout.split('/')[1].split(' ')[0].to_i
     end
 
-    old_chef_service_interval != new_chef_service_interval ? true : false
+    old_chef_daemon_interval != new_chef_daemon_interval ? true : false
   end
 
   def get_chef_pid

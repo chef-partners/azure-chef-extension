@@ -31,7 +31,7 @@ Azure resource extension to enable Chef on Azure virtual machine instances.
   "environment_variables": {
     "< comma separated list of key-value pairs >"
   },
-  "chef_service_interval": "< frequency at which the chef-client runs as service or as scheduled task >",
+  "chef_daemon_interval": "< frequency at which the chef-client runs as service or as scheduled task >",
   "custom_json_attr": {
     "< comma separated list of key-value pairs >"
   },
@@ -58,7 +58,7 @@ It is an ordered list of roles and/or recipes that are run in the exact order de
 
 `environment_variables`: Specifies the list of environment variables (like the environment variables for proxy server configuration) to be available to the Chef Extension scripts.
 
-`chef_service_interval`: Specifies the frequency (in minutes) at which the `chef-client` runs as `service` or as `scheduled task`. If in case you don't want the `chef-service` or `scheduled task` to be installed on the Azure VM then set value as `0` in this field. At any time you can change the interval value using the `Set-AzureVMExtension` command with the new interval passed in the `publicconfig.config` file (pass `0` if you want to delete the already installed chef-service on the Azure VM). Default value is `30` minutes.
+`chef_daemon_interval`: Specifies the frequency (in minutes) at which the `chef-client` runs as `service` or as `scheduled task`. If in case you don't want the `chef-service` or `scheduled task` to be installed on the Azure VM then set value as `0` in this field. At any time you can change the interval value using the `Set-AzureVMExtension` command with the new interval passed in the `publicconfig.config` file (pass `0` if you want to delete the already installed chef-service on the Azure VM). Default value is `30` minutes.
 
 `custom_json_attr`: Specifies a JSON string to be added to the first run of chef-client.
 
@@ -81,7 +81,7 @@ publicconfig.config example:
     ...
     "variable_n": "value_n"
   },
-  "chef_service_interval": "18",
+  "chef_daemon_interval": "18",
   "daemon": "none",
   "custom_json_attr": {
     "container_service": { "chef-init-test": { "command": "C:\\opscode\\chef\\bin" } }
@@ -181,7 +181,7 @@ Update-AzureVM -VM $vmOb.VM -Name "<vm-name>" -ServiceName "<cloud-service-name>
           "variable_2": "value_2",
           "variable_3": "value_3"
         },
-        "chef_service_interval": "18",
+        "chef_daemon_interval": "18",
         "daemon" : "service",
         "custom_json_attr": {
           "container_service": { "chef-init-test": { "command": "C:\\opscode\\chef\\bin" } }

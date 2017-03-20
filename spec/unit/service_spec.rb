@@ -22,7 +22,7 @@ describe ChefService do
 
         context 'chef-service interval has been changed by the user' do
           before do
-            allow(instance).to receive(:chef_service_interval_changed?).and_return(true)
+            allow(instance).to receive(:chef_daemon_interval_changed?).and_return(true)
           end
 
           it 'updates the interval in client.rb file and restarts the service' do
@@ -37,7 +37,7 @@ describe ChefService do
 
         context 'chef-service interval has not been changed by the user' do
           before(:each) do
-            allow(instance).to receive(:chef_service_interval_changed?).and_return(false)
+            allow(instance).to receive(:chef_daemon_interval_changed?).and_return(false)
           end
 
           context 'chef-service is running' do
@@ -122,7 +122,7 @@ describe ChefService do
 
         context 'chef-service interval has been changed by the user' do
           before do
-            allow(instance).to receive(:chef_service_interval_changed?).and_return(true)
+            allow(instance).to receive(:chef_daemon_interval_changed?).and_return(true)
           end
 
           it 'deletes the old cronjob and installs new cronjob for the chef-service with the new interval value' do
@@ -137,7 +137,7 @@ describe ChefService do
 
         context 'chef-service interval has not been changed by the user' do
           before do
-            allow(instance).to receive(:chef_service_interval_changed?).and_return(false)
+            allow(instance).to receive(:chef_daemon_interval_changed?).and_return(false)
           end
 
           it 'just says no change in interval by user' do
@@ -349,7 +349,7 @@ describe ChefService do
   end
 
   describe 'set_interval' do
-    context 'chef_service_interval exists in the client.rb file' do
+    context 'chef_daemon_interval exists in the client.rb file' do
       let (:client_rb) { client_rb_with_interval }
 
       let (:new_client_rb) {
@@ -374,7 +374,7 @@ describe ChefService do
       end
     end
 
-    context 'chef_service_interval does not exist in the client.rb file' do
+    context 'chef_daemon_interval does not exist in the client.rb file' do
       let (:client_rb) { client_rb_without_interval }
 
       let (:new_client_rb) {
@@ -705,7 +705,7 @@ describe ChefService do
     end
   end
 
-  describe 'chef_service_interval_changed?' do
+  describe 'chef_daemon_interval_changed?' do
     before(:each) do
       allow(instance).to receive(:puts)
     end
@@ -722,14 +722,14 @@ describe ChefService do
 
         context 'interval has changed' do
           it 'returns true' do
-            response = instance.send(:chef_service_interval_changed?, 25)
+            response = instance.send(:chef_daemon_interval_changed?, 25)
             expect(response).to be == true
           end
         end
 
         context 'interval has not changed' do
           it 'returns false' do
-            response = instance.send(:chef_service_interval_changed?, 21)
+            response = instance.send(:chef_daemon_interval_changed?, 21)
             expect(response).to be == false
           end
         end
@@ -742,14 +742,14 @@ describe ChefService do
 
         context 'interval has changed' do
           it 'returns true' do
-            response = instance.send(:chef_service_interval_changed?, 15)
+            response = instance.send(:chef_daemon_interval_changed?, 15)
             expect(response).to be == true
           end
         end
 
         context 'interval has not changed' do
           it 'returns false' do
-            response = instance.send(:chef_service_interval_changed?, 30)
+            response = instance.send(:chef_daemon_interval_changed?, 30)
             expect(response).to be == false
           end
         end
@@ -767,7 +767,7 @@ describe ChefService do
             "crontab -l | grep -A 1 azure_chef_extension | sed -n '2p'").and_return(
               OpenStruct.new(:exitstatus => 0, :stdout => '*/19 * * * * /bin/sleep 0; chef-client -c /client.rb -L /chef-client.log --pid /azure-chef-client.pid --once')
             )
-          response = instance.send(:chef_service_interval_changed?, 15)
+          response = instance.send(:chef_daemon_interval_changed?, 15)
           expect(response).to be == true
         end
       end
@@ -778,7 +778,7 @@ describe ChefService do
             "crontab -l | grep -A 1 azure_chef_extension | sed -n '2p'").and_return(
               OpenStruct.new(:exitstatus => 0, :stdout => '*/19 * * * * /bin/sleep 0; chef-client -c /client.rb -L /chef-client.log --pid /azure-chef-client.pid --once')
             )
-          response = instance.send(:chef_service_interval_changed?, 19)
+          response = instance.send(:chef_daemon_interval_changed?, 19)
           expect(response).to be == false
         end
       end

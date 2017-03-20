@@ -78,19 +78,19 @@ describe ChefTask do
 
   describe "#install_service" do
     it "installs the chef scheduled task with the given interval" do
-      chef_service_interval = 17
+      chef_daemon_interval = 17
       log_location = "log"
       bootstrap_directory = "bootstrap_dir"
-      expect(instance).to receive(:shell_out).with("SCHTASKS.EXE /CREATE /TN \"chef-client\" /F /SC \"MINUTE\" /MO \"#{chef_service_interval}\" /TR \"cmd /c 'ruby chef-client -L #{log_location}/chef-client.log -c #{bootstrap_directory}/client.rb'\" /RU \"NT Authority\\System\" /RP /RL \"HIGHEST\"").and_return(double("result", :error? => false))
-      instance.send(:install_service, bootstrap_directory, log_location, chef_service_interval)
+      expect(instance).to receive(:shell_out).with("SCHTASKS.EXE /CREATE /TN \"chef-client\" /F /SC \"MINUTE\" /MO \"#{chef_daemon_interval}\" /TR \"cmd /c 'ruby chef-client -L #{log_location}/chef-client.log -c #{bootstrap_directory}/client.rb'\" /RU \"NT Authority\\System\" /RP /RL \"HIGHEST\"").and_return(double("result", :error? => false))
+      instance.send(:install_service, bootstrap_directory, log_location, chef_daemon_interval)
     end
   end
 
   describe "#update_chef_sch_task" do
     it "updates and enables the schedules task with the given interval" do
-      chef_service_interval = 17
-      expect(instance).to receive(:shell_out).with("SCHTASKS.EXE /CHANGE /TN \"chef-client\" /RI #{chef_service_interval} /RU \"NT Authority\\System\" /RP /RL \"HIGHEST\" /ENABLE").and_return(double("result", :error? => false))
-      instance.send(:update_chef_sch_task, chef_service_interval)
+      chef_daemon_interval = 17
+      expect(instance).to receive(:shell_out).with("SCHTASKS.EXE /CHANGE /TN \"chef-client\" /RI #{chef_daemon_interval} /RU \"NT Authority\\System\" /RP /RL \"HIGHEST\" /ENABLE").and_return(double("result", :error? => false))
+      instance.send(:update_chef_sch_task, chef_daemon_interval)
     end
   end
 end
