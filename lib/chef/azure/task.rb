@@ -18,9 +18,9 @@
 
 class ChefTask
   include Chef::Mixin::ShellOut
-  DEFAULT_CHEF_SERVICE_INTERVAL = 30
+  DEFAULT_CHEF_DAEMON_INTERVAL = 30
 
-  def enable(bootstrap_directory, log_location, chef_service_interval = DEFAULT_CHEF_SERVICE_INTERVAL)
+  def enable(bootstrap_directory, log_location, chef_daemon_interval = DEFAULT_CHEF_DAEMON_INTERVAL)
   	log_location = log_location || bootstrap_directory
     exit_code = 0
     message = "success"
@@ -29,10 +29,10 @@ class ChefTask
       puts "#{Time.now} Getting chef-client scheduled task status"
       if is_installed?
         puts "#{Time.now} chef-client scheduled task is already installed."
-        puts "#{Time.now} Enabling chef scheduled task with interval #{chef_service_interval} minutes."
-        update_chef_sch_task(chef_service_interval)
+        puts "#{Time.now} Enabling chef scheduled task with interval #{chef_daemon_interval} minutes."
+        update_chef_sch_task(chef_daemon_interval)
       else
-        install_service(bootstrap_directory, log_location, chef_service_interval)
+        install_service(bootstrap_directory, log_location, chef_daemon_interval)
       end
     rescue => e
       Chef::Log.error "#{error_message} (#{e})"
@@ -67,15 +67,15 @@ class ChefTask
     result.error? ? false : true
   end
 
-  def install_service(bootstrap_directory, log_location, chef_service_interval)
+  def install_service(bootstrap_directory, log_location, chef_daemon_interval)
     puts "#{Time.now} Installing chef-client scheduled task..."
-    result = shell_out("SCHTASKS.EXE /CREATE /TN \"chef-client\" /F /SC \"MINUTE\" /MO \"#{chef_service_interval}\" /TR \"cmd /c 'ruby chef-client -L #{log_location}/chef-client.log -c #{bootstrap_directory}/client.rb'\" /RU \"NT Authority\\System\" /RP /RL \"HIGHEST\"")
+    result = shell_out("SCHTASKS.EXE /CREATE /TN \"chef-client\" /F /SC \"MINUTE\" /MO \"#{chef_daemon_interval}\" /TR \"cmd /c 'ruby chef-client -L #{log_location}/chef-client.log -c #{bootstrap_directory}/client.rb'\" /RU \"NT Authority\\System\" /RP /RL \"HIGHEST\"")
     result.error? ? result.error! : (puts "#{Time.now} Installed chef-client scheduled task.")
   end
 
-  def update_chef_sch_task(chef_service_interval)
+  def update_chef_sch_task(chef_daemon_interval)
     puts "#{Time.now} Updating chef-client scheduled task..."
-    result = shell_out("SCHTASKS.EXE /CHANGE /TN \"chef-client\" /RI #{chef_service_interval} /RU \"NT Authority\\System\" /RP /RL \"HIGHEST\" /ENABLE")
+    result = shell_out("SCHTASKS.EXE /CHANGE /TN \"chef-client\" /RI #{chef_daemon_interval} /RU \"NT Authority\\System\" /RP /RL \"HIGHEST\" /ENABLE")
     result.error? ? result.error! : (puts "#{Time.now} Updated chef-client scheduled task.")
   end
 

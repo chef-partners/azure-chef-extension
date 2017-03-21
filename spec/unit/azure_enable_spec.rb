@@ -266,11 +266,11 @@ describe EnableChef do
     end
   end
 
-  describe '#load_chef_service_interval' do
+  describe '#load_chef_daemon_interval' do
     it 'invokes value_from_json_file and other methods' do
       expect(instance).to receive(:handler_settings_file)
       expect(instance).to receive(:value_from_json_file)
-      instance.send(:load_chef_service_interval)
+      instance.send(:load_chef_daemon_interval)
     end
 
     context 'example-1' do
@@ -279,8 +279,8 @@ describe EnableChef do
           mock_data("handler_settings.settings"))
       end
 
-      it 'fetches chef_service_interval value from the given json file' do
-        response = instance.send(:load_chef_service_interval)
+      it 'fetches chef_daemon_interval value from the given json file' do
+        response = instance.send(:load_chef_daemon_interval)
         expect(response).to be == '13'
       end
     end
@@ -291,8 +291,8 @@ describe EnableChef do
           mock_data("handler_settings_1.settings"))
       end
 
-      it 'fetches chef_service_interval value from the given json file' do
-        response = instance.send(:load_chef_service_interval)
+      it 'fetches chef_daemon_interval value from the given json file' do
+        response = instance.send(:load_chef_daemon_interval)
         expect(response).to be == '0'
       end
     end
@@ -308,14 +308,14 @@ describe EnableChef do
       instance.instance_variable_set(:@azure_plugin_log_location, '/azure_plugin_log_location')
     end
 
-    context 'chef_service_interval option is not given by user, means it is empty' do
+    context 'chef_daemon_interval option is not given by user, means it is empty' do
       before(:each) do
-        allow(instance).to receive(:load_chef_service_interval).and_return('')
+        allow(instance).to receive(:load_chef_daemon_interval).and_return('')
         expect(chef_service_instance).to_not receive(:disable)
       end
 
       context 'chef-service enable is successful' do
-        it 'calls enable method with no chef_service_interval option and then reports success message to azure' do
+        it 'calls enable method with no chef_daemon_interval option and then reports success message to azure' do
           expect(chef_service_instance).to receive(:enable).with(
             '/chef_extension_root',
             '/bootstrap_directory',
@@ -329,7 +329,7 @@ describe EnableChef do
       end
 
       context 'chef-service enable is un-successful' do
-        it 'calls enable method with no chef_service_interval option and then reports failure message to azure' do
+        it 'calls enable method with no chef_daemon_interval option and then reports failure message to azure' do
           expect(chef_service_instance).to receive(:enable).with(
             '/chef_extension_root',
             '/bootstrap_directory',
@@ -343,9 +343,9 @@ describe EnableChef do
       end
     end
 
-    context 'chef_service_interval option given by user is 0' do
+    context 'chef_daemon_interval option given by user is 0' do
       before(:each) do
-        allow(instance).to receive(:load_chef_service_interval).and_return('0')
+        allow(instance).to receive(:load_chef_daemon_interval).and_return('0')
         expect(chef_service_instance).to_not receive(:enable)
       end
 
@@ -378,14 +378,14 @@ describe EnableChef do
       end
     end
 
-    context 'chef_service_interval option given by user is non-empty, non-zero and valid' do
+    context 'chef_daemon_interval option given by user is non-empty, non-zero and valid' do
       before(:each) do
-        allow(instance).to receive(:load_chef_service_interval).and_return('13')
+        allow(instance).to receive(:load_chef_daemon_interval).and_return('13')
         expect(chef_service_instance).to_not receive(:disable)
       end
 
       context 'chef-service enable is successful' do
-        it 'calls enable method with chef_service_interval option and then reports success message to azure' do
+        it 'calls enable method with chef_daemon_interval option and then reports success message to azure' do
           expect(chef_service_instance).to receive(:enable).with(
             '/chef_extension_root',
             '/bootstrap_directory',
@@ -400,7 +400,7 @@ describe EnableChef do
       end
 
       context 'chef-service enable is un-successful' do
-        it 'calls enable method with chef_service_interval option and then reports failure message to azure' do
+        it 'calls enable method with chef_daemon_interval option and then reports failure message to azure' do
           expect(chef_service_instance).to receive(:enable).with(
             '/chef_extension_root',
             '/bootstrap_directory',
@@ -415,16 +415,16 @@ describe EnableChef do
       end
     end
 
-    context 'chef_service_interval option given by user is non-empty, non-zero and invalid' do
+    context 'chef_daemon_interval option given by user is non-empty, non-zero and invalid' do
       before do
-        allow(instance).to receive(:load_chef_service_interval).and_return('-8')
+        allow(instance).to receive(:load_chef_daemon_interval).and_return('-8')
         expect(chef_service_instance).to_not receive(:disable)
         expect(chef_service_instance).to_not receive(:enable)
       end
 
       it 'raises error' do
         expect { instance.send(:enable_chef_service) }.to raise_error(
-          'Invalid value for chef_service_interval option.'
+          'Invalid value for chef_daemon_interval option.'
         )
       end
     end
@@ -851,9 +851,9 @@ describe EnableChef do
   end
 
   describe "#enable_chef_sch_task" do
-    context "when chef_service_interval is empty" do
+    context "when chef_daemon_interval is empty" do
       before do
-        allow(instance).to receive(:load_chef_service_interval).and_return("")
+        allow(instance).to receive(:load_chef_daemon_interval).and_return("")
       end
 
       it "creates the chef scheduled task with default interval" do
@@ -863,9 +863,9 @@ describe EnableChef do
       end
     end
 
-    context "when chef_service_interval = 0" do
+    context "when chef_daemon_interval = 0" do
       before do
-        allow(instance).to receive(:load_chef_service_interval).and_return("0")
+        allow(instance).to receive(:load_chef_daemon_interval).and_return("0")
       end
 
       it "disables the chef scheduled task" do
@@ -875,19 +875,19 @@ describe EnableChef do
       end
     end
 
-    context "when chef_service_interval < 0" do
+    context "when chef_daemon_interval < 0" do
       before do
-        allow(instance).to receive(:load_chef_service_interval).and_return("-2")
+        allow(instance).to receive(:load_chef_daemon_interval).and_return("-2")
       end
 
       it "raises error" do
-        expect { instance.send(:enable_chef_sch_task) }.to raise_error("Invalid value for chef_service_interval option.")
+        expect { instance.send(:enable_chef_sch_task) }.to raise_error("Invalid value for chef_daemon_interval option.")
       end
     end
 
-    context "when chef_service_interval > 0" do
+    context "when chef_daemon_interval > 0" do
       before do
-        allow(instance).to receive(:load_chef_service_interval).and_return("34")
+        allow(instance).to receive(:load_chef_daemon_interval).and_return("34")
       end
 
       it "creates the chef scheduled task with the given interval" do
