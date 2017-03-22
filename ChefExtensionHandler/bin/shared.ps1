@@ -201,10 +201,12 @@ function Get-autoUpdateClientSetting{
 function Get-PublicSettings-From-Config-Json($key, $powershellVersion) {
   Try
   {
-    $azure_config_file = Get-Azure-Config-Path($powershellVersion)
-    $json_contents = Get-Content $azure_config_file
-    $normalized_json = normalize_json($json_contents)
-
+    if(!$normalized_json)
+    {
+      $azure_config_file = Get-Azure-Config-Path($powershellVersion)
+      $json_contents = Get-Content $azure_config_file
+      $global:normalized_json = normalize_json($json_contents)
+    }
     if ( $powershellVersion -ge 3 ) {
       $value = ($normalized_json | ConvertFrom-Json | Select -expand runtimeSettings | Select -expand handlerSettings | Select -expand publicSettings).$key
     }
