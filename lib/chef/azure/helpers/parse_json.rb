@@ -93,6 +93,8 @@ def escape_unescaped_content(file_content)
     # are not content
     if !!(line[line.length - 1] =~ /[\,\}\]]/) || (line_index < (lines.length - 1) && lines[line_index + 1][0] == ',')
       escaped_line += "\n"
+    else
+      escaped_line += "\\n" unless line.to_s.start_with? 'publicSettings'
     end
 
     escaped_content += escaped_line

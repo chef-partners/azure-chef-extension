@@ -17,7 +17,6 @@ describe "EnableChef get_validation_key generates correct validation.pem file" d
       @decrypted_settings = mock_data('correct_decrypted_json.txt')
       validation_key = mock_data('validation_key.txt')
       @key = OpenSSL::PKey::RSA.new(validation_key.squeeze("\n")).to_pem
-      @key.delete!("\n")
       allow(instance).to receive(:windows?).and_return(true)
       allow(instance).to receive(:handler_settings_file).and_return(mock_data("handler_settings.settings"))
     end
@@ -43,7 +42,6 @@ describe "EnableChef get_validation_key generates correct validation.pem file" d
       @decrypted_settings = mock_data('correct_decrypted_json.txt')
       validation_key = mock_data('validation_key.txt')
       @key = OpenSSL::PKey::RSA.new(validation_key.squeeze("\n")).to_pem
-      @key.delete!("\n")
       allow(instance).to receive(:windows?).and_return(false)
       allow(instance).to receive(:handler_settings_file).and_return(mock_data("handler_settings.settings"))
     end
