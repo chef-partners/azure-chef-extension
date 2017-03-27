@@ -53,7 +53,6 @@ end
 describe "value_from_json_file" do
   before do
     @multi_lined = "first line\nsecond line\nthird line\n"
-    @multi_lined.delete!("\n")
   end
 
   it "returns json value from the supplied json file_content." do
