@@ -90,7 +90,13 @@ function Chef-SetCustomEnvVariables($envHash, $powershellVersion)
 }
 
 function Get-PowershellVersion {
-  $PSVersionTable.PSVersion.Major
+  echo "Get PowershellVersion function"
+  if(!$powershellVersion)
+  {
+      echo "Get PowershellVersion from PSVersionTable"
+      $global:powershellVersion = $PSVersionTable.PSVersion.Major
+  }
+  $powershellVersion
 }
 
 # write status to file N.status
