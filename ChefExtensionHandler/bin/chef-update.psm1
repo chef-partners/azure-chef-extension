@@ -59,16 +59,9 @@ function Update-ChefClient {
       Remove-Item -Force $nodeRegistered
     }
     $backupLocation = Get-TempBackupDir
-    $removebackuptemp = "C:\\temp\\chef_backup"
-    $backuptemp = "C:\temp\*"
-
     $calledFromUpdate = $True
     # Save chef configuration.
-    xcopy $bootstrapDirectory "C:\\temp" /s /e /i /q
-    Remove-Item $removebackuptemp -Recurse
-    Copy-Item $backuptemp -Destination $backupLocation -Force -Recurse
-    Remove-Item "C:\\temp" -Recurse
-
+    Copy-Item $bootstrapDirectory $backupLocation -recurse
     Write-Host "[$(Get-Date)] Configuration saved to $backupLocation"
 
     # uninstall chef. this will work since the uninstall script is idempotent
@@ -77,9 +70,7 @@ function Update-ChefClient {
     Write-Host "[$(Get-Date)] Uninstall completed"
 
     # Restore Chef Configuration
-    xcopy $backupLocation "C:\\temp" /s /e /i /q
-    Copy-Item $backuptemp -Destination $bootstrapDirectory -Force -Recurse
-    Remove-Item "C:\\temp" -Recurse
+    Copy-Item $backupLocation $bootstrapDirectory -recurse
 
     # install new version of chef extension
     echo "Calling Install-ChefClient from $scriptDir\chef-install.psm1 on new version"
