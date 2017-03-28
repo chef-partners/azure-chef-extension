@@ -32,7 +32,7 @@ function Get-SharedHelper {
 }
 
 function Get-TempBackupDir {
-  $env:temp + "\\chef_backup"
+  $env:temp + "\\chef_backup\\"
 }
 
 function Update-ChefClient {
@@ -60,8 +60,13 @@ function Update-ChefClient {
     }
     $backupLocation = Get-TempBackupDir
     $calledFromUpdate = $True
-    # Save chef configuration.
-    Copy-Item $bootstrapDirectory $backupLocation -recurse
+
+    # Save chef configuration to backup location
+    if (-Not (Test-Path $backupLocation))
+    {
+         md -path $backupLocation
+    }
+    Copy-Item "$bootstrapDirectory\\*" $backupLocation -recurse -force
     Write-Host "[$(Get-Date)] Configuration saved to $backupLocation"
 
     # uninstall chef. this will work since the uninstall script is idempotent
@@ -70,7 +75,7 @@ function Update-ChefClient {
     Write-Host "[$(Get-Date)] Uninstall completed"
 
     # Restore Chef Configuration
-    Copy-Item $backupLocation $bootstrapDirectory -recurse
+    Copy-Item "$backupLocation*" "$bootstrapDirectory\\" -recurse -force
 
     # install new version of chef extension
     echo "Calling Install-ChefClient from $scriptDir\chef-install.psm1 on new version"
