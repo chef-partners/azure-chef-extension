@@ -8,7 +8,7 @@ Details about the thing that changed that needs to get included in the Release N
 -->
 
 
-# Windows azure-chef-extension 1210.12.109.1000 release notes:
+# Windows azure-chef-extension 1210.12.109.1002 release notes:
 In this release, we have added support for environment variables in windows chef extension.
 
 See the [CHANGELOG](https://github.com/chef-partners/azure-chef-extension/blob/master/CHANGELOG.md) for a list of all changes in this release, and review.
@@ -19,8 +19,7 @@ More information on the contribution process for Chef projects can be found in t
 https://github.com/chef-partners/azure-chef-extension
 
 
-##Feature added in Windows azure-chef-extension 1210.12.109.1000
-* Add support for environment variables in windows chef extension [Issue 193](https://github.com/chef-partners/azure-chef-extension/pull/193)
-
-##Known issue
-* Extension works fine for the latest windows 2008 images. 
+## Feature added in Windows azure-chef-extension 1210.12.109.1002
+* Fixed extension bad format issue in windows chef extension [Issue 200](https://github.com/chef-partners/azure-chef-extension/pull/200)
+* Optimized extension install and enable for windows [Issue 197](https://github.com/chef-partners/azure-chef-extension/pull/197)
+* Renamed chef-service-interval option name to chef-daemon-interval [Issue 196](https://github.com/chef-partners/azure-chef-extension/pull/196)

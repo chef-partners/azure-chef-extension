@@ -1,14 +1,14 @@
-#azure-chef-extension
+# azure-chef-extension
 
 Azure resource extension to enable Chef on Azure virtual machine instances.
 
-##Features:
+## Features:
 
 1. It can be installed through Azure RESTFUL API for extension
 2. The execution output of the scripts is logged in the log directory specified in HandlerEnvironment.json
 3. Status of the extension is reported back to Azure so that user can see the status on Azure Portal
 
-##Platforms and version its supported:
+## Platforms and version its supported:
 
 | Platform | Version    |
 |----------|------------|
@@ -19,8 +19,8 @@ Azure resource extension to enable Chef on Azure virtual machine instances.
 | Debian   | 7,8        |
 
 
-##Azure Chef Extension usage:
-#####Options that can be set in publicconfig.config
+## Azure Chef Extension usage:
+##### Options that can be set in publicconfig.config
 ```javascript
 {
   "client_rb": "< your additions to the client.rb configuration >".
@@ -94,7 +94,7 @@ publicconfig.config example:
 }
 ```
 
-#####Options that can be set in privateconfig.config
+##### Options that can be set in privateconfig.config
 ```javascript
 {
   "validation_key": "<your chef organisation validation key as a JSON escaped string>",
@@ -102,14 +102,14 @@ publicconfig.config example:
 }
 ```
 
-####Following are the References to doc for different Azure command line tools
+#### Following are the References to doc for different Azure command line tools
 
 1. [Azure portal](https://docs.chef.io/azure_portal.html)
 2. [Azure Powershell cmdlets](examples/azure-powershell-examples.md)
 3. [Azure Xplat CLI](examples/azure-xplat-cli-examples.md)
 4. [Knife Azure Plugin](examples/knife-azure-plugin-examples.md)
 
-####Powershell script to try Azure Chef Extension by using Set-AzureVMExtension cmdlet:
+#### Powershell script to try Azure Chef Extension by using Set-AzureVMExtension cmdlet:
 
 ```javascript
 $vm1 = "<VM name>"
@@ -132,7 +132,7 @@ New-AzureVM -Location 'West US' -ServiceName $svc -VM $vObj1
 # Look into your hosted chef account to verify the registerd node(VM)
 ```
 
-####Updating Extension manually
+#### Updating Extension manually
 
 1. Suppose you have a VM with extension version 1205 .12
 2. `$vmm = Get-AzureVM -Name "<vm-name>" -ServiceName "<cloud-service-name>"`
@@ -143,7 +143,7 @@ $vmOb = Set-AzureVMExtension -VM $vmm -ExtensionName 'ChefClient' -Publisher ‘
 Update-AzureVM -VM $vmOb.VM -Name "<vm-name>" -ServiceName "<cloud-service-name>
 ```
 
-####ARM commands for Azure Chef Extension
+#### ARM commands for Azure Chef Extension
 
 1. Please refer https://github.com/Azure/azure-quickstart-templates/tree/master/chef-json-parameters-linux-vm of creating the ARM template files.
 
@@ -219,7 +219,7 @@ https://azure.microsoft.com/en-us/resources/templates/multi-vm-chef-template-ubu
 
 
 
-##Azure Chef Extension Version Scheme
+## Azure Chef Extension Version Scheme
 
 **Description:**
 
@@ -247,7 +247,7 @@ If there is no patch applied, then RevisionNumber is not set. On applying patch,
 
     Hence Extension Version will be 1210.12.100.1001
 
-##Old Version Scheme
+## Old Version Scheme
 
 **Description:**
 
@@ -286,16 +286,16 @@ Chef-Client versions are specified in 4 digit format: `<MajorVersion.MinorVersio
     # After applying patch to Extension increase extension's RevisionNumber by 1
     New Extension Version will be 1210.12.4.1001
 
-##Tagging
+## Tagging
 We tag the extension with every extension publish. We have started tagging from extension 1206.12.3.0. Prior to that tags are not available.
 Before tagging we update the README(if required), CHANGELOG and RELEASE_NOTES.
 
-##Build and Packaging
+## Build and Packaging
 You can use rake tasks to build and publish the new builds to Azure subscription.
 
 **Note:** The arguments have fixed order and recommended to specify all for readability and avoiding confusion.
 
-#####Build
+##### Build
     rake build[:target_type, :extension_version, :confirmation_required]
 
 :target_type = [windows/ubuntu/centos] default is windows
@@ -306,7 +306,7 @@ You can use rake tasks to build and publish the new builds to Azure subscription
 
     rake 'build[ubuntu,1210.12]'
 
-#####Publish
+##### Publish
 Rake task to generate a build and publish the generated zip package to Azure.
 
     rake publish[:deploy_type, :target_type, :extension_version, :chef_deploy_namespace, :operation, :internal_or_public, :confirmation_required]
@@ -335,7 +335,7 @@ The task depends on:
 
     rake 'publish[deploy_to_production,ubuntu,1210.12,Chef.Bootstrap.WindowsAzure.Test,update,confirm_internal_deployment]'
 
-#####Delete
+##### Delete
 Rake task to delete a published package to Azure.
 **Note:**
 Only internal packages can be deleted.
@@ -354,7 +354,7 @@ The task depends on:
 
     rake 'delete[delete_from_production,ubuntu,Chef.Bootstrap.WindowsAzure.Test,1210.12.4.1000]'
 
-#####Update
+##### Update
 Rake task to udpate a published package to Azure. Used to switch published versions from "internal" to "public" and vice versa. You need to know the build date.
 
     rake update[:deploy_type, :target_type, :extension_version, :build_date_yyyymmdd, :chef_deploy_namespace, :internal_or_public, :confirmation_required]
