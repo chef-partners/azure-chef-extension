@@ -1,5 +1,11 @@
 # azure-chef-extension Change Log
 
+## Latest Release: 1210.12.109.1002 (2017/03/28)
+* [azure-chef-extension #203](https://github.com/chef-partners/azure-chef-extension/pull/203) Fixed nested backup issue.
+* [azure-chef-extension #200](https://github.com/chef-partners/azure-chef-extension/pull/200) Fixed extension bad format issue.
+* [azure-chef-extension #197](https://github.com/chef-partners/azure-chef-extension/pull/197) Optimized extension install and enable for windows.
+* [azure-chef-extension #196](https://github.com/chef-partners/azure-chef-extension/pull/196) Renamed chef-service-interval option name to chef-daemon-interval.
+
 ## Latest Release: 1210.12.109.1000 (2017/03/17)
 * [azure-chef-extension #193](https://github.com/chef-partners/azure-chef-extension/pull/193) Added support for environment_variables in windows extension.
 
