@@ -1,5 +1,8 @@
 # azure-chef-extension Change Log
 
+## Latest Release: 1210.12.109.1003 (2017/03/31)
+* [azure-chef-extension #205](https://github.com/chef-partners/azure-chef-extension/pull/205) Fixed extension failure issue for Windows 8.
+
 ## Latest Release: 1210.12.109.1002 (2017/03/28)
 * [azure-chef-extension #203](https://github.com/chef-partners/azure-chef-extension/pull/203) Fixed nested backup issue.
 * [azure-chef-extension #200](https://github.com/chef-partners/azure-chef-extension/pull/200) Fixed extension bad format issue.
