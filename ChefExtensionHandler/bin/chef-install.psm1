@@ -63,7 +63,7 @@ function Install-ChefClient {
           $daemon = "auto"
         }
         if (-Not $chef_package_version) {
-          $chef_package_version = "latest"
+          $chef_package_version = "12.19.36"
         }
         if (-Not $daemon) {
           $daemon = "service"
