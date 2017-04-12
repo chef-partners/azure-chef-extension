@@ -337,11 +337,14 @@ class EnableChef
   def get_validation_key(decrypted_text, validation_key_format)
     #extract validation_key from decrypted hash
     validation_key = value_from_json_file(decrypted_text, "validation_key")
-    begin
-      validation_key = Base64.decode64(validation_key) if(validation_key_format == "base64encoded")
-      validation_key = OpenSSL::PKey::RSA.new(validation_key.squeeze("\n")).to_pem
-    rescue OpenSSL::PKey::RSAError => e
-      Chef::Log.error "Chef validation key parsing error. #{e.inspect}"
+
+    unless validation_key.empty?
+      begin
+        validation_key = Base64.decode64(validation_key) if(validation_key_format == "base64encoded")
+        validation_key = OpenSSL::PKey::RSA.new(validation_key.squeeze("\n")).to_pem
+      rescue OpenSSL::PKey::RSAError => e
+        Chef::Log.error "Chef validation key parsing error. #{e.inspect}"
+      end
     end
     validation_key.delete("\x00")
   end
@@ -349,10 +352,13 @@ class EnableChef
   def get_client_key(decrypted_text)
     #extract client_key from decrypted hash
     client_key = value_from_json_file(decrypted_text, "client_pem")
-    begin
-      client_key = OpenSSL::PKey::RSA.new(client_key.squeeze("\n")).to_pem
-    rescue OpenSSL::PKey::RSAError => e
-      Chef::Log.error "Chef client key parsing error. #{e.inspect}"
+
+    unless client_key.empty?
+      begin
+        client_key = OpenSSL::PKey::RSA.new(client_key.squeeze("\n")).to_pem
+      rescue OpenSSL::PKey::RSAError => e
+        Chef::Log.error "Chef client key parsing error. #{e.inspect}"
+      end
     end
     client_key
   end
@@ -360,10 +366,13 @@ class EnableChef
   def get_chef_server_ssl_cert(decrypted_text)
     #extract chef_server_ssl_cert from decrypted hash
     chef_server_ssl_cert = value_from_json_file(decrypted_text, "chef_server_crt")
-    begin
-      chef_server_ssl_cert = OpenSSL::X509::Certificate.new(chef_server_ssl_cert.squeeze("\n")).to_pem
-    rescue OpenSSL::X509::CertificateError => e
-      Chef::Log.error "Chef Server SSL certificate parsing error. #{e.inspect}"
+
+    unless chef_server_ssl_cert.empty?
+      begin
+        chef_server_ssl_cert = OpenSSL::X509::Certificate.new(chef_server_ssl_cert.squeeze("\n")).to_pem
+      rescue OpenSSL::X509::CertificateError => e
+        Chef::Log.error "Chef Server SSL certificate parsing error. #{e.inspect}"
+      end
     end
     chef_server_ssl_cert
   end
