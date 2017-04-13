@@ -897,4 +897,36 @@ describe EnableChef do
       end
     end
   end
+
+  describe "#get_client_key" do
+    it "calls OpenSSL function if `client_key` is passed" do
+      allow(instance).to receive(:decrypted_text)
+      allow(instance).to receive(:value_from_json_file).and_return("client_key")
+      expect(OpenSSL::PKey::RSA).to receive_message_chain(:new, :to_pem)
+      instance.send(:get_client_key,"dummy_key")
+    end
+
+    it "doesn't call OpenSSL function if `client_key` is not passed" do
+      allow(instance).to receive(:decrypted_text)
+      allow(instance).to receive(:value_from_json_file).and_return("")
+      expect(OpenSSL::PKey::RSA).not_to receive(:new)
+      instance.send(:get_client_key,"dummy_key")
+    end
+  end
+
+  describe "#get_chef_server_ssl_cert" do
+    it "calls OpenSSL function if `chef_server_crt` is passed" do
+      allow(instance).to receive(:decrypted_text)
+      allow(instance).to receive(:value_from_json_file).and_return("chef_server_crt")
+      expect(OpenSSL::X509::Certificate).to receive_message_chain(:new, :to_pem)
+      instance.send(:get_chef_server_ssl_cert,"dummy_key")
+    end
+
+    it "doesn't call OpenSSL function if `chef_server_crt` is not passed" do
+      allow(instance).to receive(:decrypted_text)
+      allow(instance).to receive(:value_from_json_file).and_return("")
+      expect(OpenSSL::X509::Certificate).not_to receive(:new)
+      instance.send(:get_chef_server_ssl_cert,"dummy_key")
+    end
+  end
 end
