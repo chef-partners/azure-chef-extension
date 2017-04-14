@@ -54,10 +54,6 @@ class Chef
           escape_and_echo(super)
         end
 
-        def chef_server_ssl_cert
-          escape_and_echo(super)
-        end
-
         def secret
           escape_and_echo(@config[:secret])
         end
@@ -120,7 +116,7 @@ CONFIG
           end
 
           if(Gem::Specification.find_by_name('chef').version.version.to_f >= 12)
-            if ! chef_server_ssl_cert.empty?
+            if @chef_config[:chef_server_ssl_cert_content]
               client_rb << %Q{trusted_certs_dir       "c:/chef/trusted_certs"\n}
             end
           end
@@ -161,6 +157,10 @@ CONFIG
         # echo
         def escape_and_echo(file_contents)
           file_contents.gsub(/^(.*)$/, 'echo.\1').gsub(/([(<|>)^])/, '^\1')
+        end
+
+        def escape_and_echo_cert(file_contents)
+          file_contents.gsub(/^(.*)$/, 'echo.\1').gsub(/([(<|>)^])/, '^\1').gsub(/"/,'')
         end
 
         private
