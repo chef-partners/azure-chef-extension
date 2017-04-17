@@ -17,10 +17,6 @@ class Chef
           @chef_config[:client_key_content]
         end
 
-        def chef_server_ssl_cert
-          @chef_config[:chef_server_ssl_cert_content]
-        end
-
         def first_boot
           Hash(@config[:first_boot_attributes]).merge(:run_list => @run_list)
         end
@@ -52,7 +48,7 @@ class Chef
           end
 
           if(Gem::Specification.find_by_name('chef').version.version.to_f >= 12)
-            if ! chef_server_ssl_cert.empty?
+            if @chef_config[:chef_server_ssl_cert_content]
               client_rb << %Q{trusted_certs_dir       "/etc/chef/trusted_certs"\n}
             end
           end
