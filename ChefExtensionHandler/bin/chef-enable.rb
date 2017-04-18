@@ -1,5 +1,8 @@
 
 # Ruby code that runs the original chef-client and updates the azure extension status
+if RUBY_PLATFORM =~ /mswin|mingw|windows/
+  sleep(30)
+end
 
 require 'chef/azure/commands/enable'
 
