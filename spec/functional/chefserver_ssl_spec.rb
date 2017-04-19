@@ -26,7 +26,7 @@ describe "get_chef_server_ssl_cert" do
     it "returns correct chef_server_ssl_cert" do
       EnableChef::LINUX_CERT_PATH = File.expand_path(File.dirname("spec/assets/ssl_certs/*"))
       returned_ssl_cert = instance.send(:get_chef_server_ssl_cert,@decrypted_protected_settings)
-      expect(returned_ssl_cert).to eq(@actual_ssl_cert)
+      expect(returned_ssl_cert[0]).to eq(@actual_ssl_cert)
     end
   end
 
@@ -40,14 +40,14 @@ describe "get_chef_server_ssl_cert" do
       decrypted_chef_server_ssl_cert = mock_data('ssl_certs/correct_decrypted_ssl_cert_json.txt')
       allow(instance).to receive(:shell_out).and_return(OpenStruct.new(:exitstatus => 0, :stdout => decrypted_chef_server_ssl_cert))
       returned_ssl_cert = instance.send(:get_chef_server_ssl_cert,@decrypted_protected_settings)
-      expect(returned_ssl_cert).to eq(@actual_ssl_cert)
+      expect(returned_ssl_cert[0]).to eq(@actual_ssl_cert)
     end
 
     it "returns correct chef_server_ssl_cert if there are escape characters in the decrypted json" do
       decrypted_chef_server_ssl_cert = mock_data('ssl_certs/incorrect_decrypted_ssl_cert_json.txt')
       allow(instance).to receive(:shell_out).and_return(OpenStruct.new(:exitstatus => 0, :stdout => decrypted_chef_server_ssl_cert))
       returned_ssl_cert = instance.send(:get_chef_server_ssl_cert,@decrypted_protected_settings)
-      expect(returned_ssl_cert).to eq(@actual_ssl_cert)
+      expect(returned_ssl_cert[0]).to eq(@actual_ssl_cert)
     end
   end
 end
