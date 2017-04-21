@@ -44,10 +44,12 @@ chmod 0600 /etc/chef/encrypted_data_bag_secret
 
 <% if @chef_config[:chef_server_ssl_cert_content] and ! @chef_config[:chef_server_ssl_cert_content].empty? -%>
 mkdir -p /etc/chef/trusted_certs
-cat > /etc/chef/trusted_certs/chefserver_cert.crt <<'EOP'
-<%= chef_server_ssl_cert %>
+<% @chef_config[:chef_server_ssl_cert_content].each_with_index do |cert,index| -%>
+cat > /etc/chef/trusted_certs/chefserver_cert_<%= index %>.crt <<'EOP'
+<%= cert %>
 EOP
-chmod 0600 /etc/chef/trusted_certs/chefserver_cert.crt
+chmod 0600 /etc/chef/trusted_certs/chefserver_cert_<%= index %>.crt
+<% end -%>
 <% end -%>
 
 <%# Generate Ohai Hints -%>

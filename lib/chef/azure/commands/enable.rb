@@ -365,16 +365,22 @@ class EnableChef
 
   def get_chef_server_ssl_cert(decrypted_text)
     #extract chef_server_ssl_cert from decrypted hash
+    delimiter = "\n-----END CERTIFICATE-----\n"
+    chef_server_ssl_cert_multiple = Array.new
     chef_server_ssl_cert = value_from_json_file(decrypted_text, "chef_server_crt")
 
     unless chef_server_ssl_cert.empty?
+      chef_server_ssl_certs = chef_server_ssl_cert.split(delimiter)
       begin
-        chef_server_ssl_cert = OpenSSL::X509::Certificate.new(chef_server_ssl_cert.squeeze("\n")).to_pem
+        chef_server_ssl_certs.each do |chef_server_ssl_cert|
+          chef_server_ssl_cert += delimiter
+          chef_server_ssl_cert_multiple << OpenSSL::X509::Certificate.new(chef_server_ssl_cert.squeeze("\n")).to_pem
+        end
       rescue OpenSSL::X509::CertificateError => e
         Chef::Log.error "Chef Server SSL certificate parsing error. #{e.inspect}"
       end
     end
-    chef_server_ssl_cert
+    chef_server_ssl_cert_multiple
   end
 
   def secret_key(decrypted_text)

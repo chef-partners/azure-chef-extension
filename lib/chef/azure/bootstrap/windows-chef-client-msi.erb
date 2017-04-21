@@ -59,15 +59,15 @@ echo client key written.
 
 <% if @chef_config[:chef_server_ssl_cert_content] and ! @chef_config[:chef_server_ssl_cert_content].empty? -%>
 echo Writing ChefServer SSL certificate...
-
 mkdir <%= bootstrap_directory %>\trusted_certs
-> <%= bootstrap_directory %>\trusted_certs\chefserver_cert.crt (
- <%= chef_server_ssl_cert %>
+<% @chef_config[:chef_server_ssl_cert_content].each_with_index do |cert,index| -%>
+> <%= bootstrap_directory %>\trusted_certs\chefserver_cert_<%= index %>.crt (
+  <%= escape_and_echo_cert(cert) %>
 )
-
-
+<% end -%>
 echo ChefServer SSL certificate written.
 <% end -%>
+
 @echo on
 
 <% if @config[:secret] -%>
