@@ -17,7 +17,16 @@ Azure resource extension to enable Chef on Azure virtual machine instances.
 | Centos   | 6.5+                 |
 | RHEL     | 6+         |
 | Debian   | 7,8        |
+### Microsoft Windows Images
+The extension is tested against the offical Microsoft images on Azure listed below. If you have issues and you're using a different Windows image please provide that information in any issues filed.
 
+| Version | Image  |
+|---------| -------|
+| 2008r2  | a699494373c04fc0bc8f2bb1389d6106__Win2K8R2SP1-Datacenter-20170406-en.us-127GB.vhd |
+| 2012    | a699494373c04fc0bc8f2bb1389d6106__Windows-Server-2012-Datacenter-20170406-en.us-127GB.vhd |
+| 2012r2  | a699494373c04fc0bc8f2bb1389d6106__Windows-Server-2012-R2-20170406-en.us-127GB.vhd |
+
+**Note**: `Windows Server 2008 R2` gives timeout error intermittently while installing extention when using ASM command `Set-AzureVMExtension`. But it works successfully with other ASM commands and Xplat commands.
 
 ## Azure Chef Extension usage:
 ##### Options that can be set in publicconfig.config
