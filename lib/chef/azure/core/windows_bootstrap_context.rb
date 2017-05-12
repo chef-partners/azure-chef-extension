@@ -148,7 +148,8 @@ CONFIG
         end
 
         def first_boot
-          first_boot_attributes_and_run_list = (@config[:first_boot_attributes] || {}).merge(:run_list => @run_list)
+          attributes = (@config[:first_boot_attributes] || {})
+          first_boot_attributes_and_run_list = @run_list.empty? ? attributes : attributes.merge(:run_list => @run_list)
           escape_and_echo(first_boot_attributes_and_run_list.to_json)
         end
 
