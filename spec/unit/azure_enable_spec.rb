@@ -448,7 +448,7 @@ describe EnableChef do
           allow(IO).to receive_message_chain(
             :read, :chomp).and_return("template")
           allow(Process).to receive(:detach)
-          @sample_config = {:environment=>"_default", :chef_node_name=>"mynode3", :chef_extension_root=>"./", :user_client_rb=>"", :log_location=>nil, :chef_server_url=>"https://api.opscode.com/organizations/clochefacc", :validation_client_name=>"clochefacc-validator", :secret=>nil, :first_boot_attributes => {}}
+          @sample_config = {:environment=>nil, :chef_node_name=>"mynode3", :chef_extension_root=>"./", :user_client_rb=>"", :log_location=>nil, :chef_server_url=>"https://api.opscode.com/organizations/clochefacc", :validation_client_name=>"clochefacc-validator", :secret=>nil, :first_boot_attributes => {}}
           @sample_runlist = ["recipe[getting-started]", "recipe[apt]"]
         end
 
@@ -463,7 +463,7 @@ describe EnableChef do
           expect(instance).to_not receive(:load_cloud_attributes_in_hints)
           expect(instance).to receive(:secret_key)
           expect(FileUtils).to receive(:rm)
-          expect(Process).to receive(:spawn).with("chef-client -c #{@bootstrap_directory}/client.rb -j #{@bootstrap_directory}/first-boot.json -E #{@sample_config[:environment]} -L #{@sample_config[:log_location]}/chef-client.log --once ").and_return(123)
+          expect(Process).to receive(:spawn).with("chef-client -c #{@bootstrap_directory}/client.rb -j #{@bootstrap_directory}/first-boot.json -L #{@sample_config[:log_location]}/chef-client.log --once ").and_return(123)
           instance.send(:configure_chef_only_once)
           expect(instance.instance_variable_get(:@child_pid)).to be == 123
           expect(instance.instance_variable_get(:@chef_client_success_file)).to be nil
@@ -480,7 +480,7 @@ describe EnableChef do
           expect(Erubis::Eruby.new).to receive(:evaluate)
           expect(instance).to receive(:shell_out).and_return(
             OpenStruct.new(:exitstatus => 0, :stdout => ""))
-          expect(Process).to receive(:spawn).with("chef-client -c #{@bootstrap_directory}/client.rb -j #{@bootstrap_directory}/first-boot.json -E #{@sample_config[:environment]} -L #{@sample_config[:log_location]}/chef-client.log --once ").and_return(456)
+          expect(Process).to receive(:spawn).with("chef-client -c #{@bootstrap_directory}/client.rb -j #{@bootstrap_directory}/first-boot.json -L #{@sample_config[:log_location]}/chef-client.log --once ").and_return(456)
           instance.send(:configure_chef_only_once)
           expect(instance.instance_variable_get(:@child_pid)).to be == 456
           expect(instance.instance_variable_get(:@chef_client_success_file)).to be nil
@@ -504,7 +504,7 @@ describe EnableChef do
           allow(IO).to receive_message_chain(
             :read, :chomp).and_return("template")
           allow(Process).to receive(:detach)
-          @sample_config = {:environment=>"_default", :chef_node_name=>"mynode3", :chef_extension_root=>"./", :user_client_rb=>"", :log_location=>nil, :chef_server_url=>"https://api.opscode.com/organizations/clochefacc", :validation_client_name=>"clochefacc-validator", :secret=>nil, :first_boot_attributes => {"container_service"=>{"chef-init-test"=>{"command"=>"C:\\opscode\\chef\\bin"}}} }
+          @sample_config = {:environment=>nil, :chef_node_name=>"mynode3", :chef_extension_root=>"./", :user_client_rb=>"", :log_location=>nil, :chef_server_url=>"https://api.opscode.com/organizations/clochefacc", :validation_client_name=>"clochefacc-validator", :secret=>nil, :first_boot_attributes => {"container_service"=>{"chef-init-test"=>{"command"=>"C:\\opscode\\chef\\bin"}}} }
           @sample_runlist = ["recipe[getting-started]", "recipe[apt]"]
         end
 
@@ -519,7 +519,7 @@ describe EnableChef do
           expect(instance).to receive(:load_cloud_attributes_in_hints)
           expect(instance).to receive(:secret_key)
           expect(FileUtils).to receive(:rm)
-          expect(Process).to receive(:spawn).with("chef-client -c #{@bootstrap_directory}/client.rb -j #{@bootstrap_directory}/first-boot.json -E #{@sample_config[:environment]} -L #{@sample_config[:log_location]}/chef-client.log --once  && touch c:\\chef_client_success").and_return(789)
+          expect(Process).to receive(:spawn).with("chef-client -c #{@bootstrap_directory}/client.rb -j #{@bootstrap_directory}/first-boot.json -L #{@sample_config[:log_location]}/chef-client.log --once  && touch c:\\chef_client_success").and_return(789)
           instance.send(:configure_chef_only_once)
           expect(instance.instance_variable_get(:@child_pid)).to be == 789
           expect(instance.instance_variable_get(:@chef_client_success_file)).to be == 'c:\\chef_client_success'
@@ -536,7 +536,7 @@ describe EnableChef do
           expect(Erubis::Eruby.new).to receive(:evaluate)
           expect(instance).to receive(:shell_out).and_return(
             OpenStruct.new(:exitstatus => 0, :stdout => ""))
-          expect(Process).to receive(:spawn).with("chef-client -c #{@bootstrap_directory}/client.rb -j #{@bootstrap_directory}/first-boot.json -E #{@sample_config[:environment]} -L #{@sample_config[:log_location]}/chef-client.log --once  && touch /tmp/chef_client_success").and_return(120)
+          expect(Process).to receive(:spawn).with("chef-client -c #{@bootstrap_directory}/client.rb -j #{@bootstrap_directory}/first-boot.json -L #{@sample_config[:log_location]}/chef-client.log --once  && touch /tmp/chef_client_success").and_return(120)
           instance.send(:configure_chef_only_once)
           expect(instance.instance_variable_get(:@child_pid)).to be == 120
           expect(instance.instance_variable_get(:@chef_client_success_file)).to be == '/tmp/chef_client_success'
