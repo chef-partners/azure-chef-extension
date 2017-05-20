@@ -1,5 +1,8 @@
 # azure-chef-extension Change Log
 
+## Latest Release: 1210.12.109.1004 (2017/05/18)
+* [azure-chef-extension #213](https://github.com/chef-partners/azure-chef-extension/pull/213) Fixed runlist conflicts with policy_name and policy_group settings in first-boot.json
+
 ## Latest Release: 1210.12.109.1003 (2017/03/31)
 * [azure-chef-extension #205](https://github.com/chef-partners/azure-chef-extension/pull/205) Fixed extension failure issue for Windows 8.
 
