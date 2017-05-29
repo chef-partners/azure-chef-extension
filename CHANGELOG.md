@@ -2,6 +2,9 @@
 
 ## Latest Release: 1210.12.109.1004 (2017/05/18)
 * [azure-chef-extension #213](https://github.com/chef-partners/azure-chef-extension/pull/213) Fixed runlist conflicts with policy_name and policy_group settings in first-boot.json
+* [azure-chef-extension #210](https://github.com/chef-partners/azure-chef-extension/pull/210) Update readme with microsoft image
+* [azure-chef-extension #209](https://github.com/chef-partners/azure-chef-extension/pull/209) Added changes for spliting multiple certificates
+* [azure-chef-extension #208](https://github.com/chef-partners/azure-chef-extension/pull/208) Fixing OpenSSL `header too long` issue.
 
 ## Latest Release: 1210.12.109.1003 (2017/03/31)
 * [azure-chef-extension #205](https://github.com/chef-partners/azure-chef-extension/pull/205) Fixed extension failure issue for Windows 8.
