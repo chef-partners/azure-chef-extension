@@ -335,6 +335,21 @@ describe ChefService do
       end
     end
 
+    context 'service start successful for startup type is disable' do
+      before do
+        allow(instance).to receive(%x{powershell.exe -Command "Set-Service -Name 'chef-client' -StartupType Disabled"}).and_return(true)
+      end
+      it 'does not report any error' do
+        allow(instance).to receive(%x{powershell.exe -Command "Set-Service -Name 'chef-client' -StartupType automatic"})
+        expect(instance).to receive(:shell_out).with(
+          'sc.exe start chef-client  -c /bootstrap_directory\\client.rb -L /log_location\\chef-client.log ').and_return(
+            OpenStruct.new(:exitstatus => 0, :stdout => '', :error! => '')
+        )
+        response = instance.send(:start_service, '/bootstrap_directory', '/log_location')
+        expect(response.empty?).to be == true
+      end
+    end
+
     context 'service start un-successful' do
       it 'reports the error' do
         expect(instance).to receive(:shell_out).with(

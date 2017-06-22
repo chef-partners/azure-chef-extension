@@ -117,6 +117,7 @@ class ChefService
   def start_service(bootstrap_directory, log_location)
     puts "#{Time.now} Starting chef-client service ...."
     params = " -c #{bootstrap_directory}\\client.rb -L #{log_location}\\chef-client.log "
+    set_startup_type = %x{powershell.exe -Command "Set-Service -Name 'chef-client' -StartupType automatic"}
     result = shell_out("sc.exe start chef-client #{params}")
     result.error!
   end
