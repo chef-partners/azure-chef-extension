@@ -326,21 +326,7 @@ describe ChefService do
   describe 'start_service' do
     context 'service start successful' do
       it 'does not report any error' do
-        expect(instance).to receive(:shell_out).with(
-          'sc.exe start chef-client  -c /bootstrap_directory\\client.rb -L /log_location\\chef-client.log ').and_return(
-            OpenStruct.new(:exitstatus => 0, :stdout => '', :error! => '')
-        )
-        response = instance.send(:start_service, '/bootstrap_directory', '/log_location')
-        expect(response.empty?).to be == true
-      end
-    end
-
-    context 'service start successful for startup type is disable' do
-      before do
-        allow(instance).to receive(%x{powershell.exe -Command "Set-Service -Name 'chef-client' -StartupType Disabled"}).and_return(true)
-      end
-      it 'does not report any error' do
-        allow(instance).to receive(%x{powershell.exe -Command "Set-Service -Name 'chef-client' -StartupType automatic"})
+        allow(instance).to receive(:set_startup_type).and_return(true)
         expect(instance).to receive(:shell_out).with(
           'sc.exe start chef-client  -c /bootstrap_directory\\client.rb -L /log_location\\chef-client.log ').and_return(
             OpenStruct.new(:exitstatus => 0, :stdout => '', :error! => '')
@@ -352,6 +338,7 @@ describe ChefService do
 
     context 'service start un-successful' do
       it 'reports the error' do
+        allow(instance).to receive(:set_startup_type).and_return(true)
         expect(instance).to receive(:shell_out).with(
           'sc.exe start chef-client  -c /bootstrap_directory\\client.rb -L /log_location\\chef-client.log ').and_return(
             OpenStruct.new(:exitstatus => 1, :stdout => '', :error! => 'Some unknown error occurred.')
@@ -444,6 +431,7 @@ describe ChefService do
     context 'chef-service is already running' do
       before do
         allow(instance).to receive(:is_running?).and_return(true)
+        allow(instance).to receive(:set_startup_type).and_return(true)
       end
 
       it 'stops and then starts the chef-service' do
@@ -459,6 +447,7 @@ describe ChefService do
     context 'chef-service is not running' do
       before do
         allow(instance).to receive(:is_running?).and_return(false)
+        allow(instance).to receive(:set_startup_type).and_return(true)
       end
 
       it 'just starts the chef-service' do

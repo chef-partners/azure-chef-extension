@@ -117,7 +117,7 @@ class ChefService
   def start_service(bootstrap_directory, log_location)
     puts "#{Time.now} Starting chef-client service ...."
     params = " -c #{bootstrap_directory}\\client.rb -L #{log_location}\\chef-client.log "
-    set_startup_type = %x{powershell.exe -Command "Set-Service -Name 'chef-client' -StartupType automatic"}
+    set_startup_type
     result = shell_out("sc.exe start chef-client #{params}")
     result.error!
   end
@@ -143,6 +143,7 @@ class ChefService
 
   def restart_service
     stop_service if is_running?
+    set_startup_type
     result = shell_out("sc.exe start chef-client")
     result.error!
   end
@@ -264,5 +265,11 @@ class ChefService
     else
       raise "Invalid chef-client pid file. [#{chef_pid_file}]"
     end
+  end
+
+  # Set chef-client service startup type Automatic(Delay Start)
+  def set_startup_type
+    startup_type = shell_out("powershell.exe -Command Set-Service -Name 'chef-client' -StartupType automatic")
+    startup_type.error!
   end
 end
