@@ -326,6 +326,7 @@ describe ChefService do
   describe 'start_service' do
     context 'service start successful' do
       it 'does not report any error' do
+        allow(instance).to receive(:set_startup_type).and_return(true)
         expect(instance).to receive(:shell_out).with(
           'sc.exe start chef-client  -c /bootstrap_directory\\client.rb -L /log_location\\chef-client.log ').and_return(
             OpenStruct.new(:exitstatus => 0, :stdout => '', :error! => '')
@@ -337,6 +338,7 @@ describe ChefService do
 
     context 'service start un-successful' do
       it 'reports the error' do
+        allow(instance).to receive(:set_startup_type).and_return(true)
         expect(instance).to receive(:shell_out).with(
           'sc.exe start chef-client  -c /bootstrap_directory\\client.rb -L /log_location\\chef-client.log ').and_return(
             OpenStruct.new(:exitstatus => 1, :stdout => '', :error! => 'Some unknown error occurred.')
@@ -429,6 +431,7 @@ describe ChefService do
     context 'chef-service is already running' do
       before do
         allow(instance).to receive(:is_running?).and_return(true)
+        allow(instance).to receive(:set_startup_type).and_return(true)
       end
 
       it 'stops and then starts the chef-service' do
@@ -444,6 +447,7 @@ describe ChefService do
     context 'chef-service is not running' do
       before do
         allow(instance).to receive(:is_running?).and_return(false)
+        allow(instance).to receive(:set_startup_type).and_return(true)
       end
 
       it 'just starts the chef-service' do
