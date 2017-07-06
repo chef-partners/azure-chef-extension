@@ -6,7 +6,7 @@
   <Label>Chef Extension for <%= target_type %></Label>
   <HostingResources>VmRole</HostingResources>
   <!--Update this field with correct link where the extension is published.-->
-  <MediaLink>https://<%= package_storage_account %>.blob.core.windows.net/<%= package_container %>/<%= package_name %></MediaLink>
+  <MediaLink>https://<%= package_storage_account %>.blob.core.<%= cloud_platform %>.net/<%= package_container %>/<%= package_name %></MediaLink>
   <Description>Chef Extension that sets up chef-client on VM</Description>
   <LocalResources />
   <IsInternalExtension><%= is_internal %></IsInternalExtension>

@@ -45,8 +45,10 @@ WINDOWS_PACKAGE_LIST = [
 
 PREVIEW = "deploy_to_preview"
 PRODUCTION = "deploy_to_production"
+GOV = "deploy_to_gov"
 DELETE_FROM_PREVIEW = "delete_from_preview"
 DELETE_FROM_PRODUCTION = "delete_from_production"
+DELETE_FROM_GOV = "delete_from_gov"
 CONFIRM_PUBLIC = "confirm_public_deployment"
 CONFIRM_INTERNAL = "confirm_internal_deployment"
 DEPLOY_INTERNAL = "deploy_to_internal"
@@ -86,7 +88,7 @@ end
 def assert_deploy_params(deploy_type, internal_or_public)
   assert_publish_env_vars
 
-  error_and_exit! "deploy_type parameter value should be \"#{PREVIEW}\" or \"#{PRODUCTION}\"" unless (deploy_type == PREVIEW or deploy_type == PRODUCTION)
+  error_and_exit! "deploy_type parameter value should be \"#{PREVIEW}\" or \"#{PRODUCTION}\" or \"#{GOV}\"" unless (deploy_type == PREVIEW or deploy_type == PRODUCTION or deploy_type == GOV)
 
   error_and_exit! "internal_or_public parameter value should be \"#{CONFIRM_INTERNAL}\" or \"#{CONFIRM_PUBLIC}\"" unless (internal_or_public == CONFIRM_INTERNAL or internal_or_public == CONFIRM_PUBLIC)
 end
@@ -100,7 +102,7 @@ end
 def assert_delete_params(type, chef_deploy_namespace, full_extension_version)
   assert_publish_env_vars
 
-  error_and_exit! "deploy_type parameter value should be \"#{DELETE_FROM_PREVIEW}\" or \"#{DELETE_FROM_PRODUCTION}\"" unless (type == DELETE_FROM_PREVIEW or type == DELETE_FROM_PRODUCTION)
+  error_and_exit! "deploy_type parameter value should be \"#{DELETE_FROM_PREVIEW}\" or \"#{DELETE_FROM_PRODUCTION}\" or \"#{DELETE_FROM_GOV}\"" unless (type == DELETE_FROM_PREVIEW or type == DELETE_FROM_PRODUCTION or type == DELETE_FROM_GOV)
 
   error_and_exit! "chef_deploy_namespace must be specified." if chef_deploy_namespace.nil?
 
@@ -138,6 +140,8 @@ def get_mgmt_uri(deploy_type)
   case deploy_type
   when /(^#{PRODUCTION}$|^#{DELETE_FROM_PRODUCTION}$)/
     "https://management.core.windows.net/"
+  when /(^#{GOV}$|^#{DELETE_FROM_GOV}$)/
+    "https://management.core.usgovcloudapi.net/"
   when /(^#{PREVIEW}$|^#{DELETE_FROM_PREVIEW}$)/
     "https://management-preview.core.windows-int.net/"
   end
@@ -162,6 +166,8 @@ def get_definition_xml(args, date_tag = nil)
 
   extensionZipPackage = get_extension_pkg_name(args, date_tag)
 
+  cloud_platform = (args.deploy_type == GOV) ? "usgovcloudapi" : "windows"
+
   # Process the erb
   definitionXml = ERBHelpers::ERBCompiler.run(
       File.read("build/templates/definition.xml.erb"),
@@ -170,6 +176,7 @@ def get_definition_xml(args, date_tag = nil)
       :extension_version => args.extension_version,
       :target_type => args.target_type,
       :package_storage_account => storageAccount,
+      :cloud_platform => cloud_platform,
       :package_container =>  storageContainer,
       :package_name => extensionZipPackage,
       :is_internal => is_internal?(args)
