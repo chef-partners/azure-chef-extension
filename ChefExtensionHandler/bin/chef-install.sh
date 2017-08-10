@@ -75,7 +75,7 @@ chef_install_from_script(){
         exit 1
       elif [ -z "$chef_version" ]; then
         echo "Installing latest chef client"
-        sh /tmp/$platform-install.sh
+        sh /tmp/$platform-install.sh -v "12.19.36"
       else
         echo "Installing chef client with version $chef_version"
         sh /tmp/$platform-install.sh -v $chef_version
