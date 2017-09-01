@@ -86,7 +86,7 @@ function Chef-SetCustomEnvVariables($envHash, $powershellVersion)
       [Environment]::SetEnvironmentVariable($prop.Key, $prop.Value, "User")
       [Environment]::SetEnvironmentVariable($prop.Key, $prop.Value, "Process")
     }
-  } 
+  }
 }
 
 function Get-PowershellVersion {
@@ -249,16 +249,21 @@ function Get-Azure-Config-Path($powershellVersion) {
     }
 
     # Get the last .settings file
-    $config_files = get-childitem $config_folder -recurse | where {$_.extension -eq ".settings"}
+    $config_file_name = Get-Lastest-Settings-File($config_folder)
 
-    if($config_files -is [system.array]) {
-      $config_file_name = $config_files[-1].Name
-    }
-    else {
-      $config_file_name = $config_files.Name
-    }
+    $azure_config_file = "$config_folder\$config_file_name"
+    $config_file_is_a_folder = (Get-Item $azure_config_file) -is [System.IO.DirectoryInfo]
 
-    "$config_folder\$config_file_name"
+    # In case of update, the n.settings file doesn't exists initially in the
+    # folder of the new extension. Hence using the n.settings file copied into
+    # the C:\Chef folder during enable
+    if ( $config_file_is_a_folder ) {
+      Write-Host "n.settings file doesn't exist in the extension folder. Reading from C:\chef."
+      $config_folder = "C:\Chef"
+      $config_file_name = Get-Lastest-Settings-File($config_folder)
+      $azure_config_file = "$config_folder\$config_file_name"
+    }
+    return $azure_config_file
   }
   Catch
   {
@@ -267,6 +272,18 @@ function Get-Azure-Config-Path($powershellVersion) {
     echo "Failed to read file: $FailedItem. The error message was $ErrorMessage"
     throw "Error in Get-Azure-Config-Path. Couldn't parse the HandlerEnvironment.json file"
   }
+}
+
+function Get-Lastest-Settings-File($config_folder) {
+  $config_files = get-childitem $config_folder -recurse | where {$_.extension -eq ".settings"}
+
+  if($config_files -is [system.array]) {
+    $config_file_name = $config_files[-1].Name
+  }
+  else {
+    $config_file_name = $config_files.Name
+  }
+  return $config_file_name
 }
 
 # This method is called separetely from enable.cmd before calling Install-ChefClient
