@@ -12,6 +12,7 @@ require 'json'
 require 'zip'
 require 'date'
 require 'nokogiri'
+require 'mixlib/shellout'
 require './lib/chef/azure/helpers/erb.rb'
 
 PACKAGE_NAME = "ChefExtensionHandler"
@@ -82,6 +83,33 @@ def assert_publish_env_vars
     if ENV[var.keys.first].nil?
       error_and_exit! "Please set the environment variable - \"#{var.keys.first}\" for [#{var.values.first}]"
     end
+  end
+end
+
+def assert_gov_environment_vars
+  env_vars = {
+    "azure_extension_cli" => "Path of azure-extension-cli binary. Download it from https://github.com/Azure/azure-extensions-cli/releases",
+    "SUBSCRIPTION_ID" => "Subscription ID of the GOV Account from where extension is to be published.",
+    "SUBSCRIPTION_CERT" => "Path to the Management Certificate",
+    "MANAGEMENT_URL" => "Management URL for Gov Cloud (https://management.core.usgovcloudapi.net)",
+    "EXTENSION_NAMESPACE" => "Publisher namespace (Chef.Bootstrap.WindowsAzure)"
+  }
+
+  env_vars.each do |var, desc|
+    error_and_exit! "Please set the environment variable - \"#{var}\" for [#{desc}]" unless ENV[var]
+  end
+end
+
+# sets the common environment varaibles for Chef Extension
+def set_gov_env_vars(subscription_id)
+  env_vars = {
+    "SUBSCRIPTION_ID" => subscription_id,
+    "MANAGEMENT_URL" => "https://management.core.usgovcloudapi.net",
+    "EXTENSION_NAMESPACE" => "Chef.Bootstrap.WindowsAzure"
+  }
+
+  env_vars.each do |var, value|
+    ENV[var] = value
   end
 end
 
@@ -166,18 +194,36 @@ def get_definition_xml(args, date_tag = nil)
 
   extensionZipPackage = get_extension_pkg_name(args, date_tag)
 
-  # Process the erb
-  definitionXml = ERBHelpers::ERBCompiler.run(
-      File.read("build/templates/definition.xml.erb"),
-      {:chef_namespace => args.chef_deploy_namespace,
-      :extension_name => extensionName,
-      :extension_version => args.extension_version,
-      :target_type => args.target_type,
-      :package_storage_account => storageAccount,
-      :package_container =>  storageContainer,
-      :package_name => extensionZipPackage,
-      :is_internal => is_internal?(args)
-    })
+  if args.deploy_type == GOV
+    chef_url = 'http://www.chef.io/about'
+    supported_os = args.target_type == 'windows' ? 'windows' : 'linux'
+    storage_base_url = 'core.usgovcloudapi.net'
+
+    begin
+      cli_cmd = Mixlib::ShellOut.new("#{ENV['azure_extension_cli']} new-extension-manifest --package #{extensionZipPackage} --storage-account #{storageAccount} --namespace #{args.chef_deploy_namespace} --name #{extensionName} --version #{args.extension_version} --label 'Chef Extension for #{args.target_type}' --description 'Chef Extension that sets up chef-client on VM' --eula-url #{chef_url} --privacy-url #{chef_url} --homepage-url #{chef_url} --company 'Chef Software, Inc.' --supported-os #{supported_os} --storage-base-url #{storage_base_url}")
+
+      result = cli_cmd.run_command
+      result.error!
+
+      definitionXml = result.stdout
+    rescue Mixlib::ShellOut::ShellCommandFailed => e
+      puts "Failure while running `#{ENV['azure_extension_cli']} new-extension-manifest`: #{e}"
+      exit
+    end
+  else
+    # Process the erb
+    definitionXml = ERBHelpers::ERBCompiler.run(
+        File.read("build/templates/definition.xml.erb"),
+        {:chef_namespace => args.chef_deploy_namespace,
+        :extension_name => extensionName,
+        :extension_version => args.extension_version,
+        :target_type => args.target_type,
+        :package_storage_account => storageAccount,
+        :package_container =>  storageContainer,
+        :package_name => extensionZipPackage,
+        :is_internal => is_internal?(args)
+      })
+  end
 
   definitionXml
 end
@@ -281,6 +327,11 @@ task :publish, [:deploy_type, :target_type, :extension_version, :chef_deploy_nam
 
   subscription_id, subscription_name = load_publish_settings
 
+  if args.deploy_type == GOV
+    set_gov_env_vars(subscription_id)
+    assert_gov_environment_vars
+  end
+
   publish_uri = get_publish_uri(args.deploy_type, subscription_id, args.operation)
 
   definitionXml = get_definition_xml(args)
@@ -313,24 +364,36 @@ CONFIRMATION
   tempFile.write(definitionXml)
   tempFile.close
 
-  # Upload the generated package to Azure storage as a blob.
-  puts "\n\nUploading zip package..."
-  puts "------------------------"
-  storageAccount, storageContainer, extensionName = load_publish_properties(args.target_type)
-  extensionZipPackage = get_extension_pkg_name(args)
-
-  system("powershell -nologo -noprofile -executionpolicy unrestricted Import-Module .\\scripts\\uploadpkg.psm1;Upload-ChefPkgToAzure #{ENV["publishsettings"]} #{storageAccount} #{storageContainer} #{extensionZipPackage}")
-
-  # Publish the uploaded package to PIR using azure cmdlets.
-  puts "\n\nPublishing the package..."
-  puts "-------------------------"
-  postOrPut = if args.operation == "new"
-      "POST"
-    elsif args.operation == "update"
-      "PUT"
+  if args.deploy_type == GOV
+    begin
+      cli_cmd = Mixlib::ShellOut.new("#{ENV['azure_extension_cli']} new-extension-version --manifest #{definitionXmlFile}")
+      result = cli_cmd.run_command
+      result.error!
+      puts "The extension has been successfully published internally."
+    rescue Mixlib::ShellOut::ShellCommandFailed => e
+      puts "Failure while running `#{ENV['azure_extension_cli']} new-extension-version`: #{e}"
+      exit
     end
+  else
+    # Upload the generated package to Azure storage as a blob.
+    puts "\n\nUploading zip package..."
+    puts "------------------------"
+    storageAccount, storageContainer, extensionName = load_publish_properties(args.target_type)
+    extensionZipPackage = get_extension_pkg_name(args)
 
-  system("powershell -nologo -noprofile -executionpolicy unrestricted Import-Module .\\scripts\\publishpkg.psm1;Publish-ChefPkg #{ENV["publishsettings"]} \"\'#{subscription_name}\'\" #{publish_uri} #{definitionXmlFile} #{postOrPut}")
+    system("powershell -nologo -noprofile -executionpolicy unrestricted Import-Module .\\scripts\\uploadpkg.psm1;Upload-ChefPkgToAzure #{ENV["publishsettings"]} #{storageAccount} #{storageContainer} #{extensionZipPackage}")
+
+    # Publish the uploaded package to PIR using azure cmdlets.
+    puts "\n\nPublishing the package..."
+    puts "-------------------------"
+    postOrPut = if args.operation == "new"
+        "POST"
+      elsif args.operation == "update"
+        "PUT"
+      end
+
+    system("powershell -nologo -noprofile -executionpolicy unrestricted Import-Module .\\scripts\\publishpkg.psm1;Publish-ChefPkg #{ENV["publishsettings"]} \"\'#{subscription_name}\'\" #{publish_uri} #{definitionXmlFile} #{postOrPut}")
+  end
 
   tempFile.unlink
 end
