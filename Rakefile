@@ -16,6 +16,7 @@ require 'mixlib/shellout'
 require './lib/chef/azure/helpers/erb.rb'
 
 PACKAGE_NAME = "ChefExtensionHandler"
+MANIFEST_NAME = "publishDefinitionXml"
 EXTENSION_VERSION = "1.0"
 CHEF_BUILD_DIR = "pkg"
 PESTER_VER_TAG = "2.0.4" # we lock down to specific tag version
@@ -189,6 +190,18 @@ def get_extension_pkg_name(args, date_tag = nil)
   end
 end
 
+# Updates IsInternal as False for public release and True for internal release
+def update_definition_xml(xml, args)
+  doc = Nokogiri::XML(File.open(xml))
+  internal = doc.at_css("IsInternalExtension")
+  internal.content = is_internal?(args)
+  File.write(xml, doc.to_xml)
+end
+
+def get_definition_xml_name(date_tag = nil)
+  date_tag.nil? ? "#{MANIFEST_NAME}_#{Date.today.strftime("%Y%m%d")}" : "#{MANIFEST_NAME}_#{date_tag}"
+end
+
 def get_definition_xml(args, date_tag = nil)
   storageAccount, storageContainer, extensionName = load_publish_properties(args.target_type)
 
@@ -307,6 +320,7 @@ task :clean do
   FileUtils.rm_rf(Dir.glob("#{PESTER_SANDBOX}"))
   puts "Deleting gem file..."
   FileUtils.rm_f(Dir.glob("*.gem"))
+  FileUtils.rm_f(Dir.glob("publishDefinitionXml_*"))
 end
 
 desc "Publishes the azure chef extension package using publish.json Ex: publish[deploy_type, platform, extension_version], default is build[preview,windows]."
@@ -357,12 +371,13 @@ CONFIRMATION
 
   puts "Continuing with publish request..."
 
-  tempFile = Tempfile.new("publishDefinitionXml")
-  definitionXmlFile = tempFile.path
+  date_tag = Date.today.strftime("%Y%m%d")
+  manifestFile = File.new("publishDefinitionXml_#{date_tag}", "w")
+  definitionXmlFile = manifestFile.path
   puts "Writing publishDefinitionXml to #{definitionXmlFile}..."
   puts "[[\n#{definitionXml}\n]]"
-  tempFile.write(definitionXml)
-  tempFile.close
+  manifestFile.write(definitionXml)
+  manifestFile.close
 
   if args.deploy_type == GOV
     begin
@@ -394,8 +409,6 @@ CONFIRMATION
 
     system("powershell -nologo -noprofile -executionpolicy unrestricted Import-Module .\\scripts\\publishpkg.psm1;Publish-ChefPkg #{ENV["publishsettings"]} \"\'#{subscription_name}\'\" #{publish_uri} #{definitionXmlFile} #{postOrPut}")
   end
-
-  tempFile.unlink
 end
 
 desc "Deletes the azure chef extension package which was publised as internal Ex: publish[deploy_type, platform, extension_version], default is build[preview,windows]."
@@ -462,9 +475,11 @@ task :update, [:deploy_type, :target_type, :extension_version, :build_date_yyyym
   # assert build date since we form the build tag
   error_and_exit! "Please specify the :build_date_yyyymmdd param used to identify the published build" if args.build_date_yyyymmdd.nil?
 
-  definitionXml = get_definition_xml(args, args.build_date_yyyymmdd)
+  definitionXmlFile = get_definition_xml_name(args.build_date_yyyymmdd)
+  update_definition_xml(definitionXmlFile, args) # Updates IsInternal as False for public release and True for internal release
 
   subscription_id, subscription_name = load_publish_settings
+
   publish_uri = get_publish_uri(args.deploy_type, subscription_id, "update")
 
   puts <<-CONFIRMATION
@@ -488,16 +503,22 @@ CONFIRMATION
 
   puts "Continuing with udpate request..."
 
-  tempFile = Tempfile.new("updateDefinitionXml")
-  definitionXmlFile = tempFile.path
-  puts "Writing updateDefinitionXml to #{definitionXmlFile}..."
-  puts "[[\n#{definitionXml}\n]]"
-  tempFile.write(definitionXml)
-  tempFile.close
+  if args.deploy_type == GOV
+    set_gov_env_vars(subscription_id)
+    assert_gov_environment_vars
 
-  system("powershell -nologo -noprofile -executionpolicy unrestricted Import-Module .\\scripts\\publishpkg.psm1;Publish-ChefPkg #{ENV["publishsettings"]} \"\'#{subscription_name}\'\" #{publish_uri} #{definitionXmlFile} PUT")
-
-  tempFile.unlink
+    begin
+      cli_cmd = Mixlib::ShellOut.new("#{ENV['azure_extension_cli']} promote-all-regions --manifest #{definitionXmlFile}")
+      result = cli_cmd.run_command
+      result.error!
+      puts "The extension has been successfully published externally."
+    rescue Mixlib::ShellOut::ShellCommandFailed => e
+      puts "Failure while running `#{ENV['azure_extension_cli']} promote-all-regions`: #{e}"
+      exit
+    end
+  else
+    system("powershell -nologo -noprofile -executionpolicy unrestricted Import-Module .\\scripts\\publishpkg.psm1;Publish-ChefPkg #{ENV["publishsettings"]} \"\'#{subscription_name}\'\" #{publish_uri} #{definitionXmlFile} PUT")
+  end
 end
 
 task :init_pester do
