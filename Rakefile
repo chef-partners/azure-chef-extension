@@ -198,8 +198,8 @@ def update_definition_xml(xml, args)
   File.write(xml, doc.to_xml)
 end
 
-def get_definition_xml_name(date_tag = nil)
-  date_tag.nil? ? "#{MANIFEST_NAME}_#{Date.today.strftime("%Y%m%d")}" : "#{MANIFEST_NAME}_#{date_tag}"
+def get_definition_xml_name(args)
+  "#{MANIFEST_NAME}_#{args.target_type}_#{args.build_date_yyyymmdd}"
 end
 
 def get_definition_xml(args, date_tag = nil)
@@ -214,10 +214,8 @@ def get_definition_xml(args, date_tag = nil)
 
     begin
       cli_cmd = Mixlib::ShellOut.new("#{ENV['azure_extension_cli']} new-extension-manifest --package #{extensionZipPackage} --storage-account #{storageAccount} --namespace #{args.chef_deploy_namespace} --name #{extensionName} --version #{args.extension_version} --label 'Chef Extension for #{args.target_type}' --description 'Chef Extension that sets up chef-client on VM' --eula-url #{chef_url} --privacy-url #{chef_url} --homepage-url #{chef_url} --company 'Chef Software, Inc.' --supported-os #{supported_os} --storage-base-url #{storage_base_url}")
-
       result = cli_cmd.run_command
       result.error!
-
       definitionXml = result.stdout
     rescue Mixlib::ShellOut::ShellCommandFailed => e
       puts "Failure while running `#{ENV['azure_extension_cli']} new-extension-manifest`: #{e}"
@@ -372,7 +370,7 @@ CONFIRMATION
   puts "Continuing with publish request..."
 
   date_tag = Date.today.strftime("%Y%m%d")
-  manifestFile = File.new("publishDefinitionXml_#{date_tag}", "w")
+  manifestFile = File.new("#{MANIFEST_NAME}_#{args.target_type}_#{date_tag}", "w")
   definitionXmlFile = manifestFile.path
   puts "Writing publishDefinitionXml to #{definitionXmlFile}..."
   puts "[[\n#{definitionXml}\n]]"
@@ -430,8 +428,6 @@ task :delete, [:deploy_type, :target_type, :chef_deploy_namespace, :full_extensi
   publish_options = JSON.parse(File.read("Publish.json"))
   extensionName = publish_options[args.target_type]["definitionParams"]["extensionName"]
 
-  delete_uri = get_mgmt_uri(args.deploy_type) + "#{subscription_id}/services/extensions/#{args.chef_deploy_namespace}/#{extensionName}/#{args.full_extension_version}"
-
   # Get user confirmation, since we are deleting from Azure.
   puts <<-CONFIRMATION
 
@@ -443,7 +439,6 @@ This task deletes a published chef extension package from Azure #{args.deploy_ty
     Subscription Name:  #{subscription_name}
     Publisher Name:     #{args.chef_deploy_namespace}
     Extension Name:     #{extensionName}
-    Delete Uri:  #{delete_uri}
 ****************************************
 CONFIRMATION
 
@@ -453,7 +448,22 @@ CONFIRMATION
 
   puts "Continuing with delete request..."
 
-  system("powershell -nologo -noprofile -executionpolicy unrestricted Import-Module .\\scripts\\deletepkg.psm1;Delete-ChefPkg #{ENV["publishsettings"]} \"\'#{subscription_name}\'\" #{delete_uri}")
+  if args.deploy_type == DELETE_FROM_GOV
+    set_gov_env_vars(subscription_id)
+    assert_gov_environment_vars
+    begin
+      cli_cmd = Mixlib::ShellOut.new("#{ENV['azure_extension_cli']} delete-version --name #{extensionName} --version #{args.full_extension_version}")
+      result = cli_cmd.run_command
+      result.error!
+      puts "The extension has been successfully deleted."
+    rescue Mixlib::ShellOut::ShellCommandFailed => e
+      puts "Failure while running `#{ENV['azure_extension_cli']} delete-version`: #{e}"
+      exit
+    end
+  else
+    delete_uri = get_mgmt_uri(args.deploy_type) + "#{subscription_id}/services/extensions/#{args.chef_deploy_namespace}/#{extensionName}/#{args.full_extension_version}"
+    system("powershell -nologo -noprofile -executionpolicy unrestricted Import-Module .\\scripts\\deletepkg.psm1;Delete-ChefPkg #{ENV["publishsettings"]} \"\'#{subscription_name}\'\" #{delete_uri}")
+  end
 end
 
 desc "Updates the azure chef extension package metadata which was publised Ex: update[\"definitionxml.xml\"]."
@@ -475,7 +485,7 @@ task :update, [:deploy_type, :target_type, :extension_version, :build_date_yyyym
   # assert build date since we form the build tag
   error_and_exit! "Please specify the :build_date_yyyymmdd param used to identify the published build" if args.build_date_yyyymmdd.nil?
 
-  definitionXmlFile = get_definition_xml_name(args.build_date_yyyymmdd)
+  definitionXmlFile = get_definition_xml_name(args)
   update_definition_xml(definitionXmlFile, args) # Updates IsInternal as False for public release and True for internal release
 
   subscription_id, subscription_name = load_publish_settings
