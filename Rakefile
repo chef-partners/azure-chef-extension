@@ -23,6 +23,8 @@ PESTER_VER_TAG = "2.0.4" # we lock down to specific tag version
 PESTER_GIT_URL = 'https://github.com/pester/Pester.git'
 PESTER_SANDBOX = './PESTER_SANDBOX'
 
+GOV_REGIONS = ["USGov Iowa", "USGov Arizona", "USGov Texas", "USGov Virginia"]
+
 # Array of hashes {src : dest} for files to be packaged
 LINUX_PACKAGE_LIST = [
   {"ChefExtensionHandler/*.sh" => "#{CHEF_BUILD_DIR}/"},
@@ -112,6 +114,15 @@ def set_gov_env_vars(subscription_id)
   env_vars.each do |var, value|
     ENV[var] = value
   end
+end
+
+def assert_promote_params(args)
+  assert_gov_environment_vars
+  error_and_exit! "`promote_single_region` task is supported on for deploy_type: \"#{GOV}\"" unless args.deploy_type == GOV
+  error_and_exit! "Invalid Region. Valid regions for GOV Cloud are: #{GOV_REGIONS}" unless GOV_REGIONS.include? args.region
+
+  # assert build date since we form the build tag
+  error_and_exit! "Please specify the :build_date_yyyymmdd param used to identify the published build" if args.build_date_yyyymmdd.nil?
 end
 
 def assert_deploy_params(deploy_type, internal_or_public)
@@ -406,6 +417,55 @@ CONFIRMATION
       end
 
     system("powershell -nologo -noprofile -executionpolicy unrestricted Import-Module .\\scripts\\publishpkg.psm1;Publish-ChefPkg #{ENV["publishsettings"]} \"\'#{subscription_name}\'\" #{publish_uri} #{definitionXmlFile} #{postOrPut}")
+  end
+end
+
+desc "Promotes the extension in single region for GOV Cloud"
+task :promote_single_region, [:deploy_type, :target_type, :extension_version, :build_date_yyyymmdd, :region, :confirmation_required] do |t, args|
+  args.with_defaults(
+    :deploy_type => GOV,
+    :target_type => "windows",
+    :extension_version => EXTENSION_VERSION,
+    :build_date_yyyymmdd => nil,
+    :region => "USGov Virginia",
+    :confirmation_required => "true")
+
+  puts "**Promote_single_region called with args:\n#{args}\n\n"
+
+  assert_publish_env_vars
+  subscription_id, subscription_name = load_publish_settings
+  set_gov_env_vars(subscription_id)
+  assert_promote_params(args)
+  definitionXmlFile = get_definition_xml_name(args)
+
+  puts <<-CONFIRMATION
+
+*****************************************
+This task promotes the chef extension package to '#{args.region}' region.
+  Details:
+  -------
+    Publish To:  ** #{args.deploy_type.gsub(/deploy_to_/, "")} **
+    Subscription Name:  #{subscription_name}
+    Extension Version:  #{args.extension_version}
+    Build Date: #{args.build_date_yyyymmdd}
+    Region:  #{args.region}
+****************************************
+CONFIRMATION
+  # Get user confirmation, since we are publishing a new build to Azure.
+  if args.confirmation_required == "true"
+    confirm!("update")
+  end
+
+  puts "Promoting the extension to #{args.region}..."
+
+  begin
+    cli_cmd = Mixlib::ShellOut.new("#{ENV['azure_extension_cli']} promote-single-region --manifest #{definitionXmlFile} --region-1 '#{args.region}'")
+    result = cli_cmd.run_command
+    result.error!
+    puts "The extension has been successfully published in #{args.region}."
+  rescue Mixlib::ShellOut::ShellCommandFailed => e
+    puts "Failure while running `#{ENV['azure_extension_cli']} promote-single-region`: #{e}"
+    exit
   end
 end
 
