@@ -118,8 +118,10 @@ end
 
 def assert_promote_params(args)
   assert_gov_environment_vars
-  error_and_exit! "`promote_single_region` task is supported on for deploy_type: \"#{GOV}\"" unless args.deploy_type == GOV
-  error_and_exit! "Invalid Region. Valid regions for GOV Cloud are: #{GOV_REGIONS}" unless GOV_REGIONS.include? args.region
+  error_and_exit! "This task is supported on for deploy_type: \"#{GOV}\"" unless args.deploy_type == GOV
+  (error_and_exit! "Invalid Region. Valid regions for GOV Cloud are: #{GOV_REGIONS}" unless GOV_REGIONS.include? args.region) if args.region
+  (error_and_exit! "Invalid Region. Valid regions for GOV Cloud are: #{GOV_REGIONS}" unless GOV_REGIONS.include? args.region1) if args.region1
+  (error_and_exit! "Invalid Region. Valid regions for GOV Cloud are: #{GOV_REGIONS}" unless GOV_REGIONS.include? args.region2) if args.region2
 
   # assert build date since we form the build tag
   error_and_exit! "Please specify the :build_date_yyyymmdd param used to identify the published build" if args.build_date_yyyymmdd.nil?
@@ -465,6 +467,57 @@ CONFIRMATION
     puts "The extension has been successfully published in #{args.region}."
   rescue Mixlib::ShellOut::ShellCommandFailed => e
     puts "Failure while running `#{ENV['azure_extension_cli']} promote-single-region`: #{e}"
+    exit
+  end
+end
+
+desc "Promotes the extension in two regions for GOV Cloud"
+task :promote_two_regions, [:deploy_type, :target_type, :extension_version, :build_date_yyyymmdd, :region1, :region2, :confirmation_required] do |t, args|
+  args.with_defaults(
+    :deploy_type => GOV,
+    :target_type => "windows",
+    :extension_version => EXTENSION_VERSION,
+    :build_date_yyyymmdd => nil,
+    :region1 => "USGov Virginia",
+    :region2 => "USGov Iowa",
+    :confirmation_required => "true")
+
+  puts "**Promote_two_regions called with args:\n#{args}\n\n"
+
+  assert_publish_env_vars
+  subscription_id, subscription_name = load_publish_settings
+  set_gov_env_vars(subscription_id)
+  assert_promote_params(args)
+  definitionXmlFile = get_definition_xml_name(args)
+
+  puts <<-CONFIRMATION
+
+*****************************************
+This task promotes the chef extension package to '#{args.region1}' and '#{args.region2}' regions.
+  Details:
+  -------
+    Publish To:  ** #{args.deploy_type.gsub(/deploy_to_/, "")} **
+    Subscription Name:  #{subscription_name}
+    Extension Version:  #{args.extension_version}
+    Build Date: #{args.build_date_yyyymmdd}
+    Region1:  #{args.region1}
+    Region2:  #{args.region2}
+****************************************
+CONFIRMATION
+  # Get user confirmation, since we are publishing a new build to Azure.
+  if args.confirmation_required == "true"
+    confirm!("update")
+  end
+
+  puts "Promoting the extension to #{args.region1} and #{args.region2}..."
+
+  begin
+    cli_cmd = Mixlib::ShellOut.new("#{ENV['azure_extension_cli']} promote-two-regions --manifest #{definitionXmlFile} --region-1 '#{args.region1}' --region-2 '#{args.region2}'")
+    result = cli_cmd.run_command
+    result.error!
+    puts "The extension has been successfully published in #{args.region1} and #{args.region2}."
+  rescue Mixlib::ShellOut::ShellCommandFailed => e
+    puts "Failure while running `#{ENV['azure_extension_cli']} promote-two-regions`: #{e}"
     exit
   end
 end
