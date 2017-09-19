@@ -522,6 +522,56 @@ CONFIRMATION
   end
 end
 
+desc "Unpublishes the azure chef extension package which was publised in some Regions."
+task :unpublish_version, [:deploy_type, :target_type, :full_extension_version, :confirmation_required] do |t, args|
+
+  args.with_defaults(
+    :deploy_type => DELETE_FROM_GOV,
+    :target_type => "windows",
+    :full_extension_version => nil,
+    :confirmation_required => "true")
+
+  puts "**unpublish_version called with args:\n#{args}\n\n"
+
+  assert_publish_env_vars
+  error_and_exit! "This task is supported on for deploy_type: \"#{DELETE_FROM_GOV}\"" unless args.deploy_type == DELETE_FROM_GOV
+  subscription_id, subscription_name = load_publish_settings
+  set_gov_env_vars(subscription_id)
+  assert_gov_environment_vars
+
+  publish_options = JSON.parse(File.read("Publish.json"))
+  extensionName = publish_options[args.target_type]["definitionParams"]["extensionName"]
+
+  # Get user confirmation, since we are deleting from Azure.
+  puts <<-CONFIRMATION
+
+*****************************************
+This task unpublishes a published chef extension package from Azure #{args.deploy_type}.
+  Details:
+  -------
+    Delete from:  ** #{args.deploy_type.gsub(/delete_from_/, "")} **
+    Subscription Name:  #{subscription_name}
+    Publisher Name:     #{ENV['EXTENSION_NAMESPACE']}
+    Extension Name:     #{extensionName}
+****************************************
+CONFIRMATION
+
+  if args.confirmation_required == "true"
+    confirm!("delete")
+  end
+
+  puts "Continuing with unpublish request..."
+  begin
+    cli_cmd = Mixlib::ShellOut.new("#{ENV['azure_extension_cli']} unpublish-version --name #{extensionName} --version #{args.full_extension_version}")
+    result = cli_cmd.run_command
+    result.error!
+    puts "The extension has been successfully unpublished."
+  rescue Mixlib::ShellOut::ShellCommandFailed => e
+    puts "Failure while running `#{ENV['azure_extension_cli']} unpublish-version`: #{e}"
+    exit
+  end
+end
+
 desc "Deletes the azure chef extension package which was publised as internal Ex: publish[deploy_type, platform, extension_version], default is build[preview,windows]."
 task :delete, [:deploy_type, :target_type, :chef_deploy_namespace, :full_extension_version, :confirmation_required] do |t, args|
 
