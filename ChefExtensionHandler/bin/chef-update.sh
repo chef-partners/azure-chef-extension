@@ -31,20 +31,11 @@ if [ -f $node_registered ]; then
   rm $node_registered
 fi
 
-BACKUP_FOLDER="etc_chef_extn_update_`date +%s`"
-
-# Save chef configuration.
-mv /etc/chef /tmp/$BACKUP_FOLDER
-
 # uninstall chef extension.
 sh $commands_script_path/chef-uninstall.sh
-
-# Restore Chef Configuration
-mv /tmp/$BACKUP_FOLDER /etc/chef
 
 # install new version of chef extension
 sh $commands_script_path/chef-install.sh
 
 # touch the update_process_descriptor
 touch /etc/chef/.updating_chef_extension
-

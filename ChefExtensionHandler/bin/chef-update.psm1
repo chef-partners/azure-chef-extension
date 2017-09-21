@@ -31,10 +31,6 @@ function Get-SharedHelper {
   "$chefExtensionRoot\\bin\\shared.ps1"
 }
 
-function Get-TempBackupDir {
-  $env:temp + "\\chef_backup\\"
-}
-
 function Update-ChefClient {
 
   # Source the shared PS
@@ -58,24 +54,12 @@ function Update-ChefClient {
     if (Test-Path $nodeRegistered) {
       Remove-Item -Force $nodeRegistered
     }
-    $backupLocation = Get-TempBackupDir
     $calledFromUpdate = $True
-
-    # Save chef configuration to backup location
-    if (-Not (Test-Path $backupLocation))
-    {
-         md -path $backupLocation
-    }
-    Copy-Item "$bootstrapDirectory\\*" $backupLocation -recurse -force
-    Write-Host "[$(Get-Date)] Configuration saved to $backupLocation"
 
     # uninstall chef. this will work since the uninstall script is idempotent
     echo "Calling Uninstall-ChefClient from $scriptDir\chef-uninstall.psm1"
     Uninstall-ChefClient $calledFromUpdate
     Write-Host "[$(Get-Date)] Uninstall completed"
-
-    # Restore Chef Configuration
-    Copy-Item "$backupLocation*" "$bootstrapDirectory\\" -recurse -force
 
     # install new version of chef extension
     echo "Calling Install-ChefClient from $scriptDir\chef-install.psm1 on new version"
