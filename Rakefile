@@ -76,7 +76,7 @@ def confirm!(type)
   print "Do you wish to proceed? (y/n)"
   proceed = STDIN.gets.chomp() == 'y'
   if not proceed
-    puts "Exitting #{type} request."
+    puts "Exiting #{type} request."
     exit
   end
 end
@@ -116,15 +116,10 @@ def set_env_vars(deploy_type, subscription_id)
   end
 end
 
-def assert_promote_params(args)
-  assert_environment_vars
-  error_and_exit! "This task is supported on for deploy_type: \"#{GOV}\"" unless args.deploy_type == GOV
+def assert_gov_regions(args)
   (error_and_exit! "Invalid Region. Valid regions for GOV Cloud are: #{GOV_REGIONS}" unless GOV_REGIONS.include? args.region) if args.region
   (error_and_exit! "Invalid Region. Valid regions for GOV Cloud are: #{GOV_REGIONS}" unless GOV_REGIONS.include? args.region1) if args.region1
   (error_and_exit! "Invalid Region. Valid regions for GOV Cloud are: #{GOV_REGIONS}" unless GOV_REGIONS.include? args.region2) if args.region2
-
-  # assert build date since we form the build tag
-  error_and_exit! "Please specify the :build_date_yyyymmdd param used to identify the published build" if args.build_date_yyyymmdd.nil?
 end
 
 def assert_deploy_params(deploy_type, internal_or_public)
@@ -387,7 +382,7 @@ end
 desc "Promotes the extension in single region for GOV Cloud"
 task :promote_single_region, [:deploy_type, :target_type, :extension_version, :build_date_yyyymmdd, :region, :confirmation_required] do |t, args|
   args.with_defaults(
-    :deploy_type => GOV,
+    :deploy_type => PRODUCTION,
     :target_type => "windows",
     :extension_version => EXTENSION_VERSION,
     :build_date_yyyymmdd => nil,
@@ -399,7 +394,10 @@ task :promote_single_region, [:deploy_type, :target_type, :extension_version, :b
   assert_publish_env_vars
   subscription_id, subscription_name = load_publish_settings
   set_env_vars(args.deploy_type, subscription_id)
-  assert_promote_params(args)
+  # assert build date since we form the build tag
+  error_and_exit! "Please specify the :build_date_yyyymmdd param used to identify the published build" if args.build_date_yyyymmdd.nil?
+  assert_environment_vars
+  assert_gov_regions(args) if args.deploy_type == GOV
   definitionXmlFile = get_definition_xml_name(args)
 
   puts <<-CONFIRMATION
@@ -436,7 +434,7 @@ end
 desc "Promotes the extension in two regions for GOV Cloud"
 task :promote_two_regions, [:deploy_type, :target_type, :extension_version, :build_date_yyyymmdd, :region1, :region2, :confirmation_required] do |t, args|
   args.with_defaults(
-    :deploy_type => GOV,
+    :deploy_type => PRODUCTION,
     :target_type => "windows",
     :extension_version => EXTENSION_VERSION,
     :build_date_yyyymmdd => nil,
@@ -449,7 +447,10 @@ task :promote_two_regions, [:deploy_type, :target_type, :extension_version, :bui
   assert_publish_env_vars
   subscription_id, subscription_name = load_publish_settings
   set_env_vars(args.deploy_type, subscription_id)
-  assert_promote_params(args)
+  # assert build date since we form the build tag
+  error_and_exit! "Please specify the :build_date_yyyymmdd param used to identify the published build" if args.build_date_yyyymmdd.nil?
+  assert_environment_vars
+  assert_gov_regions(args) if args.deploy_type == GOV
   definitionXmlFile = get_definition_xml_name(args)
 
   puts <<-CONFIRMATION
