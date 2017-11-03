@@ -574,21 +574,16 @@ CONFIRMATION
 
   puts "Continuing with delete request..."
 
-  if args.deploy_type == DELETE_FROM_GOV
-    set_env_vars(args.deploy_type, subscription_id)
-    assert_environment_vars
-    begin
-      cli_cmd = Mixlib::ShellOut.new("#{ENV['azure_extension_cli']} delete-version --name #{extensionName} --version #{args.full_extension_version}")
-      result = cli_cmd.run_command
-      result.error!
-      puts "The extension has been successfully deleted."
-    rescue Mixlib::ShellOut::ShellCommandFailed => e
-      puts "Failure while running `#{ENV['azure_extension_cli']} delete-version`: #{e}"
-      exit
-    end
-  else
-    delete_uri = get_mgmt_uri(args.deploy_type) + "#{subscription_id}/services/extensions/#{args.chef_deploy_namespace}/#{extensionName}/#{args.full_extension_version}"
-    system("powershell -nologo -noprofile -executionpolicy unrestricted Import-Module .\\scripts\\deletepkg.psm1;Delete-ChefPkg #{ENV["publishsettings"]} \"\'#{subscription_name}\'\" #{delete_uri}")
+  set_env_vars(args.deploy_type, subscription_id)
+  assert_environment_vars
+  begin
+    cli_cmd = Mixlib::ShellOut.new("#{ENV['azure_extension_cli']} delete-version --name #{extensionName} --version #{args.full_extension_version}")
+    result = cli_cmd.run_command
+    result.error!
+    puts "The extension has been successfully deleted."
+  rescue Mixlib::ShellOut::ShellCommandFailed => e
+    puts "Failure while running `#{ENV['azure_extension_cli']} delete-version`: #{e}"
+    exit
   end
 end
 
