@@ -489,7 +489,7 @@ desc "Unpublishes the azure chef extension package which was publised in some Re
 task :unpublish_version, [:deploy_type, :target_type, :full_extension_version, :confirmation_required] do |t, args|
 
   args.with_defaults(
-    :deploy_type => DELETE_FROM_GOV,
+    :deploy_type => DELETE_FROM_PRODUCTION,
     :target_type => "windows",
     :full_extension_version => nil,
     :confirmation_required => "true")
@@ -497,7 +497,7 @@ task :unpublish_version, [:deploy_type, :target_type, :full_extension_version, :
   puts "**unpublish_version called with args:\n#{args}\n\n"
 
   assert_publish_env_vars
-  error_and_exit! "This task is supported on for deploy_type: \"#{DELETE_FROM_GOV}\"" unless args.deploy_type == DELETE_FROM_GOV
+  error_and_exit! "This task is supported on for deploy_types: \"#{DELETE_FROM_GOV}\" and \"#{DELETE_FROM_PRODUCTION}\"" unless (args.deploy_type == DELETE_FROM_GOV || args.deploy_type == DELETE_FROM_PRODUCTION)
   subscription_id, subscription_name = load_publish_settings
   set_env_vars(args.deploy_type, subscription_id)
   assert_environment_vars
@@ -639,21 +639,17 @@ CONFIRMATION
 
   puts "Continuing with udpate request..."
 
-  if args.deploy_type == GOV
-    set_env_vars(args.deploy_type, subscription_id)
-    assert_environment_vars
+  set_env_vars(args.deploy_type, subscription_id)
+  assert_environment_vars
 
-    begin
-      cli_cmd = Mixlib::ShellOut.new("#{ENV['azure_extension_cli']} promote-all-regions --manifest #{definitionXmlFile}")
-      result = cli_cmd.run_command
-      result.error!
-      puts "The extension has been successfully published externally."
-    rescue Mixlib::ShellOut::ShellCommandFailed => e
-      puts "Failure while running `#{ENV['azure_extension_cli']} promote-all-regions`: #{e}"
-      exit
-    end
-  else
-    system("powershell -nologo -noprofile -executionpolicy unrestricted Import-Module .\\scripts\\publishpkg.psm1;Publish-ChefPkg #{ENV["publishsettings"]} \"\'#{subscription_name}\'\" #{publish_uri} #{definitionXmlFile} PUT")
+  begin
+    cli_cmd = Mixlib::ShellOut.new("#{ENV['azure_extension_cli']} promote-all-regions --manifest #{definitionXmlFile}")
+    result = cli_cmd.run_command
+    result.error!
+    puts "The extension has been successfully published externally."
+  rescue Mixlib::ShellOut::ShellCommandFailed => e
+    puts "Failure while running `#{ENV['azure_extension_cli']} promote-all-regions`: #{e}"
+    exit
   end
 end
 
