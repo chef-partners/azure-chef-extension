@@ -13,7 +13,7 @@ Azure resource extension to enable Chef on Azure virtual machine instances.
 | Platform | Version    |
 |----------|------------|
 | Ubuntu   | 12.04, 14+  |
-| Windows  | 2008r2, 2012, 2012r2 |
+| Windows  | 2008r2+    |
 | Centos   | 6.5+                 |
 | RHEL     | 6+         |
 | Debian   | 7,8        |
@@ -225,6 +225,8 @@ New-AzureResourceGroupDeployment -Name <deployment_name> -TemplateParameterFile 
 **References:**
 https://azure.microsoft.com/en-us/resources/templates/chef-json-parameters-linux-vm/
 https://azure.microsoft.com/en-us/resources/templates/multi-vm-chef-template-ubuntu-vm/
+
+**Note:** If there are more than one extensions in your ARM template then sequencing of the extensions may be required to avoid conflicts. Add the Chef Extension at the end as the run is likely to be longer.
 
 
 
