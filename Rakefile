@@ -76,7 +76,7 @@ def confirm!(type)
   print "Do you wish to proceed? (y/n)"
   proceed = STDIN.gets.chomp() == 'y'
   if not proceed
-    puts "Exitting #{type} request."
+    puts "Exiting #{type} request."
     exit
   end
 end
@@ -89,12 +89,12 @@ def assert_publish_env_vars
   end
 end
 
-def assert_gov_environment_vars
+def assert_environment_vars
   env_vars = {
     "azure_extension_cli" => "Path of azure-extension-cli binary. Download it from https://github.com/Azure/azure-extensions-cli/releases",
     "SUBSCRIPTION_ID" => "Subscription ID of the GOV Account from where extension is to be published.",
     "SUBSCRIPTION_CERT" => "Path to the Management Certificate",
-    "MANAGEMENT_URL" => "Management URL for Gov Cloud (https://management.core.usgovcloudapi.net)",
+    "MANAGEMENT_URL" => "Management URL for Public/Gov Cloud (e.g. https://management.core.windows.net/)",
     "EXTENSION_NAMESPACE" => "Publisher namespace (Chef.Bootstrap.WindowsAzure)"
   }
 
@@ -104,10 +104,10 @@ def assert_gov_environment_vars
 end
 
 # sets the common environment varaibles for Chef Extension
-def set_gov_env_vars(subscription_id)
+def set_env_vars(deploy_type, subscription_id)
   env_vars = {
     "SUBSCRIPTION_ID" => subscription_id,
-    "MANAGEMENT_URL" => "https://management.core.usgovcloudapi.net",
+    "MANAGEMENT_URL" => get_mgmt_uri(deploy_type),
     "EXTENSION_NAMESPACE" => "Chef.Bootstrap.WindowsAzure"
   }
 
@@ -116,15 +116,10 @@ def set_gov_env_vars(subscription_id)
   end
 end
 
-def assert_promote_params(args)
-  assert_gov_environment_vars
-  error_and_exit! "This task is supported on for deploy_type: \"#{GOV}\"" unless args.deploy_type == GOV
+def assert_gov_regions(args)
   (error_and_exit! "Invalid Region. Valid regions for GOV Cloud are: #{GOV_REGIONS}" unless GOV_REGIONS.include? args.region) if args.region
   (error_and_exit! "Invalid Region. Valid regions for GOV Cloud are: #{GOV_REGIONS}" unless GOV_REGIONS.include? args.region1) if args.region1
   (error_and_exit! "Invalid Region. Valid regions for GOV Cloud are: #{GOV_REGIONS}" unless GOV_REGIONS.include? args.region2) if args.region2
-
-  # assert build date since we form the build tag
-  error_and_exit! "Please specify the :build_date_yyyymmdd param used to identify the published build" if args.build_date_yyyymmdd.nil?
 end
 
 def assert_deploy_params(deploy_type, internal_or_public)
@@ -220,33 +215,18 @@ def get_definition_xml(args, date_tag = nil)
 
   extensionZipPackage = get_extension_pkg_name(args, date_tag)
 
-  if args.deploy_type == GOV
-    chef_url = 'http://www.chef.io/about'
-    supported_os = args.target_type == 'windows' ? 'windows' : 'linux'
-    storage_base_url = 'core.usgovcloudapi.net'
+  chef_url = 'http://www.chef.io/about'
+  supported_os = args.target_type == 'windows' ? 'windows' : 'linux'
+  storage_base_url = args.deploy_type == GOV ? 'core.usgovcloudapi.net' : 'core.windows.net'
 
-    begin
-      cli_cmd = Mixlib::ShellOut.new("#{ENV['azure_extension_cli']} new-extension-manifest --package #{extensionZipPackage} --storage-account #{storageAccount} --namespace #{args.chef_deploy_namespace} --name #{extensionName} --version #{args.extension_version} --label 'Chef Extension for #{args.target_type}' --description 'Chef Extension that sets up chef-client on VM' --eula-url #{chef_url} --privacy-url #{chef_url} --homepage-url #{chef_url} --company 'Chef Software, Inc.' --supported-os #{supported_os} --storage-base-url #{storage_base_url}")
-      result = cli_cmd.run_command
-      result.error!
-      definitionXml = result.stdout
-    rescue Mixlib::ShellOut::ShellCommandFailed => e
-      puts "Failure while running `#{ENV['azure_extension_cli']} new-extension-manifest`: #{e}"
-      exit
-    end
-  else
-    # Process the erb
-    definitionXml = ERBHelpers::ERBCompiler.run(
-        File.read("build/templates/definition.xml.erb"),
-        {:chef_namespace => args.chef_deploy_namespace,
-        :extension_name => extensionName,
-        :extension_version => args.extension_version,
-        :target_type => args.target_type,
-        :package_storage_account => storageAccount,
-        :package_container =>  storageContainer,
-        :package_name => extensionZipPackage,
-        :is_internal => is_internal?(args)
-      })
+  begin
+    cli_cmd = Mixlib::ShellOut.new("#{ENV['azure_extension_cli']} new-extension-manifest --package #{extensionZipPackage} --storage-account #{storageAccount} --namespace #{args.chef_deploy_namespace} --name #{extensionName} --version #{args.extension_version} --label 'Chef Extension for #{args.target_type}' --description 'Chef Extension that sets up chef-client on VM' --eula-url #{chef_url} --privacy-url #{chef_url} --homepage-url #{chef_url} --company 'Chef Software, Inc.' --supported-os #{supported_os} --storage-base-url #{storage_base_url}")
+    result = cli_cmd.run_command
+    result.error!
+    definitionXml = result.stdout
+  rescue Mixlib::ShellOut::ShellCommandFailed => e
+    puts "Failure while running `#{ENV['azure_extension_cli']} new-extension-manifest`: #{e}"
+    exit
   end
 
   definitionXml
@@ -352,10 +332,8 @@ task :publish, [:deploy_type, :target_type, :extension_version, :chef_deploy_nam
 
   subscription_id, subscription_name = load_publish_settings
 
-  if args.deploy_type == GOV
-    set_gov_env_vars(subscription_id)
-    assert_gov_environment_vars
-  end
+  set_env_vars(args.deploy_type, subscription_id)
+  assert_environment_vars
 
   publish_uri = get_publish_uri(args.deploy_type, subscription_id, args.operation)
 
@@ -390,42 +368,21 @@ CONFIRMATION
   manifestFile.write(definitionXml)
   manifestFile.close
 
-  if args.deploy_type == GOV
-    begin
-      cli_cmd = Mixlib::ShellOut.new("#{ENV['azure_extension_cli']} new-extension-version --manifest #{definitionXmlFile}")
-      result = cli_cmd.run_command
-      result.error!
-      puts "The extension has been successfully published internally."
-    rescue Mixlib::ShellOut::ShellCommandFailed => e
-      puts "Failure while running `#{ENV['azure_extension_cli']} new-extension-version`: #{e}"
-      exit
-    end
-  else
-    # Upload the generated package to Azure storage as a blob.
-    puts "\n\nUploading zip package..."
-    puts "------------------------"
-    storageAccount, storageContainer, extensionName = load_publish_properties(args.target_type)
-    extensionZipPackage = get_extension_pkg_name(args)
-
-    system("powershell -nologo -noprofile -executionpolicy unrestricted Import-Module .\\scripts\\uploadpkg.psm1;Upload-ChefPkgToAzure #{ENV["publishsettings"]} #{storageAccount} #{storageContainer} #{extensionZipPackage}")
-
-    # Publish the uploaded package to PIR using azure cmdlets.
-    puts "\n\nPublishing the package..."
-    puts "-------------------------"
-    postOrPut = if args.operation == "new"
-        "POST"
-      elsif args.operation == "update"
-        "PUT"
-      end
-
-    system("powershell -nologo -noprofile -executionpolicy unrestricted Import-Module .\\scripts\\publishpkg.psm1;Publish-ChefPkg #{ENV["publishsettings"]} \"\'#{subscription_name}\'\" #{publish_uri} #{definitionXmlFile} #{postOrPut}")
+  begin
+    cli_cmd = Mixlib::ShellOut.new("#{ENV['azure_extension_cli']} new-extension-version --manifest #{definitionXmlFile}")
+    result = cli_cmd.run_command
+    result.error!
+    puts "The extension has been successfully published internally."
+  rescue Mixlib::ShellOut::ShellCommandFailed => e
+    puts "Failure while running `#{ENV['azure_extension_cli']} new-extension-version`: #{e}"
+    exit
   end
 end
 
 desc "Promotes the extension in single region for GOV Cloud"
 task :promote_single_region, [:deploy_type, :target_type, :extension_version, :build_date_yyyymmdd, :region, :confirmation_required] do |t, args|
   args.with_defaults(
-    :deploy_type => GOV,
+    :deploy_type => PRODUCTION,
     :target_type => "windows",
     :extension_version => EXTENSION_VERSION,
     :build_date_yyyymmdd => nil,
@@ -436,8 +393,11 @@ task :promote_single_region, [:deploy_type, :target_type, :extension_version, :b
 
   assert_publish_env_vars
   subscription_id, subscription_name = load_publish_settings
-  set_gov_env_vars(subscription_id)
-  assert_promote_params(args)
+  set_env_vars(args.deploy_type, subscription_id)
+  # assert build date since we form the build tag
+  error_and_exit! "Please specify the :build_date_yyyymmdd param used to identify the published build" if args.build_date_yyyymmdd.nil?
+  assert_environment_vars
+  assert_gov_regions(args) if args.deploy_type == GOV
   definitionXmlFile = get_definition_xml_name(args)
 
   puts <<-CONFIRMATION
@@ -474,7 +434,7 @@ end
 desc "Promotes the extension in two regions for GOV Cloud"
 task :promote_two_regions, [:deploy_type, :target_type, :extension_version, :build_date_yyyymmdd, :region1, :region2, :confirmation_required] do |t, args|
   args.with_defaults(
-    :deploy_type => GOV,
+    :deploy_type => PRODUCTION,
     :target_type => "windows",
     :extension_version => EXTENSION_VERSION,
     :build_date_yyyymmdd => nil,
@@ -486,8 +446,11 @@ task :promote_two_regions, [:deploy_type, :target_type, :extension_version, :bui
 
   assert_publish_env_vars
   subscription_id, subscription_name = load_publish_settings
-  set_gov_env_vars(subscription_id)
-  assert_promote_params(args)
+  set_env_vars(args.deploy_type, subscription_id)
+  # assert build date since we form the build tag
+  error_and_exit! "Please specify the :build_date_yyyymmdd param used to identify the published build" if args.build_date_yyyymmdd.nil?
+  assert_environment_vars
+  assert_gov_regions(args) if args.deploy_type == GOV
   definitionXmlFile = get_definition_xml_name(args)
 
   puts <<-CONFIRMATION
@@ -526,7 +489,7 @@ desc "Unpublishes the azure chef extension package which was publised in some Re
 task :unpublish_version, [:deploy_type, :target_type, :full_extension_version, :confirmation_required] do |t, args|
 
   args.with_defaults(
-    :deploy_type => DELETE_FROM_GOV,
+    :deploy_type => DELETE_FROM_PRODUCTION,
     :target_type => "windows",
     :full_extension_version => nil,
     :confirmation_required => "true")
@@ -534,10 +497,10 @@ task :unpublish_version, [:deploy_type, :target_type, :full_extension_version, :
   puts "**unpublish_version called with args:\n#{args}\n\n"
 
   assert_publish_env_vars
-  error_and_exit! "This task is supported on for deploy_type: \"#{DELETE_FROM_GOV}\"" unless args.deploy_type == DELETE_FROM_GOV
+  error_and_exit! "This task is supported on for deploy_types: \"#{DELETE_FROM_GOV}\" and \"#{DELETE_FROM_PRODUCTION}\"" unless (args.deploy_type == DELETE_FROM_GOV || args.deploy_type == DELETE_FROM_PRODUCTION)
   subscription_id, subscription_name = load_publish_settings
-  set_gov_env_vars(subscription_id)
-  assert_gov_environment_vars
+  set_env_vars(args.deploy_type, subscription_id)
+  assert_environment_vars
 
   publish_options = JSON.parse(File.read("Publish.json"))
   extensionName = publish_options[args.target_type]["definitionParams"]["extensionName"]
@@ -611,21 +574,16 @@ CONFIRMATION
 
   puts "Continuing with delete request..."
 
-  if args.deploy_type == DELETE_FROM_GOV
-    set_gov_env_vars(subscription_id)
-    assert_gov_environment_vars
-    begin
-      cli_cmd = Mixlib::ShellOut.new("#{ENV['azure_extension_cli']} delete-version --name #{extensionName} --version #{args.full_extension_version}")
-      result = cli_cmd.run_command
-      result.error!
-      puts "The extension has been successfully deleted."
-    rescue Mixlib::ShellOut::ShellCommandFailed => e
-      puts "Failure while running `#{ENV['azure_extension_cli']} delete-version`: #{e}"
-      exit
-    end
-  else
-    delete_uri = get_mgmt_uri(args.deploy_type) + "#{subscription_id}/services/extensions/#{args.chef_deploy_namespace}/#{extensionName}/#{args.full_extension_version}"
-    system("powershell -nologo -noprofile -executionpolicy unrestricted Import-Module .\\scripts\\deletepkg.psm1;Delete-ChefPkg #{ENV["publishsettings"]} \"\'#{subscription_name}\'\" #{delete_uri}")
+  set_env_vars(args.deploy_type, subscription_id)
+  assert_environment_vars
+  begin
+    cli_cmd = Mixlib::ShellOut.new("#{ENV['azure_extension_cli']} delete-version --name #{extensionName} --version #{args.full_extension_version}")
+    result = cli_cmd.run_command
+    result.error!
+    puts "The extension has been successfully deleted."
+  rescue Mixlib::ShellOut::ShellCommandFailed => e
+    puts "Failure while running `#{ENV['azure_extension_cli']} delete-version`: #{e}"
+    exit
   end
 end
 
@@ -676,21 +634,17 @@ CONFIRMATION
 
   puts "Continuing with udpate request..."
 
-  if args.deploy_type == GOV
-    set_gov_env_vars(subscription_id)
-    assert_gov_environment_vars
+  set_env_vars(args.deploy_type, subscription_id)
+  assert_environment_vars
 
-    begin
-      cli_cmd = Mixlib::ShellOut.new("#{ENV['azure_extension_cli']} promote-all-regions --manifest #{definitionXmlFile}")
-      result = cli_cmd.run_command
-      result.error!
-      puts "The extension has been successfully published externally."
-    rescue Mixlib::ShellOut::ShellCommandFailed => e
-      puts "Failure while running `#{ENV['azure_extension_cli']} promote-all-regions`: #{e}"
-      exit
-    end
-  else
-    system("powershell -nologo -noprofile -executionpolicy unrestricted Import-Module .\\scripts\\publishpkg.psm1;Publish-ChefPkg #{ENV["publishsettings"]} \"\'#{subscription_name}\'\" #{publish_uri} #{definitionXmlFile} PUT")
+  begin
+    cli_cmd = Mixlib::ShellOut.new("#{ENV['azure_extension_cli']} promote-all-regions --manifest #{definitionXmlFile}")
+    result = cli_cmd.run_command
+    result.error!
+    puts "The extension has been successfully published externally."
+  rescue Mixlib::ShellOut::ShellCommandFailed => e
+    puts "Failure while running `#{ENV['azure_extension_cli']} promote-all-regions`: #{e}"
+    exit
   end
 end
 
