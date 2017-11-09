@@ -33,7 +33,7 @@ curl_check(){
     echo "Detected curl..."
   else
     echo "Installing curl..."
-    if [ "$1" = "centos" -o "$1" = "rhel" ]; then
+    if [ "$1" = "centos" -o "$1" = "rhel" -o "$1" = "linuxoracle" ]; then
       yum install -d0 -e0 -y curl
     else
       apt-get install -q -y curl
@@ -63,7 +63,7 @@ chef_install_from_script(){
     #check if chef-client is already installed
     if [ "$platform" = "ubuntu" -o "$platform" = "debian" ]; then
       dpkg-query -s chef > /dev/null 2>&1
-    elif [ "$platform" = "centos" -o "$platform" = "rhel" ]; then
+    elif [ "$platform" = "centos" -o "$platform" = "rhel" -o "$platform" = "linuxoracle" ]; then
       yum list installed | grep -w "chef"
     fi
     if [ $? -ne 0 ]; then

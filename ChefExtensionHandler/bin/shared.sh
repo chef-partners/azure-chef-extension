@@ -10,6 +10,8 @@ get_linux_distributor(){
     linux_distributor='debian'
   elif python -mplatform | grep redhat > /dev/null; then
     linux_distributor='rhel'
+  elif python -mplatform | grep -E -i "linux.*oracle" > /dev/null; then
+    linux_distributor='linuxoracle'
   fi
   echo "${linux_distributor}"
 }
