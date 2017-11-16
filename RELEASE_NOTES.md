@@ -7,9 +7,8 @@ Example Note:
 Details about the thing that changed that needs to get included in the Release Notes in markdown.
 -->
 
-
-# Windows azure-chef-extension 1210.12.109.1005 release notes:
-In this release, we have fixed a bug. 
+# azure-chef-extension 1210.12.110.1000 release notes:
+In this release, we have fixed some bugs. 
 
 See the [CHANGELOG](https://github.com/chef-partners/azure-chef-extension/blob/master/CHANGELOG.md) for a list of all changes in this release, and review.
 
@@ -18,6 +17,6 @@ More information on the contribution process for Chef projects can be found in t
 ## azure-chef-extension on Github
 https://github.com/chef-partners/azure-chef-extension
 
-
-## Issues fixed in Windows azure-chef-extension 1210.12.109.1005
-* Chef-service enable failed, make sure that Azure Chef extension start the chef-client service, If service StartMode is disabled.(https://github.com/chef-partners/azure-chef-extension/pull/217)
+## Issues fixed for azure-chef-extension 1210.12.110.1000
+* Fixed error coming while upgrading Chef extension version on Windows. [Issue 226](https://github.com/chef-partners/azure-chef-extension/issues/226)
+* Added support for Oracle Linux. [Issue 233](https://github.com/chef-partners/azure-chef-extension/issues/233)
