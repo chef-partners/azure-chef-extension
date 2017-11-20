@@ -17,6 +17,8 @@ More information on the contribution process for Chef projects can be found in t
 ## azure-chef-extension on Github
 https://github.com/chef-partners/azure-chef-extension
 
-## Issues fixed for azure-chef-extension 1210.12.110.1000
-* Fixed error coming while upgrading Chef extension version on Windows. [Issue 226](https://github.com/chef-partners/azure-chef-extension/issues/226)
+## Feature added in azure-chef-extension 1210.12.110.1000
 * Added support for Oracle Linux. [Issue 233](https://github.com/chef-partners/azure-chef-extension/issues/233)
+
+## Issue fixed for Windows azure-chef-extension 1210.12.110.1000
+* Fixed error coming while upgrading Chef extension version on Windows. [Issue 226](https://github.com/chef-partners/azure-chef-extension/issues/226)
