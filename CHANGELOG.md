@@ -1,5 +1,12 @@
 # azure-chef-extension Change Log
 
+## Latest Release: 1210.12.110.1000 (2017/11/15)
+* [azure-chef-extension #237](https://github.com/chef-partners/azure-chef-extension/pull/237) Updated document for extension sequencing in ARM template.
+* [azure-chef-extension #236](https://github.com/chef-partners/azure-chef-extension/pull/236) Added support for Oracle Linux.
+* [azure-chef-extension #234](https://github.com/chef-partners/azure-chef-extension/pull/234) Updated rake task to use azure-extension-cli to publish/unpublish extension in Public cloud
+* [azure-chef-extension #229](https://github.com/chef-partners/azure-chef-extension/pull/229) Updated rake task to support publishing extension on Gov Cloud
+* [azure-chef-extension #228](https://github.com/chef-partners/azure-chef-extension/pull/228) Removed backup logic and using n.settings file from C:/Chef during update to fix error coming while upgrading Chef extension version on Windows.
+
 ## Latest Release: 1210.12.109.1005 (2017/07/03)
 * [azure-chef-extension #217](https://github.com/chef-partners/azure-chef-extension/pull/217) Chef-service enable failed, make sure that Azure Chef extension start the chef-client service, If service StartMode is disabled.
 

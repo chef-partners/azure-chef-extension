@@ -10,13 +10,14 @@ Azure resource extension to enable Chef on Azure virtual machine instances.
 
 ## Platforms and version its supported:
 
-| Platform | Version    |
-|----------|------------|
-| Ubuntu   | 12.04, 14+  |
-| Windows  | 2008r2+    |
-| Centos   | 6.5+                 |
-| RHEL     | 6+         |
-| Debian   | 7,8        |
+| Platform | Version      |
+|----------|--------------|
+| Ubuntu   | 12.04, 14+   |
+| Windows  | 2008r2 +     |
+| Centos   | 6.5+         |
+| RHEL     | 6+           |
+| Debian   | 7,8          |
+| Oracle   | 6.8+         |
 ### Microsoft Windows Images
 The extension is tested against the offical Microsoft images on Azure listed below. If you have issues and you're using a different Windows image please provide that information in any issues filed.
 
