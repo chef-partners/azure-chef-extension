@@ -57,6 +57,7 @@ function Install-ChefClient {
       $chef_pkg = Get-ChefPackage
       if (-Not $chef_pkg) {
         $chef_package_version = Get-PublicSettings-From-Config-Json "bootstrap_version" $powershellVersion
+        $chef_package_channel = Get-PublicSettings-From-Config-Json "bootstrap_channel" $powershellVersion
         $daemon = Get-PublicSettings-From-Config-Json "daemon"  $powershellVersion
 
         if ( $daemon -eq "none" ) {
@@ -65,11 +66,14 @@ function Install-ChefClient {
         if (-Not $chef_package_version) {
           $chef_package_version = "latest"
         }
+        if (-Not $chef_package_channel) {
+          $chef_package_channel = "stable"
+        }
         if (-Not $daemon) {
           $daemon = "service"
         }
 
-        iex (new-object net.webclient).downloadstring('https://omnitruck.chef.io/install.ps1');install -daemon $daemon -version $chef_package_version
+        iex (new-object net.webclient).downloadstring('https://omnitruck.chef.io/install.ps1');install -daemon $daemon -version $chef_package_version -channel $chef_package_channel
       }
       $completed = $true
     }
