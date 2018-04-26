@@ -93,10 +93,13 @@ chef_install_from_script(){
         echo "Installing latest chef client"
         sh /tmp/$platform-install.sh
       elif [ ! -z "$chef_version" ] && [ -z "$chef_channel" ]; then
-        echo "Installing chef client with version $chef_version"
+        echo "Installing chef client version $chef_version"
         sh /tmp/$platform-install.sh -v $chef_version
+      elif [ -z "$chef_version" ] && [ ! -z "$chef_channel" ]; then
+        echo "Installing latest chef client from $chef_channel"
+        sh /tmp/$platform-install.sh -c $chef_channel
       else
-        echo "Installing chef client for $chef_channel channel with version $chef_version"
+        echo "Installing chef client version $chef_version from $chef_channel channel"
         sh /tmp/$platform-install.sh -v $chef_version -c $chef_channel
       fi
       echo "Deleting Install.sh script present at /tmp/$platform-install.sh"
