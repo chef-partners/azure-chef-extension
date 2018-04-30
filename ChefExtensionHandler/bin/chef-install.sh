@@ -55,9 +55,25 @@ get_chef_version() {
   fi
 }
 
+get_chef_channel() {
+  config_file_name=$(get_config_settings_file $chef_extension_root)
+  if [ -z "$config_file_name" ]; then
+    echo "No config file found !!"
+  else
+    if cat $config_file_name 2>/dev/null | grep -q "bootstrap_channel"; then
+      chef_channel=`sed ':a;N;$!ba;s/\n//g' $config_file_name | sed 's/.*bootstrap_channel" *: *" *\(.*\)/\1/' 2>/dev/null | awk -F\" '{ print $1 }' | sed 's/[ \t]*$//'`
+      echo $chef_channel
+    else
+      echo ""
+    fi
+  fi
+}
+
 chef_install_from_script(){
     echo "Reading chef-client version from settings file"
     chef_version=$(get_chef_version &)
+    echo "Reading chef-client release channel from settings file"
+    chef_channel=$(get_chef_channel &)
     echo "Call for Checking linux distributor"
     platform=$(get_linux_distributor)
     #check if chef-client is already installed
@@ -73,12 +89,18 @@ chef_install_from_script(){
       if [ "$chef_version" = "No config file found !!" ]; then
         echo "Configuration error. Azure chef extension Settings file missing."
         exit 1
-      elif [ -z "$chef_version" ]; then
+      elif [ -z "$chef_version" ] && [ -z "$chef_channel" ]; then
         echo "Installing latest chef client"
         sh /tmp/$platform-install.sh
-      else
-        echo "Installing chef client with version $chef_version"
+      elif [ ! -z "$chef_version" ] && [ -z "$chef_channel" ]; then
+        echo "Installing chef client version $chef_version"
         sh /tmp/$platform-install.sh -v $chef_version
+      elif [ -z "$chef_version" ] && [ ! -z "$chef_channel" ]; then
+        echo "Installing latest chef client from $chef_channel"
+        sh /tmp/$platform-install.sh -c $chef_channel
+      else
+        echo "Installing chef client version $chef_version from $chef_channel channel"
+        sh /tmp/$platform-install.sh -v $chef_version -c $chef_channel
       fi
       echo "Deleting Install.sh script present at /tmp/$platform-install.sh"
       rm /tmp/$platform-install.sh -f
