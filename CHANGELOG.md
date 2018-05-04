@@ -1,5 +1,8 @@
 # azure-chef-extension Change Log
 
+## Latest Release: 1210.12.110.1001 (2018/04/30)
+* [azure-chef-extension #245](https://github.com/chef-partners/azure-chef-extension/pull/245) Added `bootstrap_channel` option to install chef client version from `stable`, `current` or `unstable` channel.
+
 ## Latest Release: 1210.12.110.1000 (2017/11/15)
 * [azure-chef-extension #237](https://github.com/chef-partners/azure-chef-extension/pull/237) Updated document for extension sequencing in ARM template.
 * [azure-chef-extension #236](https://github.com/chef-partners/azure-chef-extension/pull/236) Added support for Oracle Linux.
