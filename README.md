@@ -159,6 +159,7 @@ Update-AzureVM -VM $vmOb.VM -Name "<vm-name>" -ServiceName "<cloud-service-name>
 
 2. Find below some advanced options that can be set in the Azure ARM template file `azuredeploy.json`:
   - `environment_variables`: Specifies the list of environment variables (like the environment variables for proxy server configuration) to be available to the Chef Extension scripts.
+  - `bootstrap_channel`: Specify the channel for installing chef client version from `stable`, `current` or `unstable` release channel.
   - `hints`: Specifies the Ohai Hints to be set in the Ohai configuration of the target node.
 
   ***Note***: Set both these options under `properties` --> `settings` section of the `Microsoft.Compute/virtualMachines/extensions` resource type as shown in the below example:

@@ -7,8 +7,8 @@ Example Note:
 Details about the thing that changed that needs to get included in the Release Notes in markdown.
 -->
 
-# azure-chef-extension 1210.12.110.1000 release notes:
-In this release, we have fixed some bugs. 
+# azure-chef-extension 1210.12.110.1001 release notes:
+In this release, we have added `bootstrap_channel` option to install chef client version from `stable`, `current` or `unstable` channel.
 
 See the [CHANGELOG](https://github.com/chef-partners/azure-chef-extension/blob/master/CHANGELOG.md) for a list of all changes in this release, and review.
 
@@ -17,8 +17,5 @@ More information on the contribution process for Chef projects can be found in t
 ## azure-chef-extension on Github
 https://github.com/chef-partners/azure-chef-extension
 
-## Feature added in azure-chef-extension 1210.12.110.1000
-* Added support for Oracle Linux. [Issue 233](https://github.com/chef-partners/azure-chef-extension/issues/233)
-
-## Issue fixed for Windows azure-chef-extension 1210.12.110.1000
-* Fixed error coming while upgrading Chef extension version on Windows. [Issue 226](https://github.com/chef-partners/azure-chef-extension/issues/226)
+## Feature added in azure-chef-extension 1210.12.110.1001
+* Added bootstrap_channel option for Linux and Windows. [Issue 244](https://github.com/chef-partners/azure-chef-extension/issues/244)
