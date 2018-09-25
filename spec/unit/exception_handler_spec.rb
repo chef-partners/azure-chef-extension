@@ -21,7 +21,24 @@ describe AzureExtension do
     end
   end
 
-  context "report on chef-client failure" do
+  context "report on chef-client failure with invalid node" do
+
+    before do
+      def instance.node
+      end
+    end
+
+    it "reports to heartbeat when node does not exist" do
+      allow(instance.run_status).to receive(:failed?).and_return(true)
+      allow(instance).to receive(:backtrace).and_return(nil)
+      expect(instance).to receive(:load_azure_env)
+      expect(instance).to receive(:report_heart_beat_to_azure).with(AzureHeartBeat::READY, 0, "chef-service is running properly. Chef client run failed with error- Check log file for details...\nBacktrace:\n")
+      instance.report
+    end
+
+  end
+
+  context "report on chef-client failure with valid node" do
 
     before do
       def instance.node
