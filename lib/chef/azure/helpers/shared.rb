@@ -133,6 +133,7 @@ module ChefAzure
     def report_heart_beat_to_azure(status, code, message)
       # update @azure_heart_beat_file
       Chef::Log.info "Reporting heartbeat..."
+      Chef::Log.info "Reporting heartbeat... Status: #{status}, code: #{code}, message: #{message} "
       AzureHeartBeat.update(@azure_heart_beat_file, status, code, message)
     end
 

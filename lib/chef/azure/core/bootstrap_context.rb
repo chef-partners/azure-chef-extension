@@ -18,7 +18,7 @@ class Chef
         end
 
         def first_boot
-          @run_list.empty? ? Hash(@config[:first_boot_attributes]) : Hash(@config[:first_boot_attributes]).merge(:run_list => @run_list)
+          @run_list.empty? ? Hash(@config[:first_boot_attributes]) : Hash(@config[:first_boot_attributes]).merge(:target_runlist => @run_list)
         end
 
         def config_content

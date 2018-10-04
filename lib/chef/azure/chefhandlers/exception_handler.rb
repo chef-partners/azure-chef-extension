@@ -1,3 +1,4 @@
+
 require 'chef/log'
 require 'chef/azure/helpers/shared'
 require 'json'
@@ -30,14 +31,14 @@ module AzureExtension
         load_azure_env
         message = "Check log file for details...\nBacktrace:\n"
         message << Array(backtrace).join("\n")
-        report_heart_beat_to_azure(AzureHeartBeat::READY, 0, "chef-service is running properly. Chef client run failed with error- #{message}")
+        report_heart_beat_to_azure(AzureHeartBeat::NOTREADY, 1, "chef-service is running properly. Chef client run failed with error- #{message}")
       end
     end
 
     def load_run_list
       first_boot = File.read("#{bootstrap_directory}/first-boot.json")
       first_boot = JSON.parse(first_boot)
-      run_list = first_boot["run_list"]
+      run_list = first_boot["target_runlist"]
 
       # Using old way to set node's runlist attribute. Not possible to use
       # Validatorless bootstraps to solve this problem, As 'User.pem'
@@ -50,7 +51,9 @@ module AzureExtension
     # set runlist
     def set_run_list(node, entries)
       node.run_list.run_list_items.clear
-      entries.each { |e| node.run_list << e }
+      if entries
+        entries.each { |e| node.run_list << e }
+      end
     end
   end
 end

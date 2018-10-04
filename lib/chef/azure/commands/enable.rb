@@ -29,21 +29,19 @@ class EnableChef
   def run
     load_env
 
-    report_heart_beat_to_azure(AzureHeartBeat::NOTREADY, 0, "Enabling chef-service...")
-
     enable_chef
 
     if @exit_code == 0
       if @chef_client_error
-        report_heart_beat_to_azure(AzureHeartBeat::READY, 0, "chef-service is enabled. Chef client run failed with error- #{@chef_client_error}")
+        report_heart_beat_to_azure(AzureHeartBeat::READY, 0, "chef-#{@daemon} is enabled. Chef client run failed with error- #{@chef_client_error}")
       else
-        report_heart_beat_to_azure(AzureHeartBeat::READY, 0, "chef-service is enabled.")
+        report_heart_beat_to_azure(AzureHeartBeat::READY, 0, "chef-#{@daemon} is enabled.")
       end
     else
       if @chef_client_error
-        report_heart_beat_to_azure(AzureHeartBeat::NOTREADY, 0, "chef-service enable failed. Chef client run failed with error- #{@chef_client_error}")
+        report_heart_beat_to_azure(AzureHeartBeat::NOTREADY, 1, "chef-#{@daemon} enable failed. Chef client run failed with error- #{@chef_client_error}")
       else
-        report_heart_beat_to_azure(AzureHeartBeat::NOTREADY, 0, "chef-service enable failed.")
+        report_heart_beat_to_azure(AzureHeartBeat::NOTREADY, 1, "chef-#{@daemon} enable failed.")
       end
     end
 
@@ -65,19 +63,26 @@ class EnableChef
     # - Install the Chef service
     # - Start the Chef service
     begin
-      configure_chef_only_once
+      # "node-registered" file also indicates that enabled was called once and
+      # configs are already generated.
+      if File.exist?("#{bootstrap_directory}/node-registered")
+        puts "#{Time.now} Node is already registered..."
+      else
+        configure_chef_only_once
+      end
+
+      @daemon = value_from_json_file(handler_settings_file, 'runtimeSettings', '0', 'handlerSettings', 'publicSettings', 'daemon')
+      @daemon = (@daemon.nil? || @daemon.empty? || @daemon == "service") ? "service" : "task"
+      report_heart_beat_to_azure(AzureHeartBeat::NOTREADY, 0, "Enabling chef #{@daemon}...")
 
       if @exit_code == 0
         report_status_to_azure("chef-extension enabled", "success")
-        daemon = value_from_json_file(handler_settings_file, 'runtimeSettings', '0', 'handlerSettings', 'publicSettings', 'daemon')
-        daemon = "service" if (daemon.nil? || daemon.empty?)
-        if(daemon == "service" || !windows?)
+        if(@daemon == "service" || !windows?)
           enable_chef_service
-        elsif daemon == "task" && windows?
+        elsif @daemon == "task" && windows?
           enable_chef_sch_task
         end
       end
-
     rescue => e
       Chef::Log.error e
       report_status_to_azure "#{e} - Check log file for details", "error"
@@ -180,98 +185,143 @@ class EnableChef
   #   => Perform node registration executing first chef run
   #   => run the user supplied runlist from first_boot.json in async manner
   def configure_chef_only_once
-    # "node-registered" file also indicates that enabled was called once and
-    # configs are already generated.
+    bootstrap_options = value_from_json_file(handler_settings_file,'runtimeSettings','0','handlerSettings', 'publicSettings', 'bootstrap_options')
+    bootstrap_options = eval(bootstrap_options) ? eval(bootstrap_options) : {}
 
-    if not File.exists?("#{bootstrap_directory}/node-registered")
-      if File.directory?("#{bootstrap_directory}")
-        puts "Bootstrap directory [#{bootstrap_directory}] already exists, skipping creation..."
+    if File.directory?("#{bootstrap_directory}")
+      puts "#{Time.now} Bootstrap directory [#{bootstrap_directory}] already exists, skipping creation..."
+    else
+      puts "#{Time.now} Bootstrap directory [#{bootstrap_directory}] does not exist, creating..."
+      FileUtils.mkdir_p("#{bootstrap_directory}")
+    end
+
+    puts "#{Time.now} Creating chef configuration files"
+
+    copy_settings_file
+
+    load_settings
+
+    begin
+      require 'chef/azure/core/bootstrap_context'
+
+      config = configure_settings(bootstrap_options)
+
+      Chef::Config[:validation_key_content] = @validation_key
+      Chef::Config[:client_key_content] = @client_key
+      Chef::Config[:chef_server_ssl_cert_content] = @chef_server_ssl_cert
+      template_file = File.expand_path(File.dirname(File.dirname(__FILE__)))
+      runlist = @run_list.empty? ? [] : escape_runlist(@run_list)
+      load_cloud_attributes_in_hints if ! @ohai_hints.empty?
+
+      if windows?
+        context = Chef::Knife::Core::WindowsBootstrapContext.new(config, runlist, Chef::Config, config[:secret])
+        template_file += "\\bootstrap\\windows-chef-client-msi.erb"
+        bootstrap_bat_file ||= "#{ENV['TMP']}/bootstrap.bat"
+        template = IO.read(template_file).chomp
+        bash_template = Erubis::Eruby.new(template).evaluate(context)
+        File.open(bootstrap_bat_file, 'w') {|f| f.write(bash_template)}
+        bootstrap_command = "cmd.exe /C #{bootstrap_bat_file}"
       else
-        puts "Bootstrap directory [#{bootstrap_directory}] does not exist, creating..."
-        FileUtils.mkdir_p("#{bootstrap_directory}")
+        context = Chef::Knife::Core::BootstrapContext.new(config, runlist, Chef::Config, config[:secret])
+        template_file += '/bootstrap/chef-full.erb'
+        template = IO.read(template_file).chomp
+        bootstrap_command = Erubis::Eruby.new(template).evaluate(context)
       end
 
-      puts "#{Time.now} Creating chef configuration files"
+      result = shell_out(bootstrap_command)
+      result.error!
+      puts "#{Time.now} Created chef configuration files"
 
-      copy_settings_file
+      # remove the temp bootstrap file
+      FileUtils.rm(bootstrap_bat_file) if windows?
+    rescue Mixlib::ShellOut::ShellCommandFailed => e
+      Chef::Log.warn "chef-client configuration files creation failed (#{e})"
+      @chef_client_error = "chef-client configuration files creation failed (#{e})"
+      return
+    rescue => e
+      Chef::Log.error e
+      @chef_client_error = "chef-client configuration files creation failed (#{e})"
+      return
+    end
 
-      load_settings
+    if @extended_logs == 'true'
+      @chef_client_success_file = windows? ? "c:\\chef_client_success" : "/tmp/chef_client_success"
+    end
+
+    # Runs chef-client with custom recipe to set the run_list and environment
+    begin
+      current_dir = File.expand_path(File.dirname(File.dirname(__FILE__)))
+      first_client_run_recipe_path = windows? ? "#{current_dir}\\first_client_run_recipe.rb" : "#{current_dir}/first_client_run_recipe.rb"
+      command = "chef-client #{first_client_run_recipe_path} -j #{bootstrap_directory}/first-boot.json -c #{bootstrap_directory}/client.rb -L #{@azure_plugin_log_location}/chef-client.log --once"
+      command += " -E #{config[:environment]}" if config[:environment]
+      result = shell_out(command)
+      result.error!
+    rescue Mixlib::ShellOut::ShellCommandFailed => e
+      Chef::Log.error "First chef-client run failed. (#{e})"
+      @chef_client_error = "First chef-client run failed (#{e})"
+      return
+    rescue => e
+      Chef::Log.error e
+      @chef_client_error = "First chef-client run failed (#{e})"
+    end
+
+    params = "-c #{bootstrap_directory}/client.rb -L #{@azure_plugin_log_location}/chef-client.log --once "
+
+    # Runs chef-client in background using scheduled task if windows else using process
+    if windows?
+      puts "#{Time.now} Creating scheduled task with runlist #{runlist}.."
+      schtask = "SCHTASKS.EXE /Create /TN \"Chef Client First Run\" /RU \"NT Authority\\System\" /RP /RL \"HIGHEST\" /SC ONCE /TR \"cmd /c 'C:\\opscode\\chef\\bin\\chef-client #{params}'\" /ST \"#{Time.now.strftime('%H:%M')}\" /F"
 
       begin
-        require 'chef/azure/core/bootstrap_context'
-        config = {}
-        bootstrap_options = value_from_json_file(handler_settings_file,'runtimeSettings','0','handlerSettings', 'publicSettings', 'bootstrap_options')
-        bootstrap_options = eval(bootstrap_options) ? eval(bootstrap_options) : {}
+        result = @extended_logs == 'true' ? shell_out("#{schtask} && touch #{@chef_client_success_file}") : shell_out(schtask)
+        result.error!
+        @chef_client_run_start_time = Time.now
 
-        config[:environment] = bootstrap_options['environment']
-        config[:chef_node_name] = bootstrap_options['chef_node_name'] if bootstrap_options['chef_node_name']
-        config[:chef_extension_root] = @chef_extension_root
-        config[:user_client_rb] = @client_rb
-        config[:log_location] = @azure_plugin_log_location
-        Chef::Config[:validation_key_content] = @validation_key
-        Chef::Config[:client_key_content] = @client_key
-        Chef::Config[:chef_server_ssl_cert_content] = @chef_server_ssl_cert
-        config[:chef_server_url] = bootstrap_options['chef_server_url'] if bootstrap_options['chef_server_url']
-        config[:validation_client_name] =  bootstrap_options['validation_client_name'] if bootstrap_options['validation_client_name']
-        template_file = File.expand_path(File.dirname(File.dirname(__FILE__)))
-        config[:secret] =  @secret
-        config[:node_verify_api_cert] =  bootstrap_options['node_verify_api_cert'] if bootstrap_options['node_verify_api_cert']
-        config[:node_ssl_verify_mode] =  bootstrap_options['node_ssl_verify_mode'] if bootstrap_options['node_ssl_verify_mode']
-        runlist = @run_list.empty? ? [] : escape_runlist(@run_list)
-        load_cloud_attributes_in_hints if ! @ohai_hints.empty?
-        config[:first_boot_attributes] = @first_boot_attributes
-
-        if windows?
-          context = Chef::Knife::Core::WindowsBootstrapContext.new(config, runlist, Chef::Config, config[:secret])
-          template_file += "\\bootstrap\\windows-chef-client-msi.erb"
-          bootstrap_bat_file ||= "#{ENV['TMP']}/bootstrap.bat"
-          template = IO.read(template_file).chomp
-          bash_template = Erubis::Eruby.new(template).evaluate(context)
-          File.open(bootstrap_bat_file, 'w') {|f| f.write(bash_template)}
-          bootstrap_command = "cmd.exe /C #{bootstrap_bat_file}"
-
-          result = shell_out(bootstrap_command)
-          result.error!
-          puts "#{Time.now} Created chef configuration files"
-          # remove the temp bootstrap file
-          FileUtils.rm(bootstrap_bat_file)
-        else
-          context = Chef::Knife::Core::BootstrapContext.new(config, runlist, Chef::Config, config[:secret])
-          template_file += '/bootstrap/chef-full.erb'
-          template = IO.read(template_file).chomp
-          bootstrap_command = Erubis::Eruby.new(template).evaluate(context)
-          result = shell_out(bootstrap_command)
-          result.error!
-          puts "#{Time.now} Created chef configuration files"
-        end
+        # call to run scheduled task immediately after creation
+        result = shell_out("SCHTASKS.EXE /Run /TN \"Chef Client First Run\"")
+        result.error!
       rescue Mixlib::ShellOut::ShellCommandFailed => e
-        Chef::Log.warn "chef-client configuration files creation failed (#{e})"
-        @chef_client_error = "chef-client configuration files creation failed (#{e})"
-        return
+        Chef::Log.error "Creation or running of scheduled task for first chef-client run failed (#{e})"
+        @chef_client_error = "Creation or running of scheduled task for first chef-client run failed (#{e})"
       rescue => e
         Chef::Log.error e
-        @chef_client_error = "chef-client configuration files creation failed (#{e})"
-        return
+        @chef_client_error = "Creation or running of scheduled task for first chef-client run failed (#{e})"
       end
-      # Now the run chef-client with runlist in background, as we done want enable command to wait, else long running chef-client with runlist will timeout azure.
-      puts "#{Time.now} Launching chef-client to register node with the runlist"
-      params = "-c #{bootstrap_directory}/client.rb -j #{bootstrap_directory}/first-boot.json -L #{@azure_plugin_log_location}/chef-client.log --once "
-      params += " -E #{config[:environment]}" if config[:environment]
-
-      if @extended_logs == 'true'
-        if windows?
-          @chef_client_success_file = "c:\\chef_client_success"
-        else
-          @chef_client_success_file = "/tmp/chef_client_success"
-        end
-        @child_pid = Process.spawn "chef-client #{params} && touch #{@chef_client_success_file}"
-        @chef_client_run_start_time = Time.now
-      else
-        @child_pid = Process.spawn "chef-client #{params}"
-      end
+      puts "#{Time.now} Created and ran scheduled task for first chef-client run with runlist #{runlist}"
+    else
+      command = @extended_logs == 'true' ? "chef-client #{params} && touch #{@chef_client_success_file}" : "chef-client #{params}"
+      @child_pid = Process.spawn command
+      @chef_client_run_start_time = Time.now
       Process.detach @child_pid
       puts "#{Time.now} Successfully launched chef-client process with PID [#{@child_pid}]"
     end
+  end
+
+  # creates the configurations options hash
+  def configure_settings(bootstrap_options)
+    config = {
+        environment: bootstrap_options['environment'],
+        chef_extension_root: @chef_extension_root,
+        user_client_rb: @client_rb,
+        log_location: @azure_plugin_log_location,
+        secret: @secret,
+        first_boot_attributes: @first_boot_attributes
+      }
+
+    if bootstrap_options['chef_node_name']
+      config[:chef_node_name] = bootstrap_options['chef_node_name']
+    else
+      chef_client = Chef::Client.new
+      chef_client.run_ohai
+      config[:chef_node_name] = chef_client.node_name
+    end
+
+    config[:chef_server_url] = bootstrap_options['chef_server_url'] if bootstrap_options['chef_server_url']
+    config[:validation_client_name] =  bootstrap_options['validation_client_name'] if bootstrap_options['validation_client_name']
+    config[:node_verify_api_cert] =  bootstrap_options['node_verify_api_cert'] if bootstrap_options['node_verify_api_cert']
+    config[:node_ssl_verify_mode] =  bootstrap_options['node_ssl_verify_mode'] if bootstrap_options['node_ssl_verify_mode']
+
+    config
   end
 
   def chef_client_log_path
