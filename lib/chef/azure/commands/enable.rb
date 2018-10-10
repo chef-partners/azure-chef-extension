@@ -72,7 +72,7 @@ class EnableChef
       end
 
       @daemon = value_from_json_file(handler_settings_file, 'runtimeSettings', '0', 'handlerSettings', 'publicSettings', 'daemon')
-      @daemon = (@daemon.nil? || @daemon.empty? || @daemon == "service") ? "service" : "task"
+      @daemon = "service" if (@daemon.nil? || @daemon.empty?)
       report_heart_beat_to_azure(AzureHeartBeat::NOTREADY, 0, "Enabling chef #{@daemon}...")
 
       if @exit_code == 0

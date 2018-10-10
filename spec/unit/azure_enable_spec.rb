@@ -465,9 +465,7 @@ describe EnableChef do
           expect(instance).to_not receive(:load_cloud_attributes_in_hints)
           expect(instance).to receive(:secret_key)
           expect(FileUtils).to receive(:rm)
-          # expect(Process).to receive(:spawn).with("chef-client -c #{@bootstrap_directory}/client.rb -j #{@bootstrap_directory}/first-boot.json -L #{@sample_config[:log_location]}/chef-client.log --once ").and_return(123)
           instance.send(:configure_chef_only_once)
-          # expect(instance.instance_variable_get(:@child_pid)).to be == 123
           expect(instance.instance_variable_get(:@chef_client_success_file)).to be nil
           expect(instance.instance_variable_get(:@chef_client_run_start_time)).not_to be nil
         end
