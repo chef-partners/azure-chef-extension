@@ -33,15 +33,15 @@ class EnableChef
 
     if @exit_code == 0
       if @chef_client_error
-        report_heart_beat_to_azure(AzureHeartBeat::READY, 0, "chef-#{@daemon} is enabled. Chef client run failed with error- #{@chef_client_error}")
+        report_heart_beat_to_azure(AzureHeartBeat::READY, 0, "chef-#{@msg_option} is enabled. Chef client run failed with error- #{@chef_client_error}")
       else
-        report_heart_beat_to_azure(AzureHeartBeat::READY, 0, "chef-#{@daemon} is enabled.")
+        report_heart_beat_to_azure(AzureHeartBeat::READY, 0, "chef-#{@msg_option} is enabled.")
       end
     else
       if @chef_client_error
-        report_heart_beat_to_azure(AzureHeartBeat::NOTREADY, 1, "chef-#{@daemon} enable failed. Chef client run failed with error- #{@chef_client_error}")
+        report_heart_beat_to_azure(AzureHeartBeat::NOTREADY, 1, "chef-#{@msg_option} enable failed. Chef client run failed with error- #{@chef_client_error}")
       else
-        report_heart_beat_to_azure(AzureHeartBeat::NOTREADY, 1, "chef-#{@daemon} enable failed.")
+        report_heart_beat_to_azure(AzureHeartBeat::NOTREADY, 1, "chef-#{@msg_option} enable failed.")
       end
     end
 
@@ -71,15 +71,25 @@ class EnableChef
         configure_chef_only_once
       end
 
-      @daemon = value_from_json_file(handler_settings_file, 'runtimeSettings', '0', 'handlerSettings', 'publicSettings', 'daemon')
-      @daemon = "service" if (@daemon.nil? || @daemon.empty?)
-      report_heart_beat_to_azure(AzureHeartBeat::NOTREADY, 0, "Enabling chef #{@daemon}...")
+      daemon = value_from_json_file(handler_settings_file, 'runtimeSettings', '0', 'handlerSettings', 'publicSettings', 'daemon')
+
+      daemon = "service" if daemon.nil? || daemon.empty?
+
+      if daemon == "service"
+        @msg_option = "service"
+      elsif daemon == "task" && windows?
+        @msg_option = "task"
+      elsif daemon == "none" && windows?
+        @msg_option = "extension"
+      end
+
+      report_heart_beat_to_azure(AzureHeartBeat::NOTREADY, 0, "Enabling chef #{@msg_option}...")
 
       if @exit_code == 0
         report_status_to_azure("chef-extension enabled", "success")
-        if(@daemon == "service" || !windows?)
+        if daemon == "service" || !windows?
           enable_chef_service
-        elsif @daemon == "task" && windows?
+        elsif daemon == "task" && windows?
           enable_chef_sch_task
         end
       end

@@ -12,7 +12,7 @@ describe EnableChef do
   context "#run" do
     context "chef service is enabled" do
       before do
-        instance.instance_variable_set(:@daemon, 'service')
+        instance.instance_variable_set(:@msg_option, 'service')
       end
 
       context "chef-client run was successful" do
@@ -84,7 +84,7 @@ describe EnableChef do
     context "Chef service enable failed" do
       before do
         instance.instance_variable_set(:@exit_code, 1)
-        instance.instance_variable_set(:@daemon, 'service')
+        instance.instance_variable_set(:@msg_option, 'service')
       end
 
       context "chef-client run was successful" do
