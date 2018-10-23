@@ -23,13 +23,13 @@ The latest binaries of azure-extension-cli don’t have some commands e.g. promo
 
 export PATH=$PATH:/opt/chef/embedded/bin
 
-export publishsettings=/home/azure/public_cloud_secrets/<azure-publishsettings-file-path>
+export publishsettings=azure-publishsettings-file-path
 
-export SUBSCRIPTION_CERT=/home/azure/public_cloud_secrets/managementCertificate.pem
+export SUBSCRIPTION_CERT=path-to-your-subscription-certificate-pem-file
 
-export azure_extension_cli=/home/azure/<path-to-your-azure-extension-cli-executable>
+export azure_extension_cli=path-to-your-azure-extension-cli-executable
 
-export SUBSCRIPTION_ID=<azure-subscription-id>
+export SUBSCRIPTION_ID=your-azure-subscription-id
 
 export MANAGEMENT_URL=https://management.core.windows.net/
 
@@ -82,7 +82,7 @@ Promoting extension to single region will make that extension available on given
 
 ```bundle exec rake promote_single_region[deploy_to_production,<platform>,<version-of-extension>,<date-of-publishing>,<region>]```
 
-***Note*** The date of publishing format should be <yyyymmdd>
+***Note*** The date of publishing format should be `yyyymmdd`
 
 ## Command to promote extension version to two regions
 
