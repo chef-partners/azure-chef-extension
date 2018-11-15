@@ -28,7 +28,7 @@ class DisableChef
     if @exit_code == 0
       report_heart_beat_to_azure(AzureHeartBeat::READY, 0, "chef-service is disabled")
     else
-      report_heart_beat_to_azure(AzureHeartBeat::NOTREADY, 0, "chef-service disable failed")
+      report_heart_beat_to_azure(AzureHeartBeat::NOTREADY, 1, "chef-service disable failed")
     end
 
     return @exit_code

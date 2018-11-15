@@ -11,13 +11,15 @@ describe EnableChef do
 
   context "#run" do
     context "chef service is enabled" do
+      before do
+        instance.instance_variable_set(:@msg_option, 'service')
+      end
+
       context "chef-client run was successful" do
         it "reports chef service enabled to heartbeat" do
           expect(instance).to receive(:load_env)
-          expect(instance).to receive(:report_heart_beat_to_azure).with(AzureHeartBeat::NOTREADY, 0, "Enabling chef-service...")
           expect(instance).to receive(:enable_chef)
           expect(instance).to receive(:report_heart_beat_to_azure).with(AzureHeartBeat::READY, 0, "chef-service is enabled.")
-
           expect(instance.run).to eq(0)
         end
       end
@@ -25,12 +27,9 @@ describe EnableChef do
       context "chef-client run failed" do
         it "reports chef service enabled and chef run failed to heartbeat" do
           instance.instance_variable_set(:@chef_client_error, "Chef client failed")
-
           expect(instance).to receive(:load_env)
-          expect(instance).to receive(:report_heart_beat_to_azure).with(AzureHeartBeat::NOTREADY, 0, "Enabling chef-service...")
           expect(instance).to receive(:enable_chef)
           expect(instance).to receive(:report_heart_beat_to_azure).with(AzureHeartBeat::READY, 0, "chef-service is enabled. Chef client run failed with error- Chef client failed")
-
           expect(instance.run).to eq(0)
         end
       end
@@ -85,15 +84,14 @@ describe EnableChef do
     context "Chef service enable failed" do
       before do
         instance.instance_variable_set(:@exit_code, 1)
+        instance.instance_variable_set(:@msg_option, 'service')
       end
 
       context "chef-client run was successful" do
         it "reports chef service enable failure and chef run success to heartbeat" do
           expect(instance).to receive(:load_env)
-          expect(instance).to receive(:report_heart_beat_to_azure).with(AzureHeartBeat::NOTREADY, 0, "Enabling chef-service...")
           expect(instance).to receive(:enable_chef)
-          expect(instance).to receive(:report_heart_beat_to_azure).with(AzureHeartBeat::NOTREADY, 0, "chef-service enable failed.")
-
+          expect(instance).to receive(:report_heart_beat_to_azure).with(AzureHeartBeat::NOTREADY, 1, "chef-service enable failed.")
           expect(instance.run).to eq(1)
         end
       end
@@ -101,12 +99,9 @@ describe EnableChef do
       context "chef-client run failed" do
         it "reports chef service enable failure and chef run failure to heartbeat" do
           instance.instance_variable_set(:@chef_client_error, "Chef client failed")
-
           expect(instance).to receive(:load_env)
-          expect(instance).to receive(:report_heart_beat_to_azure).with(AzureHeartBeat::NOTREADY, 0, "Enabling chef-service...")
           expect(instance).to receive(:enable_chef)
-          expect(instance).to receive(:report_heart_beat_to_azure).with(AzureHeartBeat::NOTREADY, 0, "chef-service enable failed. Chef client run failed with error- Chef client failed")
-
+          expect(instance).to receive(:report_heart_beat_to_azure).with(AzureHeartBeat::NOTREADY, 1, "chef-service enable failed. Chef client run failed with error- Chef client failed")
           expect(instance.run).to eq(1)
         end
       end
@@ -129,6 +124,7 @@ describe EnableChef do
 
       context '@exit_code is 0' do
         it 'calls configure_chef_only_once and enable_chef_service methods' do
+          expect(instance).to receive(:report_heart_beat_to_azure).with(AzureHeartBeat::NOTREADY, 0, "Enabling chef service...")
           expect(instance).to receive(:configure_chef_only_once)
           expect(instance).to receive(:enable_chef_service)
           expect(Chef::Log).to_not receive(:error)
@@ -145,6 +141,7 @@ describe EnableChef do
         end
 
         it 'calls configure_chef_only_once method but not enable_chef_service method' do
+          expect(instance).to receive(:report_heart_beat_to_azure).with(AzureHeartBeat::NOTREADY, 0, "Enabling chef service...")
           expect(instance).to receive(:configure_chef_only_once)
           expect(instance).to_not receive(:enable_chef_service)
           expect(Chef::Log).to_not receive(:error)
@@ -164,6 +161,7 @@ describe EnableChef do
 
       context '@exit_code is 0' do
         it 'calls configure_chef_only_once and enable_chef_service methods' do
+          expect(instance).to receive(:report_heart_beat_to_azure).with(AzureHeartBeat::NOTREADY, 0, "Enabling chef service...")
           expect(instance).to receive(:configure_chef_only_once)
           expect(instance).to receive(:enable_chef_service)
           expect(Chef::Log).to_not receive(:error)
@@ -180,6 +178,7 @@ describe EnableChef do
         end
 
         it 'calls configure_chef_only_once method but not enable_chef_service method' do
+          expect(instance).to receive(:report_heart_beat_to_azure).with(AzureHeartBeat::NOTREADY, 0, "Enabling chef service...")
           expect(instance).to receive(:configure_chef_only_once)
           expect(instance).to_not receive(:enable_chef_service)
           expect(Chef::Log).to_not receive(:error)
@@ -200,6 +199,7 @@ describe EnableChef do
 
       context '@exit_code is 0' do
         it 'calls configure_chef_only_once and enable_chef_service methods' do
+          expect(instance).to receive(:report_heart_beat_to_azure).with(AzureHeartBeat::NOTREADY, 0, "Enabling chef task...")
           expect(instance).to receive(:configure_chef_only_once)
           expect(instance).to receive(:enable_chef_sch_task)
           expect(Chef::Log).to_not receive(:error)
@@ -216,6 +216,7 @@ describe EnableChef do
         end
 
         it 'calls configure_chef_only_once method but not enable_chef_service method' do
+          expect(instance).to receive(:report_heart_beat_to_azure).with(AzureHeartBeat::NOTREADY, 0, "Enabling chef task...")
           expect(instance).to receive(:configure_chef_only_once)
           expect(instance).to_not receive(:enable_chef_sch_task)
           expect(Chef::Log).to_not receive(:error)
@@ -256,6 +257,7 @@ describe EnableChef do
       end
 
       it 'raises error' do
+        expect(instance).to receive(:report_heart_beat_to_azure).with(AzureHeartBeat::NOTREADY, 0, "Enabling chef service...")
         expect(instance).to receive(:configure_chef_only_once)
         expect(Chef::Log).to receive(:error).with(error_msg)
         expect(instance).to receive(:report_status_to_azure).twice
@@ -459,15 +461,13 @@ describe EnableChef do
           allow(Erubis::Eruby).to receive(:new).and_return("template")
           expect(Erubis::Eruby.new).to receive(:evaluate)
           expect(instance).to receive(:shell_out).and_return(
-            OpenStruct.new(:exitstatus => 0, :stdout => "")).thrice
+            OpenStruct.new(:exitstatus => 0, :stdout => "")).at_least(4).times
           expect(instance).to_not receive(:load_cloud_attributes_in_hints)
           expect(instance).to receive(:secret_key)
           expect(FileUtils).to receive(:rm)
-          expect(Process).to receive(:spawn).with("chef-client -c #{@bootstrap_directory}/client.rb -j #{@bootstrap_directory}/first-boot.json -L #{@sample_config[:log_location]}/chef-client.log --once ").and_return(123)
           instance.send(:configure_chef_only_once)
-          expect(instance.instance_variable_get(:@child_pid)).to be == 123
           expect(instance.instance_variable_get(:@chef_client_success_file)).to be nil
-          expect(instance.instance_variable_get(:@chef_client_run_start_time)).to be nil
+          expect(instance.instance_variable_get(:@chef_client_run_start_time)).not_to be nil
         end
 
         it "runs chef-client for the first time on linux" do
@@ -479,12 +479,12 @@ describe EnableChef do
           allow(Erubis::Eruby).to receive(:new).and_return("template")
           expect(Erubis::Eruby.new).to receive(:evaluate)
           expect(instance).to receive(:shell_out).and_return(
-            OpenStruct.new(:exitstatus => 0, :stdout => ""))
-          expect(Process).to receive(:spawn).with("chef-client -c #{@bootstrap_directory}/client.rb -j #{@bootstrap_directory}/first-boot.json -L #{@sample_config[:log_location]}/chef-client.log --once ").and_return(456)
+            OpenStruct.new(:exitstatus => 0, :stdout => "")).twice
+          expect(Process).to receive(:spawn).with("chef-client -c #{@bootstrap_directory}/client.rb -L #{@sample_config[:log_location]}/chef-client.log --once ").and_return(456)
           instance.send(:configure_chef_only_once)
           expect(instance.instance_variable_get(:@child_pid)).to be == 456
           expect(instance.instance_variable_get(:@chef_client_success_file)).to be nil
-          expect(instance.instance_variable_get(:@chef_client_run_start_time)).to be nil
+          expect(instance.instance_variable_get(:@chef_client_run_start_time)).not_to be nil
         end
       end
 
@@ -515,13 +515,11 @@ describe EnableChef do
           allow(Erubis::Eruby).to receive(:new).and_return("template")
           expect(Erubis::Eruby.new).to receive(:evaluate)
           expect(instance).to receive(:shell_out).and_return(
-            OpenStruct.new(:exitstatus => 0, :stdout => "")).thrice
+            OpenStruct.new(:exitstatus => 0, :stdout => "")).at_least(4).times
           expect(instance).to receive(:load_cloud_attributes_in_hints)
           expect(instance).to receive(:secret_key)
           expect(FileUtils).to receive(:rm)
-          expect(Process).to receive(:spawn).with("chef-client -c #{@bootstrap_directory}/client.rb -j #{@bootstrap_directory}/first-boot.json -L #{@sample_config[:log_location]}/chef-client.log --once  && touch c:\\chef_client_success").and_return(789)
           instance.send(:configure_chef_only_once)
-          expect(instance.instance_variable_get(:@child_pid)).to be == 789
           expect(instance.instance_variable_get(:@chef_client_success_file)).to be == 'c:\\chef_client_success'
           expect(instance.instance_variable_get(:@chef_client_run_start_time)).to_not be nil
         end
@@ -535,8 +533,8 @@ describe EnableChef do
           allow(Erubis::Eruby).to receive(:new).and_return("template")
           expect(Erubis::Eruby.new).to receive(:evaluate)
           expect(instance).to receive(:shell_out).and_return(
-            OpenStruct.new(:exitstatus => 0, :stdout => ""))
-          expect(Process).to receive(:spawn).with("chef-client -c #{@bootstrap_directory}/client.rb -j #{@bootstrap_directory}/first-boot.json -L #{@sample_config[:log_location]}/chef-client.log --once  && touch /tmp/chef_client_success").and_return(120)
+            OpenStruct.new(:exitstatus => 0, :stdout => "")).twice
+          expect(Process).to receive(:spawn).with("chef-client -c #{@bootstrap_directory}/client.rb -L #{@sample_config[:log_location]}/chef-client.log --once  && touch /tmp/chef_client_success").and_return(120)
           instance.send(:configure_chef_only_once)
           expect(instance.instance_variable_get(:@child_pid)).to be == 120
           expect(instance.instance_variable_get(:@chef_client_success_file)).to be == '/tmp/chef_client_success'
@@ -547,15 +545,19 @@ describe EnableChef do
 
     context "subsequent chef_client run" do
       before do
+        instance.instance_variable_set(:@daemon, 'service')
+        allow(File).to receive(:exist?).and_return(true)
         allow(File).to receive(:exists?).and_return(true)
+        allow(instance).to receive(:value_from_json_file)
+        allow(instance).to receive(:handler_settings_file)
+        allow(instance).to receive(:report_status_to_azure)
       end
 
       it "does not spawn chef-client run process irrespective of the platform" do
-        expect(instance).to_not receive(:load_cloud_attributes_in_hints)
-        expect(Process).to_not receive(:spawn)
-        expect(Process).to_not receive(:detach)
-        expect(instance.instance_variable_get(:@child_pid)).to be nil
-        instance.send(:configure_chef_only_once)
+        expect(instance).to_not receive(:configure_chef_only_once)
+        expect(instance).to receive(:report_heart_beat_to_azure).with(AzureHeartBeat::NOTREADY, 0, "Enabling chef service...")
+        expect(instance).to receive(:enable_chef_service)
+        instance.send(:enable_chef)
       end
     end
   end

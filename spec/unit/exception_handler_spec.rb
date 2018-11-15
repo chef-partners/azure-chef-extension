@@ -38,7 +38,7 @@ describe AzureExtension do
       allow(Chef::Search::Query.new).to receive(:search).and_return([[]])
       allow(instance).to receive(:backtrace).and_return(nil)
       expect(instance).to receive(:load_azure_env)
-      expect(instance).to receive(:report_heart_beat_to_azure).with(AzureHeartBeat::READY, 0, "chef-service is running properly. Chef client run failed with error- Check log file for details...\nBacktrace:\n")
+      expect(instance).to receive(:report_heart_beat_to_azure).with(AzureHeartBeat::NOTREADY, 1, "chef-service is running properly. Chef client run failed with error- Check log file for details...\nBacktrace:\n")
       instance.report
     end
 
@@ -51,7 +51,7 @@ describe AzureExtension do
       expect(instance).to receive(:load_run_list)
       allow(instance).to receive(:backtrace).and_return(nil)
       expect(instance).to receive(:load_azure_env)
-      expect(instance).to receive(:report_heart_beat_to_azure).with(AzureHeartBeat::READY, 0, "chef-service is running properly. Chef client run failed with error- Check log file for details...\nBacktrace:\n")
+      expect(instance).to receive(:report_heart_beat_to_azure).with(AzureHeartBeat::NOTREADY, 1, "chef-service is running properly. Chef client run failed with error- Check log file for details...\nBacktrace:\n")
       instance.report
     end
   end
