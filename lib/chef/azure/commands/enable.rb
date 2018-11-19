@@ -318,14 +318,7 @@ class EnableChef
         first_boot_attributes: @first_boot_attributes
       }
 
-    if bootstrap_options['chef_node_name']
-      config[:chef_node_name] = bootstrap_options['chef_node_name']
-    else
-      chef_client = Chef::Client.new
-      chef_client.run_ohai
-      config[:chef_node_name] = chef_client.node_name
-    end
-
+    config[:chef_node_name] = bootstrap_options['chef_node_name'] if bootstrap_options['chef_node_name']
     config[:chef_server_url] = bootstrap_options['chef_server_url'] if bootstrap_options['chef_server_url']
     config[:validation_client_name] =  bootstrap_options['validation_client_name'] if bootstrap_options['validation_client_name']
     config[:node_verify_api_cert] =  bootstrap_options['node_verify_api_cert'] if bootstrap_options['node_verify_api_cert']
