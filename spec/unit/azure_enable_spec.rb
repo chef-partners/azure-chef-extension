@@ -454,7 +454,7 @@ describe EnableChef do
           @sample_runlist = ["recipe[getting-started]", "recipe[apt]"]
         end
 
-        it "runs chef-client for the first time on windows" do
+        it "runs chef-client for the first time on windows", :if => (RUBY_PLATFORM == /windows/) do
           allow(instance).to receive(:windows?).and_return(true)
           expect(Chef::Knife::Core::WindowsBootstrapContext).to receive(
             :new).with(@sample_config, @sample_runlist, any_args)
@@ -508,7 +508,7 @@ describe EnableChef do
           @sample_runlist = ["recipe[getting-started]", "recipe[apt]"]
         end
 
-        it "runs chef-client for the first time on windows" do
+        it "runs chef-client for the first time on windows", :if => (RUBY_PLATFORM == /windows/) do
           allow(instance).to receive(:windows?).and_return(true)
           expect(Chef::Knife::Core::WindowsBootstrapContext).to receive(
             :new).with(@sample_config, @sample_runlist, any_args)

@@ -248,25 +248,6 @@ class ChefService
     old_chef_daemon_interval != new_chef_daemon_interval ? true : false
   end
 
-  def get_chef_pid
-    chef_pid_file = "#{bootstrap_directory}/#{AZURE_CHEF_SERVICE_PID_FILE}"
-
-    if File.exists?(chef_pid_file)
-      chef_pid = File.read(chef_pid_file)
-      return chef_pid.to_i
-    end
-    -1
-  end
-
-  def get_chef_pid!
-    chef_pid = get_chef_pid
-    if chef_pid > 0
-      chef_pid
-    else
-      raise "Invalid chef-client pid file. [#{chef_pid_file}]"
-    end
-  end
-
   # Set chef-client service startup type Automatic(Delay Start)
   def set_startup_type
     startup_type = shell_out("powershell.exe -Command Set-Service -Name 'chef-client' -StartupType automatic")

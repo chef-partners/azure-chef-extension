@@ -104,14 +104,12 @@ def escape_unescaped_content(file_content)
 end
 
 def get_jsonreader_object(file_name, *keys)
-  file = file_name
-
-  if file.nil?
+  if file_name.nil?
     puts "No file specified -- you must specify a file argument -- doing nothing."
     return
   end
 
-  json_reader = JSONFileReader.new(file, *keys)
+  json_reader = JSONFileReader.new(file_name, *keys)
 end
 
 def value_from_json_file(file_name, *keys)

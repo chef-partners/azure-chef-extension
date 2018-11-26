@@ -271,31 +271,6 @@ describe ChefService do
     end
   end
 
-  context "get_chef_pid" do
-    it "returns chef pid if pid file exists" do
-      allow(File).to receive(:exists?).and_return(true)
-      allow(File).to receive(:read).and_return("1")
-      expect(instance.send(:get_chef_pid)).to eq(1)
-    end
-
-    it "returns -1 if pid file doesn't exist" do
-      allow(File).to receive(:exists?).and_return(false)
-      expect(instance.send(:get_chef_pid)).to eq(-1)
-    end
-  end
-
-  context "get_chef_pid!" do
-    it "returns pid if exists" do
-      allow(instance).to receive(:get_chef_pid).and_return(1)
-      expect(instance.send(:get_chef_pid!)).to eq(1)
-    end
-
-    it "raises error if pid doesn't exist" do
-      allow(instance).to receive(:get_chef_pid).and_return(-1)
-      expect{instance.send(:get_chef_pid!)}.to raise_error
-    end
-  end
-
   context "is_running?" do
     it "tells if chef-service is running on windows" do
       allow(instance).to receive(:windows?).and_return(true)
