@@ -7,5 +7,4 @@ group :development do
   gem 'pry'
   gem 'rb-readline'
   gem 'rake'
-  gem "rack", "< 2.0" # 2.0 requires Ruby 2.2+
 end
