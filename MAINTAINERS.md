@@ -4,5 +4,7 @@ This file lists how the azure-chef-extension project is maintained. When making 
 * [Adam Edwards](https://github.com/adamedx)
 
 ##Maintainers
-* [Siddheshwar More](https://github.com/siddheshwar-more)
-* [Nimisha Sharad](https://github.com/NimishaS)
+* [Stuart Preston](https://github.com/stuartpreston)
+* [Vasundhara Jagdale](https://github.com/vasu1105)
+
+
