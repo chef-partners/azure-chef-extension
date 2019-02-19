@@ -7,4 +7,5 @@ group :development do
   gem 'pry'
   gem 'rb-readline'
   gem 'rake'
+  gem 'rack', '~> 2.0.6'
 end
