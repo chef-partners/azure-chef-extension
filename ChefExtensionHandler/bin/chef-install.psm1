@@ -64,7 +64,7 @@ function Install-ChefClient {
           $daemon = "auto"
         }
         if (-Not $chef_package_version) {
-          $chef_package_version = "latest"
+          $chef_package_version = "14" # Until Chef-15 is Verified
         }
         if (-Not $chef_package_channel) {
           $chef_package_channel = "stable"
