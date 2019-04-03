@@ -90,8 +90,8 @@ chef_install_from_script(){
         echo "Configuration error. Azure chef extension Settings file missing."
         exit 1
       elif [ -z "$chef_version" ] && [ -z "$chef_channel" ]; then
-        echo "Installing latest chef client"
-        sh /tmp/$platform-install.sh
+        echo "Installing latest chef-14 client"
+        sh /tmp/$platform-install.sh -v "14" # Until Chef-15 is Verified
       elif [ ! -z "$chef_version" ] && [ -z "$chef_channel" ]; then
         echo "Installing chef client version $chef_version"
         sh /tmp/$platform-install.sh -v $chef_version
