@@ -69,11 +69,27 @@ get_chef_channel() {
   fi
 }
 
+get_downloaded_package() {
+  config_file_name=$(get_config_settings_file $chef_extension_root)
+  if [ -z "$config_file_name" ]; then
+    echo "No config file found !!"
+  else
+    if cat $config_file_name 2>/dev/null | grep -q "chef_package_path"; then
+      chef_package_path=`sed ':a;N;$!ba;s/\n//g' $config_file_name | sed 's/.*chef_package_path" *: *" *\(.*\)/\1/' 2>/dev/null | awk -F\" '{ print $1 }' | sed 's/[ \t]*$//'`
+      echo "$chef_package_path"
+    else
+      echo ""
+    fi
+  fi
+}
+
 chef_install_from_script(){
     echo "Reading chef-client version from settings file"
     chef_version=$(get_chef_version &)
     echo "Reading chef-client release channel from settings file"
     chef_channel=$(get_chef_channel &)
+    echo "Reading downloaded chef-client path from settings file"
+    chef_downloaded_package=$(get_downloaded_package &)
     echo "Call for Checking linux distributor"
     platform=$(get_linux_distributor)
     #check if chef-client is already installed
@@ -82,7 +98,7 @@ chef_install_from_script(){
     elif [ "$platform" = "centos" -o "$platform" = "rhel" -o "$platform" = "linuxoracle" ]; then
       yum list installed | grep -w "chef"
     fi
-    if [ $? -ne 0 ]; then
+    if [ $? -ne 0 ] && [ -z "$chef_downloaded_package" ]; then
       curl_check $platform
       curl -L -o /tmp/$platform-install.sh https://omnitruck.chef.io/install.sh
       echo "Install.sh script downloaded at /tmp/$platform-install.sh"
@@ -104,6 +120,11 @@ chef_install_from_script(){
       fi
       echo "Deleting Install.sh script present at /tmp/$platform-install.sh"
       rm /tmp/$platform-install.sh -f
+    elif [ $? -ne 0 ] && [ ! -z "$chef_downloaded_package" ]; then
+      echo "Installing downloaded chef client from $chef_downloaded_package path"
+      filename=`echo $chef_downloaded_package | sed -e 's/^.*\///'`
+      filetype=`echo $filename | sed -e 's/^.*\.//'`
+      install_file $filetype "$chef_downloaded_package"
     else
       echo "Chef-client is already installed"
     fi
