@@ -56,7 +56,7 @@ function Install-ChefClient {
       ## Get chef_pkg by matching "chef client" string with $_.Name
       $chef_pkg = Get-ChefPackage
       ## Get locally downloaded msi path string from config file.
-      $msi_path = Get-PublicSettings-From-Config-Json "msi_path" $powershellVersion
+      $chef_downloaded_package = Get-PublicSettings-From-Config-Json "chef_package_path" $powershellVersion
       $daemon = Get-PublicSettings-From-Config-Json "daemon"  $powershellVersion
       if ( $daemon -eq "none" ) {
         $daemon = "auto"
@@ -64,7 +64,7 @@ function Install-ChefClient {
       if (-Not $daemon) {
         $daemon = "service"
       }
-      if (-Not $chef_pkg -and -Not $msi_path ) {
+      if (-Not $chef_pkg -and -Not $chef_downloaded_package ) {
         $chef_package_version = Get-PublicSettings-From-Config-Json "bootstrap_version" $powershellVersion
         $chef_package_channel = Get-PublicSettings-From-Config-Json "bootstrap_channel" $powershellVersion
 
@@ -76,8 +76,8 @@ function Install-ChefClient {
         }
 
         iex (new-object net.webclient).downloadstring('https://omnitruck.chef.io/install.ps1');install -daemon $daemon -version $chef_package_version -channel $chef_package_channel
-      } ElseIf ( -Not $chef_pkg -and $msi_path ) {
-        Install-ChefMsi $msi_path $daemon
+      } elseif ( -Not $chef_pkg -and $chef_downloaded_package ) {
+        Install-ChefMsi $chef_downloaded_package $daemon
       }
       $completed = $true
     }
@@ -99,27 +99,6 @@ function Install-ChefClient {
   $env:Path = "C:\\opscode\\chef\\bin;C:\\opscode\\chef\\embedded\\bin;" + $env:Path
   $chefExtensionRoot = Chef-GetExtensionRoot
   Install-AzureChefExtensionGem $chefExtensionRoot
-}
-
-Function Install-ChefMsi($msi, $addlocal) {
-  if ($addlocal -eq "service") {
-    $p = Start-Process -FilePath "msiexec.exe" -ArgumentList "/qn /i $msi ADDLOCAL=`"ChefClientFeature,ChefServiceFeature`"" -Passthru -Wait -NoNewWindow
-  }
-  ElseIf ($addlocal -eq "task") {
-    $p = Start-Process -FilePath "msiexec.exe" -ArgumentList "/qn /i $msi ADDLOCAL=`"ChefClientFeature,ChefSchTaskFeature`"" -Passthru -Wait -NoNewWindow
-  }
-  ElseIf ($addlocal -eq "auto") {
-    $p = Start-Process -FilePath "msiexec.exe" -ArgumentList "/qn /i $msi" -Passthru -Wait -NoNewWindow
-  }
-
-  $p.WaitForExit()
-  if ($p.ExitCode -eq 1618) {
-    Write-Host "$((Get-Date).ToString()) - Another msi install is in progress (exit code 1618), retrying ($($installAttempts))..."
-    return $false
-  } elseif ($p.ExitCode -ne 0) {
-    throw "msiexec was not successful. Received exit code $($p.ExitCode)"
-  }
-  return $true
 }
 
 function Get-SharedHelper {

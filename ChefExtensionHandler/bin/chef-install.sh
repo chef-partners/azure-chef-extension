@@ -41,55 +41,27 @@ curl_check(){
   fi
 }
 
-get_chef_version() {
-  config_file_name=$(get_config_settings_file $chef_extension_root)
-  if [ -z "$config_file_name" ]; then
-    echo "No config file found !!"
-  else
-    if cat $config_file_name 2>/dev/null | grep -q "bootstrap_version"; then
-      chef_version=`sed ':a;N;$!ba;s/\n//g' $config_file_name | sed 's/.*bootstrap_version" *: *" *\(.*\)/\1/' 2>/dev/null | awk -F\" '{ print $1 }' | sed 's/[ \t]*$//'`
-      echo $chef_version
-    else
-      echo ""
-    fi
+get_value_from_setting_file() {
+  chef_value=""
+  if cat $1 2>/dev/null | grep -q $2; then
+    chef_value=`sed ':a;N;$!ba;s/\n//g' $1 | sed 's/.*'"${2}"'" *: *" *\(.*\)/\1/' 2>/dev/null | awk -F\" '{ print $1 }' | sed 's/[ \t]*$//'`
   fi
-}
-
-get_chef_channel() {
-  config_file_name=$(get_config_settings_file $chef_extension_root)
-  if [ -z "$config_file_name" ]; then
-    echo "No config file found !!"
-  else
-    if cat $config_file_name 2>/dev/null | grep -q "bootstrap_channel"; then
-      chef_channel=`sed ':a;N;$!ba;s/\n//g' $config_file_name | sed 's/.*bootstrap_channel" *: *" *\(.*\)/\1/' 2>/dev/null | awk -F\" '{ print $1 }' | sed 's/[ \t]*$//'`
-      echo $chef_channel
-    else
-      echo ""
-    fi
-  fi
-}
-
-get_downloaded_package() {
-  config_file_name=$(get_config_settings_file $chef_extension_root)
-  if [ -z "$config_file_name" ]; then
-    echo "No config file found !!"
-  else
-    if cat $config_file_name 2>/dev/null | grep -q "chef_package_path"; then
-      chef_package_path=`sed ':a;N;$!ba;s/\n//g' $config_file_name | sed 's/.*chef_package_path" *: *" *\(.*\)/\1/' 2>/dev/null | awk -F\" '{ print $1 }' | sed 's/[ \t]*$//'`
-      echo "$chef_package_path"
-    else
-      echo ""
-    fi
-  fi
+  echo $chef_value
 }
 
 chef_install_from_script(){
+    echo "Fetching settings file"
+    config_file_name=$(get_config_settings_file $chef_extension_root)
+    if [ -z "$config_file_name" ]; then
+      echo "Configuration error. Azure chef extension Settings file missing."
+      exit 1
+    fi
     echo "Reading chef-client version from settings file"
-    chef_version=$(get_chef_version &)
+    chef_version=$(get_value_from_setting_file $config_file_name "bootstrap_version" &)
     echo "Reading chef-client release channel from settings file"
-    chef_channel=$(get_chef_channel &)
+    chef_channel=$(get_value_from_setting_file $config_file_name "bootstrap_channel" &)
     echo "Reading downloaded chef-client path from settings file"
-    chef_downloaded_package=$(get_downloaded_package &)
+    chef_downloaded_package=$(get_value_from_setting_file $config_file_name "chef_package_path" &)
     echo "Call for Checking linux distributor"
     platform=$(get_linux_distributor)
     #check if chef-client is already installed
@@ -102,10 +74,7 @@ chef_install_from_script(){
       curl_check $platform
       curl -L -o /tmp/$platform-install.sh https://omnitruck.chef.io/install.sh
       echo "Install.sh script downloaded at /tmp/$platform-install.sh"
-      if [ "$chef_version" = "No config file found !!" ]; then
-        echo "Configuration error. Azure chef extension Settings file missing."
-        exit 1
-      elif [ -z "$chef_version" ] && [ -z "$chef_channel" ]; then
+      if [ -z "$chef_version" ] && [ -z "$chef_channel" ]; then
         echo "Installing latest chef-14 client"
         sh /tmp/$platform-install.sh -v "14" # Until Chef-15 is Verified
       elif [ ! -z "$chef_version" ] && [ -z "$chef_channel" ]; then
