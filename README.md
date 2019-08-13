@@ -93,6 +93,7 @@ publicconfig.config example:
   },
   "chef_daemon_interval": "18",
   "daemon": "none",
+  "chef_package_path" : "C:\\Users\\azure\\chef-client-14.12.9-1-x64.msi",
   "custom_json_attr": {
     "container_service": { "chef-init-test": { "command": "C:\\opscode\\chef\\bin" } }
   },
@@ -160,6 +161,7 @@ Update-AzureVM -VM $vmOb.VM -Name "<vm-name>" -ServiceName "<cloud-service-name>
 2. Find below some advanced options that can be set in the Azure ARM template file `azuredeploy.json`:
   - `environment_variables`: Specifies the list of environment variables (like the environment variables for proxy server configuration) to be available to the Chef Extension scripts.
   - `bootstrap_channel`: Specify the channel for installing chef client version from `stable`, `current` or `unstable` release channel.
+  - `chef_package_path`: Specify the downloaded chef package path for installing chef client from local repo.
   - `hints`: Specifies the Ohai Hints to be set in the Ohai configuration of the target node.
 
   ***Note***: Set both these options under `properties` --> `settings` section of the `Microsoft.Compute/virtualMachines/extensions` resource type as shown in the below example:
@@ -194,6 +196,7 @@ Update-AzureVM -VM $vmOb.VM -Name "<vm-name>" -ServiceName "<cloud-service-name>
         },
         "chef_daemon_interval": "18",
         "daemon" : "service",
+        "chef_package_path": "/tmp/chef-14.12.9-1.el7.x86_64.rpm",
         "custom_json_attr": {
           "container_service": { "chef-init-test": { "command": "C:\\opscode\\chef\\bin" } }
         },

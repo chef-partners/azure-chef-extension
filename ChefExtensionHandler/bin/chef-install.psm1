@@ -55,25 +55,29 @@ function Install-ChefClient {
     Try {
       ## Get chef_pkg by matching "chef client" string with $_.Name
       $chef_pkg = Get-ChefPackage
-      if (-Not $chef_pkg) {
+      ## Get locally downloaded msi path string from config file.
+      $chef_downloaded_package = Get-PublicSettings-From-Config-Json "chef_package_path" $powershellVersion
+      $daemon = Get-PublicSettings-From-Config-Json "daemon"  $powershellVersion
+      if ( $daemon -eq "none" ) {
+        $daemon = "auto"
+      }
+      if (-Not $daemon) {
+        $daemon = "service"
+      }
+      if (-Not $chef_pkg -and -Not $chef_downloaded_package ) {
         $chef_package_version = Get-PublicSettings-From-Config-Json "bootstrap_version" $powershellVersion
         $chef_package_channel = Get-PublicSettings-From-Config-Json "bootstrap_channel" $powershellVersion
-        $daemon = Get-PublicSettings-From-Config-Json "daemon"  $powershellVersion
 
-        if ( $daemon -eq "none" ) {
-          $daemon = "auto"
-        }
         if (-Not $chef_package_version) {
           $chef_package_version = "14" # Until Chef-15 is Verified
         }
         if (-Not $chef_package_channel) {
           $chef_package_channel = "stable"
         }
-        if (-Not $daemon) {
-          $daemon = "service"
-        }
 
         iex (new-object net.webclient).downloadstring('https://omnitruck.chef.io/install.ps1');install -daemon $daemon -version $chef_package_version -channel $chef_package_channel
+      } elseif ( -Not $chef_pkg -and $chef_downloaded_package ) {
+        Install-ChefMsi $chef_downloaded_package $daemon
       }
       $completed = $true
     }

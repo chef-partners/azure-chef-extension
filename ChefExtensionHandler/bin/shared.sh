@@ -16,6 +16,68 @@ get_linux_distributor(){
   echo "${linux_distributor}"
 }
 
+# install_file TYPE FILENAME
+# TYPE is "rpm", "deb", "solaris", "sh", etc.
+install_file() {
+  echo "Installing package $2"
+  case "$1" in
+    "rpm")
+      if test "x$platform" = "xnexus" || test "x$platform" = "xios_xr"; then
+        echo "installing with yum..."
+        yum install -yv "$2"
+      else
+        echo "installing with rpm..."
+        rpm -Uvh --oldpackage --replacepkgs "$2"
+      fi
+      ;;
+    "deb")
+      echo "installing with dpkg..."
+      dpkg -i "$2"
+      ;;
+    "bff")
+      echo "installing with installp..."
+      installp -aXYgd "$2" all
+      ;;
+    "solaris")
+      echo "installing with pkgadd..."
+      echo "conflict=nocheck" > $tmp_dir/nocheck
+      echo "action=nocheck" >> $tmp_dir/nocheck
+      echo "mail=" >> $tmp_dir/nocheck
+      pkgrm -a $tmp_dir/nocheck -n $project >/dev/null 2>&1 || true
+      pkgadd -G -n -d "$2" -a $tmp_dir/nocheck $project
+      ;;
+    "pkg")
+      echo "installing with installer..."
+      cd / && /usr/sbin/installer -pkg "$2" -target /
+      ;;
+    "dmg")
+      echo "installing dmg file..."
+      hdiutil detach "/Volumes/chef_software" >/dev/null 2>&1 || true
+      hdiutil attach "$2" -mountpoint "/Volumes/chef_software"
+      cd / && /usr/sbin/installer -pkg `find "/Volumes/chef_software" -name \*.pkg` -target /
+      hdiutil detach "/Volumes/chef_software"
+      ;;
+    "sh" )
+      echo "installing with sh..."
+      sh "$2"
+      ;;
+    "p5p" )
+      echo "installing p5p package..."
+      pkg install -g "$2" $project
+      ;;
+    *)
+      echo "Unknown filetype: $1"
+      report_bug
+      exit 1
+      ;;
+  esac
+  if test $? -ne 0; then
+    echo "Installation failed"
+    report_bug
+    exit 1
+  fi
+}
+
 get_config_settings_file() {
   config_files_path="$1/config/*.settings"
   config_file_name=`ls $config_files_path 2>/dev/null | sort -V | tail -1`

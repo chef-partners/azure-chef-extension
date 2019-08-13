@@ -229,6 +229,27 @@ function Get-PublicSettings-From-Config-Json($key, $powershellVersion) {
   }
 }
 
+Function Install-ChefMsi($msi, $addlocal) {
+  if ($addlocal -eq "service") {
+    $p = Start-Process -FilePath "msiexec.exe" -ArgumentList "/qn /i $msi ADDLOCAL=`"ChefClientFeature,ChefServiceFeature`"" -Passthru -Wait -NoNewWindow
+  }
+  ElseIf ($addlocal -eq "task") {
+    $p = Start-Process -FilePath "msiexec.exe" -ArgumentList "/qn /i $msi ADDLOCAL=`"ChefClientFeature,ChefSchTaskFeature`"" -Passthru -Wait -NoNewWindow
+  }
+  ElseIf ($addlocal -eq "auto") {
+    $p = Start-Process -FilePath "msiexec.exe" -ArgumentList "/qn /i $msi" -Passthru -Wait -NoNewWindow
+  }
+
+  $p.WaitForExit()
+  if ($p.ExitCode -eq 1618) {
+    Write-Host "$((Get-Date).ToString()) - Another msi install is in progress (exit code 1618), retrying ($($installAttempts))..."
+    return $false
+  } elseif ($p.ExitCode -ne 0) {
+    throw "msiexec was not successful. Received exit code $($p.ExitCode)"
+  }
+  return $true
+}
+
 function normalize_json($json) {
   $json -Join " "
 }
