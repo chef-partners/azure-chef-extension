@@ -1,47 +1,52 @@
 # azure-chef-extension Change Log
 
-## Latest Release: 1210.13.1.0 (2019/02/05)
+## Latest Release: 1210.13.2.1 (2019/08/20)
+* [azure-chef-extension #274](https://github.com/chef-partners/azure-chef-extension/pull/274) Added `chef_package_path` option to allow custom path of downloaded chef client.
+* [azure-chef-extension #266](https://github.com/chef-partners/azure-chef-extension/pull/266) Fixes failing specs in recent merge which has wrong check of error code.
+
+## Release: 1210.13.1.0 (2019/02/05)
+* [azure-chef-extension #269](https://github.com/chef-partners/azure-chef-extension/pull/269) Pin to Chef 14 until Chef 15 is tested and verified on Azure later this year
 * [azure-chef-extension #261](https://github.com/chef-partners/azure-chef-extension/pull/261) Fixes the duplicate node_name in client.rb
 * [azure-chef-extension #255](https://github.com/chef-partners/azure-chef-extension/pull/255) Fixes environment and run_list params not recognised.
 
-## Latest Release: 1210.12.110.1001 (2018/04/30)
+## Release: 1210.12.110.1001 (2018/04/30)
 * [azure-chef-extension #245](https://github.com/chef-partners/azure-chef-extension/pull/245) Added `bootstrap_channel` option to install chef client version from `stable`, `current` or `unstable` channel.
 
-## Latest Release: 1210.12.110.1000 (2017/11/15)
+## Release: 1210.12.110.1000 (2017/11/15)
 * [azure-chef-extension #237](https://github.com/chef-partners/azure-chef-extension/pull/237) Updated document for extension sequencing in ARM template.
 * [azure-chef-extension #236](https://github.com/chef-partners/azure-chef-extension/pull/236) Added support for Oracle Linux.
 * [azure-chef-extension #234](https://github.com/chef-partners/azure-chef-extension/pull/234) Updated rake task to use azure-extension-cli to publish/unpublish extension in Public cloud
 * [azure-chef-extension #229](https://github.com/chef-partners/azure-chef-extension/pull/229) Updated rake task to support publishing extension on Gov Cloud
 * [azure-chef-extension #228](https://github.com/chef-partners/azure-chef-extension/pull/228) Removed backup logic and using n.settings file from C:/Chef during update to fix error coming while upgrading Chef extension version on Windows.
 
-## Latest Release: 1210.12.109.1005 (2017/07/03)
+## Release: 1210.12.109.1005 (2017/07/03)
 * [azure-chef-extension #217](https://github.com/chef-partners/azure-chef-extension/pull/217) Chef-service enable failed, make sure that Azure Chef extension start the chef-client service, If service StartMode is disabled.
 
-## Latest Release: 1210.12.109.1004 (2017/05/18)
+## Release: 1210.12.109.1004 (2017/05/18)
 * [azure-chef-extension #213](https://github.com/chef-partners/azure-chef-extension/pull/213) Fixed runlist conflicts with policy_name and policy_group settings in first-boot.json
 * [azure-chef-extension #210](https://github.com/chef-partners/azure-chef-extension/pull/210) Update readme with microsoft image
 * [azure-chef-extension #209](https://github.com/chef-partners/azure-chef-extension/pull/209) Added changes for spliting multiple certificates
 * [azure-chef-extension #208](https://github.com/chef-partners/azure-chef-extension/pull/208) Fixing OpenSSL `header too long` issue.
 
-## Latest Release: 1210.12.109.1003 (2017/03/31)
+## Release: 1210.12.109.1003 (2017/03/31)
 * [azure-chef-extension #205](https://github.com/chef-partners/azure-chef-extension/pull/205) Fixed extension failure issue for Windows 8.
 
-## Latest Release: 1210.12.109.1002 (2017/03/28)
+## Release: 1210.12.109.1002 (2017/03/28)
 * [azure-chef-extension #203](https://github.com/chef-partners/azure-chef-extension/pull/203) Fixed nested backup issue.
 * [azure-chef-extension #200](https://github.com/chef-partners/azure-chef-extension/pull/200) Fixed extension bad format issue.
 * [azure-chef-extension #197](https://github.com/chef-partners/azure-chef-extension/pull/197) Optimized extension install and enable for windows.
 * [azure-chef-extension #196](https://github.com/chef-partners/azure-chef-extension/pull/196) Renamed chef-service-interval option name to chef-daemon-interval.
 
-## Latest Release: 1210.12.109.1000 (2017/03/17)
+## Release: 1210.12.109.1000 (2017/03/17)
 * [azure-chef-extension #193](https://github.com/chef-partners/azure-chef-extension/pull/193) Added support for environment_variables in windows extension.
 
-## Latest Release: 1210.12.108.1000 (2017/02/17)
+## Release: 1210.12.108.1000 (2017/02/17)
 * [azure-chef-extension #188](https://github.com/chef-partners/azure-chef-extension/pull/188) Add support for chef-client scheduled task
 
-## Latest Release: 1210.12.106.1001 (2017/01/30)
+## Release: 1210.12.106.1001 (2017/01/30)
 * [azure-chef-extension #187](https://github.com/chef-partners/azure-chef-extension/pull/187) add python script to parse env variables
 
-## Latest Release: 1210.12.107.1001 (2017/01/03)
+## Release: 1210.12.107.1001 (2017/01/03)
 * [azure-chef-extension #185](https://github.com/chef-partners/azure-chef-extension/pull/185) Parsing json on Windows 2008
 
 ## Release: 1210.12.107.1000 (2016/12/26)
