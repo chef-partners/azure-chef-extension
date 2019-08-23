@@ -161,10 +161,10 @@ Update-AzureVM -VM $vmOb.VM -Name "<vm-name>" -ServiceName "<cloud-service-name>
 2. Find below some advanced options that can be set in the Azure ARM template file `azuredeploy.json`:
   - `environment_variables`: Specifies the list of environment variables (like the environment variables for proxy server configuration) to be available to the Chef Extension scripts.
   - `bootstrap_channel`: Specify the channel for installing chef client version from `stable`, `current` or `unstable` release channel.
-  - `chef_package_path`: Specify the downloaded chef package path for installing chef client from local repo.
+  - `chef_package_path`: chef_package_path allows installing chef-client from local path. We provided this option so that user is able to install chef-client from the local path. This feature mainly added where there is restrictions on internet access. But also note azure extensions itself has limitations in respect of network access please refer to this [link](https://docs.microsoft.com/en-us/azure/virtual-machines/extensions/features-linux#network-access) which explains this in details.
   - `hints`: Specifies the Ohai Hints to be set in the Ohai configuration of the target node.
 
-  ***Note***: Set both these options under `properties` --> `settings` section of the `Microsoft.Compute/virtualMachines/extensions` resource type as shown in the below example:
+  ***Note***: Set these options under `properties` --> `settings` section of the `Microsoft.Compute/virtualMachines/extensions` resource type as shown in the below example:
 
   Example:
 
