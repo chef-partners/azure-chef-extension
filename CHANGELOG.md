@@ -1,13 +1,18 @@
 # azure-chef-extension Change Log
 
-## Latest Release: 1210.13.2.1 (2019/08/20)
+## Latest Release: 1210.13.2.1 (2019/08/23)
 * [azure-chef-extension #274](https://github.com/chef-partners/azure-chef-extension/pull/274) Added `chef_package_path` option to allow custom path of downloaded chef client.
 * [azure-chef-extension #266](https://github.com/chef-partners/azure-chef-extension/pull/266) Fixes failing specs in recent merge which has wrong check of error code.
 
-## Release: 1210.13.1.0 (2019/02/05)
+## Release: 1210.13.1.1 (2019/08/23)
 * [azure-chef-extension #269](https://github.com/chef-partners/azure-chef-extension/pull/269) Pin to Chef 14 until Chef 15 is tested and verified on Azure later this year
+
+## Release: 1210.13.1.0 (2019/02/05)
 * [azure-chef-extension #261](https://github.com/chef-partners/azure-chef-extension/pull/261) Fixes the duplicate node_name in client.rb
 * [azure-chef-extension #255](https://github.com/chef-partners/azure-chef-extension/pull/255) Fixes environment and run_list params not recognised.
+
+## Release: 1210.12.110.1002 (2018/08/23)
+* [azure-chef-extension #271](https://github.com/chef-partners/azure-chef-extension/pull/271) Pin to Chef 14 until Chef 15 is tested and verified on Azure later this year.
 
 ## Release: 1210.12.110.1001 (2018/04/30)
 * [azure-chef-extension #245](https://github.com/chef-partners/azure-chef-extension/pull/245) Added `bootstrap_channel` option to install chef client version from `stable`, `current` or `unstable` channel.
