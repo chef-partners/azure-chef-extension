@@ -7,8 +7,8 @@ Example Note:
 Details about the thing that changed that needs to get included in the Release Notes in markdown.
 -->
 
-# azure-chef-extension 1210.13.1.0 release notes:
-In this release, we have fixed the [Issue 248](https://github.com/chef-partners/azure-chef-extension/issues/248)
+# azure-chef-extension 1210.13.2.1 release notes:
+In this release, we have added `chef_package_path` option to allow custom path of downloaded chef client.
 
 See the [CHANGELOG](https://github.com/chef-partners/azure-chef-extension/blob/master/CHANGELOG.md) for a list of all changes in this release, and review.
 
