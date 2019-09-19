@@ -1,5 +1,5 @@
 cron  '<%= name %>' do
   minute '<%= "*/#{interval}" %>'
-  command '/bin/sleep <%= sleep_time %>; chef-client -c <%= bootstrap_directory %>/client.rb -L <%= log_location %>/chef-client.log --pid <%= chef_pid_file %> --once'
+  command '/bin/sleep <%= sleep_time %>; export PATH=$PATH:/usr/sbin; chef-client -c <%= bootstrap_directory %>/client.rb -L <%= log_location %>/chef-client.log --pid <%= chef_pid_file %> --once'
   action :create
 end
