@@ -27,7 +27,7 @@ function Chef-GetExtensionRoot {
 }
 
 function Get-ChefPackage {
-  Get-WmiObject -Class Win32_Product | Where-Object { $_.Name.contains("Chef Client") }
+  Get-WmiObject -Class Win32_Product | where -Property Name -CLike "Chef *Client*"
 }
 
 function Read-Environment-Variables {
