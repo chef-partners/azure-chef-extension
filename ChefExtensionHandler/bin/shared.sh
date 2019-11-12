@@ -2,15 +2,15 @@
 
 get_linux_distributor(){
 #### Using python -mplatform command to get distributor name #####
-  if python -mplatform | grep centos > /dev/null; then
+  if ( python -mplatform || /usr/libexec/platform-python -mplatform ) | grep centos > /dev/null; then
     linux_distributor='centos'
-  elif python -mplatform | grep Ubuntu > /dev/null; then
+  elif ( python -mplatform || /usr/libexec/platform-python -mplatform ) | grep Ubuntu > /dev/null; then
     linux_distributor='ubuntu'
-  elif python -mplatform | grep debian > /dev/null; then
+  elif ( python -mplatform || /usr/libexec/platform-python -mplatform ) | grep debian > /dev/null; then
     linux_distributor='debian'
-  elif python -mplatform | grep redhat > /dev/null; then
+  elif ( python -mplatform || /usr/libexec/platform-python -mplatform ) | grep redhat > /dev/null; then
     linux_distributor='rhel'
-  elif python -mplatform | grep -E -i "linux.*oracle" > /dev/null; then
+  elif ( python -mplatform || /usr/libexec/platform-python -mplatform ) | grep -E -i "linux.*oracle" > /dev/null; then
     linux_distributor='linuxoracle'
   fi
   echo "${linux_distributor}"
@@ -91,7 +91,11 @@ get_file_path_to_parse_env_variables(){
 }
 
 export_env_vars() {
-  commands="`python $path_to_parse_env_variables \"$1\"`"
+  if ( python -mplatform || /usr/libexec/platform-python -mplatform ) | grep "redhat-8" > /dev/null; then
+    commands="`/usr/libexec/platform-python $path_to_parse_env_variables \"$1\"`"
+  else
+    commands="`python $path_to_parse_env_variables \"$1\"`"
+  fi
   eval $commands
 }
 
