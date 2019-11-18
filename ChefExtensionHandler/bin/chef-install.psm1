@@ -17,7 +17,7 @@ $scriptDir = Chef-GetScriptDirectory
 function Install-AzureChefExtensionGem($chefExtensionRoot) {
   # Install the custom gem
   Write-Host("[$(Get-Date)] Installing Azure-Chef-Extension gem")
-  gem install "$chefExtensionRoot\\gems\\*.gem" --no-ri --no-rdoc
+  gem install "$chefExtensionRoot\\gems\\*.gem" --no-document
   Write-Host("[$(Get-Date)] Installed Azure-Chef-Extension gem successfully")
 }
 
