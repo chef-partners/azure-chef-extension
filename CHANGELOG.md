@@ -1,6 +1,12 @@
 # azure-chef-extension Change Log
 
-## Latest Release: 1210.13.2.1 (2019/08/23)
+## Latest Release: 1210.13.2.2 (2019/11/26)
+* [azure-chef-extension #284](https://github.com/chef-partners/azure-chef-extension/pull/284) Remove --no-ri and --no-rdoc options from chef-install.sh.
+* [azure-chef-extension #281](https://github.com/chef-partners/azure-chef-extension/pull/281) Add compatible python path for Rhel8.
+* [azure-chef-extension #279](https://github.com/chef-partners/azure-chef-extension/pull/279) Fix null-valued expression error.
+* [azure-chef-extension #278](https://github.com/chef-partners/azure-chef-extension/pull/278) Set path in cron for chef client environment.
+
+## Release: 1210.13.2.1 (2019/08/23)
 * [azure-chef-extension #274](https://github.com/chef-partners/azure-chef-extension/pull/274) Added `chef_package_path` option to allow custom path of downloaded chef client.
 * [azure-chef-extension #266](https://github.com/chef-partners/azure-chef-extension/pull/266) Fixes failing specs in recent merge which has wrong check of error code.
 
