@@ -262,7 +262,11 @@ class EnableChef
     begin
       current_dir = File.expand_path(File.dirname(File.dirname(__FILE__)))
       first_client_run_recipe_path = windows? ? "#{current_dir}\\first_client_run_recipe.rb" : "#{current_dir}/first_client_run_recipe.rb"
-      command = "chef-client #{first_client_run_recipe_path} -j #{bootstrap_directory}/first-boot.json -c #{bootstrap_directory}/client.rb -L #{@azure_plugin_log_location}/chef-client.log --once"
+      if !config[:first_boot_attributes]["policy_name"].nil? and !config[:first_boot_attributes]["policy_group"].nil?
+        command = "chef-client -j #{bootstrap_directory}/first-boot.json -c #{bootstrap_directory}/client.rb -L #{@azure_plugin_log_location}/chef-client.log --once"
+      else
+        command = "chef-client #{first_client_run_recipe_path} -j #{bootstrap_directory}/first-boot.json -c #{bootstrap_directory}/client.rb -L #{@azure_plugin_log_location}/chef-client.log --once"
+      end
       command += " -E #{config[:environment]}" if config[:environment]
       result = shell_out(command)
       result.error!
