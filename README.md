@@ -70,7 +70,7 @@ It is an ordered list of roles and/or recipes that are run in the exact order de
 
 `chef_daemon_interval`: Specifies the frequency (in minutes) at which the `chef-client` runs as `service` or as `scheduled task`. If in case you don't want the `chef-service` or `scheduled task` to be installed on the Azure VM then set value as `0` in this field. At any time you can change the interval value using the `Set-AzureVMExtension` command with the new interval passed in the `publicconfig.config` file (pass `0` if you want to delete the already installed chef-service on the Azure VM). Default value is `30` minutes.
 
-`custom_json_attr`: Specifies a JSON string to be added to the first run of chef-client.
+`custom_json_attr`: Specifies a JSON string to be added to the first run of chef-client. For e.g we can pass `policy_name` and `policy_group`in key-value pairs format. Refer to [Genrate Policyfile] (https://docs.chef.io/policyfile.html)
 
 `bootstrap_options`: Set bootstrap options while adding chef extension to Azure VM. Bootstrap options used by Chef-Client during node converge. It overrides the configuration set in client_rb option. for e.g. node_name option i.e. if you set node_name as "foo" in the client_rb and in bootstrap_option you set chef_node_name as "bar" it will take "bar" as node name instead of "foo".
 
@@ -95,7 +95,8 @@ publicconfig.config example:
   "daemon": "none",
   "chef_package_path" : "C:\\Users\\azure\\chef-client-14.12.9-1-x64.msi",
   "custom_json_attr": {
-    "container_service": { "chef-init-test": { "command": "C:\\opscode\\chef\\bin" } }
+    "container_service": { "chef-init-test": { "command": "C:\\opscode\\chef\\bin" } },
+    "custom_json_attr": { "policy_group": "azuregrp", "policy_name": "azurepolicy" }
   },
   "bootstrap_options": {
     "chef_node_name":"mynode3",
