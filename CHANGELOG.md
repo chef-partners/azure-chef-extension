@@ -1,6 +1,9 @@
 # azure-chef-extension Change Log
 
-## Latest Release: 1210.13.2.2 (2019/11/26)
+## Latest Release: 1210.13.2.3 (2020/02/13)
+* [azure-chef-extension #287](https://github.com/chef-partners/azure-chef-extension/pull/287) Fix empty runlist issue while passing policy_name and policy_group.
+
+## Release: 1210.13.2.2 (2019/11/26)
 * [azure-chef-extension #284](https://github.com/chef-partners/azure-chef-extension/pull/284) Remove --no-ri and --no-rdoc options from chef-install.sh.
 * [azure-chef-extension #281](https://github.com/chef-partners/azure-chef-extension/pull/281) Add compatible python path for Rhel8.
 * [azure-chef-extension #279](https://github.com/chef-partners/azure-chef-extension/pull/279) Fix null-valued expression error.
