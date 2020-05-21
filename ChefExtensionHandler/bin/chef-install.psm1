@@ -59,7 +59,8 @@ function Install-ChefClient {
       $chef_licence_value = Get-PublicSettings-From-Config-Json "CHEF_LICENSE" $powershellVersion
       if ( $chef_licence_value )
       {
-        Chef-SetCustomEnvVariables @{CHEF_LICENSE=$chef_licence_value} $powershellVersion
+        $chef_licence_env = New-Object -TypeName System.Management.Automation.PSObject -Property @{CHEF_LICENSE=$chef_licence_value}
+        Chef-SetCustomEnvVariables $chef_licence_env $powershellVersion
         Write-Host "Set CHEF_LICENSE Environment variable as" $env:CHEF_LICENSE
       }
       ## Get locally downloaded msi path string from config file.
