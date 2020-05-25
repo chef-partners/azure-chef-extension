@@ -85,6 +85,14 @@ get_config_settings_file() {
   echo $config_file_name
 }
 
+get_value_from_setting_file() {
+  chef_value=""
+  if cat $1 2>/dev/null | grep -q $2; then
+    chef_value=`sed ':a;N;$!ba;s/\n//g' $1 | sed 's/.*'"${2}"'" *: *" *\(.*\)/\1/' 2>/dev/null | awk -F\" '{ print $1 }' | sed 's/[ \t]*$//'`
+  fi
+  echo $chef_value
+}
+
 get_file_path_to_parse_env_variables(){
   path_to_parse_env_variables="$1/bin/parse_env_variables.py"
   echo $path_to_parse_env_variables
@@ -104,10 +112,17 @@ read_environment_variables(){
   config_file_name=$(get_config_settings_file $1)
   path_to_parse_env_variables=$(get_file_path_to_parse_env_variables $1)
 
+  echo "Reading chef licence value from settings file"
+  chef_licence_value=$(get_value_from_setting_file $config_file_name "CHEF_LICENSE" &)
+
   if [ -z "$config_file_name" ]; then
     echo "Configuration error. Azure chef extension's config/settings file missing."
     exit 1
   else
+    if [ ! -z "$chef_licence_value" ]; then
+      eval "export CHEF_LICENSE=$chef_licence_value;"
+      echo "Set CHEF_LICENSE Environment variable as $CHEF_LICENSE"
+    fi
     if cat $config_file_name 2>/dev/null | grep -q "environment_variables"; then
       export_env_vars $config_file_name
       echo "[$(date)] Environment variables read operation completed"
