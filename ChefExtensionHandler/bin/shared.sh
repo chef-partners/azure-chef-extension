@@ -85,6 +85,7 @@ get_config_settings_file() {
   echo $config_file_name
 }
 
+# Get values from 0.settings file
 get_value_from_setting_file() {
   chef_value=""
   if cat $1 2>/dev/null | grep -q $2; then
@@ -93,20 +94,25 @@ get_value_from_setting_file() {
   echo $chef_value
 }
 
+# Get file path of parse_env_variables.py file
 get_file_path_to_parse_env_variables(){
   path_to_parse_env_variables="$1/bin/parse_env_variables.py"
   echo $path_to_parse_env_variables
 }
 
+# Execute parse_env_variables.py file to fetch values of `environment_variables` from 0.setting files
 export_env_vars() {
   if ( python -mplatform || /usr/libexec/platform-python -mplatform ) | grep "redhat-8" > /dev/null; then
     commands="`/usr/libexec/platform-python $path_to_parse_env_variables \"$1\"`"
   else
     commands="`python $path_to_parse_env_variables \"$1\"`"
   fi
+  # $commands will echo the key values under `environment_variables` which will be eval later
+  # eg : eval export abc="xyz";
   eval $commands
 }
 
+# To set environment variable to new shell
 read_environment_variables(){
   echo "[$(date)] Reading environment variables"
   config_file_name=$(get_config_settings_file $1)
