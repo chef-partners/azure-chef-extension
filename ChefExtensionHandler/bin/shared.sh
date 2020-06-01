@@ -85,29 +85,50 @@ get_config_settings_file() {
   echo $config_file_name
 }
 
+# Get values from 0.settings file
+get_value_from_setting_file() {
+  chef_value=""
+  if cat $1 2>/dev/null | grep -q $2; then
+    chef_value=`sed ':a;N;$!ba;s/\n//g' $1 | sed 's/.*'"${2}"'" *: *" *\(.*\)/\1/' 2>/dev/null | awk -F\" '{ print $1 }' | sed 's/[ \t]*$//'`
+  fi
+  echo $chef_value
+}
+
+# Get file path of parse_env_variables.py file
 get_file_path_to_parse_env_variables(){
   path_to_parse_env_variables="$1/bin/parse_env_variables.py"
   echo $path_to_parse_env_variables
 }
 
+# Execute parse_env_variables.py file to fetch values of `environment_variables` from 0.setting files
 export_env_vars() {
   if ( python -mplatform || /usr/libexec/platform-python -mplatform ) | grep "redhat-8" > /dev/null; then
     commands="`/usr/libexec/platform-python $path_to_parse_env_variables \"$1\"`"
   else
     commands="`python $path_to_parse_env_variables \"$1\"`"
   fi
+  # $commands will echo the key values under `environment_variables` which will be eval later
+  # eg : eval export abc="xyz";
   eval $commands
 }
 
+# To set environment variable to new shell
 read_environment_variables(){
   echo "[$(date)] Reading environment variables"
   config_file_name=$(get_config_settings_file $1)
   path_to_parse_env_variables=$(get_file_path_to_parse_env_variables $1)
 
+  echo "Reading chef licence value from settings file"
+  chef_licence_value=$(get_value_from_setting_file $config_file_name "CHEF_LICENSE" &)
+
   if [ -z "$config_file_name" ]; then
     echo "Configuration error. Azure chef extension's config/settings file missing."
     exit 1
   else
+    if [ ! -z "$chef_licence_value" ]; then
+      eval "export CHEF_LICENSE=$chef_licence_value;"
+      echo "Set CHEF_LICENSE Environment variable as $CHEF_LICENSE"
+    fi
     if cat $config_file_name 2>/dev/null | grep -q "environment_variables"; then
       export_env_vars $config_file_name
       echo "[$(date)] Environment variables read operation completed"

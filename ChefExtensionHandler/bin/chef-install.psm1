@@ -55,6 +55,14 @@ function Install-ChefClient {
     Try {
       ## Get chef_pkg by matching "chef client" string with $_.Name
       $chef_pkg = Get-ChefPackage
+      ## Get chef_licence value from config file.
+      $chef_licence_value = Get-PublicSettings-From-Config-Json "CHEF_LICENSE" $powershellVersion
+      if ( $chef_licence_value )
+      {
+        $chef_licence_env = New-Object -TypeName System.Management.Automation.PSObject -Property @{CHEF_LICENSE=$chef_licence_value}
+        Chef-SetCustomEnvVariables $chef_licence_env $powershellVersion
+        Write-Host "Set CHEF_LICENSE Environment variable as" $env:CHEF_LICENSE
+      }
       ## Get locally downloaded msi path string from config file.
       $chef_downloaded_package = Get-PublicSettings-From-Config-Json "chef_package_path" $powershellVersion
       $daemon = Get-PublicSettings-From-Config-Json "daemon"  $powershellVersion
@@ -69,7 +77,7 @@ function Install-ChefClient {
         $chef_package_channel = Get-PublicSettings-From-Config-Json "bootstrap_channel" $powershellVersion
 
         if (-Not $chef_package_version) {
-          $chef_package_version = "14" # Until Chef-15 is Verified
+          $chef_package_version = "15" # Until Chef-16 is Verified
         }
         if (-Not $chef_package_channel) {
           $chef_package_channel = "stable"

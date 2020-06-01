@@ -41,14 +41,6 @@ curl_check(){
   fi
 }
 
-get_value_from_setting_file() {
-  chef_value=""
-  if cat $1 2>/dev/null | grep -q $2; then
-    chef_value=`sed ':a;N;$!ba;s/\n//g' $1 | sed 's/.*'"${2}"'" *: *" *\(.*\)/\1/' 2>/dev/null | awk -F\" '{ print $1 }' | sed 's/[ \t]*$//'`
-  fi
-  echo $chef_value
-}
-
 chef_install_from_script(){
     echo "Fetching settings file"
     config_file_name=$(get_config_settings_file $chef_extension_root)
@@ -75,8 +67,8 @@ chef_install_from_script(){
       curl -L -o /tmp/$platform-install.sh https://omnitruck.chef.io/install.sh
       echo "Install.sh script downloaded at /tmp/$platform-install.sh"
       if [ -z "$chef_version" ] && [ -z "$chef_channel" ]; then
-        echo "Installing latest chef-14 client"
-        sh /tmp/$platform-install.sh -v "14" # Until Chef-15 is Verified
+        echo "Installing latest chef-15 client"
+        sh /tmp/$platform-install.sh -v "15" # Until Chef-16 is Verified
       elif [ ! -z "$chef_version" ] && [ -z "$chef_channel" ]; then
         echo "Installing chef client version $chef_version"
         sh /tmp/$platform-install.sh -v $chef_version
