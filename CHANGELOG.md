@@ -1,7 +1,8 @@
 # azure-chef-extension Change Log
 
 ## Latest Release: 1210.13.3.1 (2020/06/04)
-* [azure-chef-extension #293](https://github.com/chef-partners/azure-chef-extension/pull/293) Support azure chef extension to chef-15.
+* [azure-chef-extension #293](https://github.com/chef-partners/azure-chef-extension/pull/293) Support azure chef extension to chef-15. For this added `CHEF_LICENSE` option 
+which can be pass as [license acceptance](https://github.com/chef-partners/azure-chef-extension#arm-commands-for-azure-chef-extension)
 
 ## Release: 1210.13.2.3 (2020/02/13)
 * [azure-chef-extension #287](https://github.com/chef-partners/azure-chef-extension/pull/287) Fix empty runlist issue while passing policy_name and policy_group.
