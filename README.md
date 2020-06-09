@@ -52,7 +52,7 @@ The extension is tested against the offical Microsoft images on Azure listed bel
   }
 }
 ```
-`client_rb`: Set this option to specify additional configuration details for the chef-client. Additions are appended to the top of the client.rb file.  Refer to [client.rb] (https://docs.chef.io/config_rb_client.html)
+`client_rb`: Set this option to specify additional configuration details for the chef-client. Additions are appended to the top of the client.rb file.  Refer to [client.rb](https://docs.chef.io/config_rb_client.html)
 
 `run_list`: A run-list defines all of the information necessary for Chef to configure a node into the desired state.
 It is an ordered list of roles and/or recipes that are run in the exact order defined in the run-list.
@@ -70,7 +70,7 @@ It is an ordered list of roles and/or recipes that are run in the exact order de
 
 `chef_daemon_interval`: Specifies the frequency (in minutes) at which the `chef-client` runs as `service` or as `scheduled task`. If in case you don't want the `chef-service` or `scheduled task` to be installed on the Azure VM then set value as `0` in this field. At any time you can change the interval value using the `Set-AzureVMExtension` command with the new interval passed in the `publicconfig.config` file (pass `0` if you want to delete the already installed chef-service on the Azure VM). Default value is `30` minutes.
 
-`custom_json_attr`: Specifies a JSON string to be added to the first run of chef-client. For e.g we can pass `policy_name` and `policy_group`in key-value pairs format. Refer to [Genrate Policyfile] (https://docs.chef.io/policyfile.html)
+`custom_json_attr`: Specifies a JSON string to be added to the first run of chef-client. For e.g we can pass `policy_name` and `policy_group`in key-value pairs format. Refer to [Genrate Policyfile](https://docs.chef.io/policyfile.html)
 
 `bootstrap_options`: Set bootstrap options while adding chef extension to Azure VM. Bootstrap options used by Chef-Client during node converge. It overrides the configuration set in client_rb option. for e.g. node_name option i.e. if you set node_name as "foo" in the client_rb and in bootstrap_option you set chef_node_name as "bar" it will take "bar" as node name instead of "foo".
 
@@ -164,7 +164,7 @@ Update-AzureVM -VM $vmOb.VM -Name "<vm-name>" -ServiceName "<cloud-service-name>
   - `environment_variables`: Specifies the list of environment variables (like the environment variables for proxy server configuration) to be available to the Chef Extension scripts.
   - `bootstrap_channel`: Specify the channel for installing chef client version from `stable`, `current` or `unstable` release channel.
   - `chef_package_path`: chef_package_path allows installing chef-client from local path. We provided this option so that user is able to install chef-client from the local path. This feature mainly added where there is restrictions on internet access. But also note azure extensions itself has limitations in respect of network access please refer to this [link](https://docs.microsoft.com/en-us/azure/virtual-machines/extensions/features-linux#network-access) which explains this in details.
-  - `CHEF_LICENSE`: Affected product versions which require accepting the CHEF EULA license (requires chef 15 + ). Set `CHEF_LICENSE` with either of these values `accept`, `accept-silent` or `accept-no-persist`. Refer to [CHEF EULA license] (https://docs.chef.io/chef_license_accept/#accept-the-chef-eula)
+  - `CHEF_LICENSE`: Affected product versions which require accepting the CHEF EULA license (requires chef 15 + ). Set `CHEF_LICENSE` with either of these values `accept`, `accept-silent` or `accept-no-persist`. Refer to [CHEF EULA license](https://docs.chef.io/chef_license_accept/#accept-the-chef-eula)
   - `hints`: Specifies the Ohai Hints to be set in the Ohai configuration of the target node.
 
   ***Note***: Set these options under `properties` --> `settings` section of the `Microsoft.Compute/virtualMachines/extensions` resource type as shown in the below example:
