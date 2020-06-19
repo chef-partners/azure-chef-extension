@@ -118,9 +118,9 @@ publicconfig.config example:
 #### Following are the References to doc for different Azure command line tools
 
 1. [Azure portal](https://docs.chef.io/azure_portal.html)
-2. [Azure Powershell cmdlets](examples/azure-powershell-examples.md)
-3. [Azure Xplat CLI](examples/azure-xplat-cli-examples.md)
-4. [Knife Azure Plugin](examples/knife-azure-plugin-examples.md)
+2. [Azure Powershell cmdlets](https://docs.chef.io/azure_powershell/)
+3. [Azure Xplat CLI](https://docs.chef.io/azure_chef_cli/)
+4. [Knife Azure Plugin](https://docs.chef.io/workstation/knife_azure/)
 
 #### Powershell script to try Azure Chef Extension by using Set-AzureVMExtension cmdlet:
 
