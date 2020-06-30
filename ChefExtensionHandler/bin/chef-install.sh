@@ -54,6 +54,8 @@ chef_install_from_script(){
     chef_channel=$(get_value_from_setting_file $config_file_name "bootstrap_channel" &)
     echo "Reading downloaded chef-client path from settings file"
     chef_downloaded_package=$(get_value_from_setting_file $config_file_name "chef_package_path" &)
+    echo "Reading chef package url from settings file"
+    chef_package_url=$(get_value_from_setting_file $config_file_name "chef_package_url" &)
     echo "Call for Checking linux distributor"
     platform=$(get_linux_distributor)
     #check if chef-client is already installed
@@ -62,7 +64,7 @@ chef_install_from_script(){
     elif [ "$platform" = "centos" -o "$platform" = "rhel" -o "$platform" = "linuxoracle" ]; then
       yum list installed | grep -w "chef"
     fi
-    if [ $? -ne 0 ] && [ -z "$chef_downloaded_package" ]; then
+    if [ $? -ne 0 ] && [ -z "$chef_downloaded_package" ] && [ -z "$chef_package_url" ]; then
       curl_check $platform
       curl -L -o /tmp/$platform-install.sh https://omnitruck.chef.io/install.sh
       echo "Install.sh script downloaded at /tmp/$platform-install.sh"
@@ -86,6 +88,15 @@ chef_install_from_script(){
       filename=`echo $chef_downloaded_package | sed -e 's/^.*\///'`
       filetype=`echo $filename | sed -e 's/^.*\.//'`
       install_file $filetype "$chef_downloaded_package"
+    elif [ $? -ne 0 ] && [ ! -z "$chef_package_url" ]; then
+      echo "Downloading chef client package from $chef_package_url"
+      filetype=`echo $chef_package_url | sed -e 's/^.*\.//'`
+      chef_downloaded_package="/tmp/chef-client.$filetype"
+      curl_check $platform
+      curl -L -o $chef_downloaded_package $chef_package_url
+      echo "Installing chef client from path $chef_downloaded_package"
+      install_file $filetype "$chef_downloaded_package"
+      rm $chef_downloaded_package -f
     else
       echo "Chef-client is already installed"
     fi
