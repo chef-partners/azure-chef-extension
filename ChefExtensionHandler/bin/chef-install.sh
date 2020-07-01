@@ -89,14 +89,19 @@ chef_install_from_script(){
       filetype=`echo $filename | sed -e 's/^.*\.//'`
       install_file $filetype "$chef_downloaded_package"
     elif [ $? -ne 0 ] && [ ! -z "$chef_package_url" ]; then
-      echo "Downloading chef client package from $chef_package_url"
-      filetype=`echo $chef_package_url | sed -e 's/^.*\.//'`
-      chef_downloaded_package="/tmp/chef-client.$filetype"
-      curl_check $platform
-      curl -L -o $chef_downloaded_package $chef_package_url
-      echo "Installing chef client from path $chef_downloaded_package"
-      install_file $filetype "$chef_downloaded_package"
-      rm $chef_downloaded_package -f
+      echo "Checking url $chef_package_url"
+      url_check="$(curl -Is $chef_package_url | head -1 | grep 404)"
+      if [ -z $(echo $url_check | xargs) ]; then
+        echo "Downloading chef client package from $chef_package_url"
+        filetype=`echo $chef_package_url | sed -e 's/^.*\.//'`
+        chef_downloaded_package="/tmp/chef-client.$filetype"
+        curl_check $platform
+        curl -L -o $chef_downloaded_package $chef_package_url
+        echo "Installing chef client from path $chef_downloaded_package"
+        install_file $filetype "$chef_downloaded_package"
+      else
+        echo "ERROR: 404 'Url $chef_package_url not found'"
+      fi
     else
       echo "Chef-client is already installed"
     fi
