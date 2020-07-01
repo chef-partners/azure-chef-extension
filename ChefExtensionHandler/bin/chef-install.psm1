@@ -75,6 +75,7 @@ function Install-ChefClient {
         $daemon = "service"
       }
       if (-Not $chef_pkg -and -Not $chef_downloaded_package -and -Not $chef_package_url) {
+        echo "Downloading Chef Client ..."
         $chef_package_version = Get-PublicSettings-From-Config-Json "bootstrap_version" $powershellVersion
         $chef_package_channel = Get-PublicSettings-From-Config-Json "bootstrap_channel" $powershellVersion
 
@@ -89,10 +90,12 @@ function Install-ChefClient {
       } elseif ( -Not $chef_pkg -and $chef_downloaded_package ) {
         Install-ChefMsi $chef_downloaded_package $daemon
       } elseif ( -Not $chef_pkg -and $chef_package_url ) {
+        # Saving .msi in TEMP folder with pattern accepted by `Invoke-WebRequest`
         $chef_downloaded_package = "$env:TEMP\chef-client.msi"
+        echo "Downloading chef client package from $chef_package_url"
         Invoke-WebRequest -Uri $chef_package_url -OutFile $chef_downloaded_package
+        echo "Installing chef client from path $chef_downloaded_package"
         Install-ChefMsi $chef_downloaded_package $daemon
-        Remove-Item $chef_downloaded_package -force
       }
       $completed = $true
     }
