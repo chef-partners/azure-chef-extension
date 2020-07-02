@@ -51,7 +51,7 @@ function Install-ChefClient {
   $completed = $false
 
   while (-not $completed) {
-    echo "Downloading Chef Client ..."
+    echo "Checking Chef Client ..."
     Try {
       ## Get chef_pkg by matching "chef client" string with $_.Name
       $chef_pkg = Get-ChefPackage
@@ -63,6 +63,8 @@ function Install-ChefClient {
         Chef-SetCustomEnvVariables $chef_licence_env $powershellVersion
         Write-Host "Set CHEF_LICENSE Environment variable as" $env:CHEF_LICENSE
       }
+      ## Get msi url from config file.
+      $chef_package_url = Get-PublicSettings-From-Config-Json "chef_package_url" $powershellVersion
       ## Get locally downloaded msi path string from config file.
       $chef_downloaded_package = Get-PublicSettings-From-Config-Json "chef_package_path" $powershellVersion
       $daemon = Get-PublicSettings-From-Config-Json "daemon"  $powershellVersion
@@ -72,7 +74,8 @@ function Install-ChefClient {
       if (-Not $daemon) {
         $daemon = "service"
       }
-      if (-Not $chef_pkg -and -Not $chef_downloaded_package ) {
+      if (-Not $chef_pkg -and -Not $chef_downloaded_package -and -Not $chef_package_url) {
+        echo "Downloading Chef Client ..."
         $chef_package_version = Get-PublicSettings-From-Config-Json "bootstrap_version" $powershellVersion
         $chef_package_channel = Get-PublicSettings-From-Config-Json "bootstrap_channel" $powershellVersion
 
@@ -85,6 +88,13 @@ function Install-ChefClient {
 
         iex (new-object net.webclient).downloadstring('https://omnitruck.chef.io/install.ps1');install -daemon $daemon -version $chef_package_version -channel $chef_package_channel
       } elseif ( -Not $chef_pkg -and $chef_downloaded_package ) {
+        Install-ChefMsi $chef_downloaded_package $daemon
+      } elseif ( -Not $chef_pkg -and $chef_package_url ) {
+        # Saving .msi in TEMP folder with pattern accepted by `Invoke-WebRequest`
+        $chef_downloaded_package = "$env:TEMP\chef-client.msi"
+        echo "Downloading chef client package from $chef_package_url"
+        Invoke-WebRequest -Uri $chef_package_url -OutFile $chef_downloaded_package
+        echo "Installing chef client from path $chef_downloaded_package"
         Install-ChefMsi $chef_downloaded_package $daemon
       }
       $completed = $true
