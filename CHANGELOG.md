@@ -1,6 +1,9 @@
 # azure-chef-extension Change Log
 
-## Latest Release: 1210.13.3.1 (2020/06/04)
+## Latest Release: 1210.13.3.2 (2020/07/03)
+* [azure-chef-extension #300](https://github.com/chef-partners/azure-chef-extension/pull/300) Added a new parameter called `chef_package_url` which specifies a url to download Chef Infra Client package (.msi .rpm .deb) and subsequently install.
+
+## Release: 1210.13.3.1 (2020/06/04)
 * [azure-chef-extension #293](https://github.com/chef-partners/azure-chef-extension/pull/293) Support azure chef extension to chef-15. For this added `CHEF_LICENSE` option 
 which can be pass as [license acceptance](https://github.com/chef-partners/azure-chef-extension#arm-commands-for-azure-chef-extension)
 
