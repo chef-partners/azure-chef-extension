@@ -166,6 +166,9 @@ Update-AzureVM -VM $vmOb.VM -Name "<vm-name>" -ServiceName "<cloud-service-name>
   - `chef_package_path`: chef_package_path allows installing chef-client from local path. We provided this option so that user is able to install chef-client from the local path. This feature mainly added where there is restrictions on internet access. But also note azure extensions itself has limitations in respect of network access please refer to this [link](https://docs.microsoft.com/en-us/azure/virtual-machines/extensions/features-linux#network-access) which explains this in details.
   - `CHEF_LICENSE`: Affected product versions which require accepting the CHEF EULA license (requires chef 15 + ). Set `CHEF_LICENSE` with either of these values `accept`, `accept-silent` or `accept-no-persist`. Refer to [CHEF EULA license](https://docs.chef.io/chef_license_accept/#accept-the-chef-eula)
   - `hints`: Specifies the Ohai Hints to be set in the Ohai configuration of the target node.
+  - `chef_package_url`: Specifies a url to download Chef Infra Client package (.msi .rpm .deb) and subsequently install.
+  Example:
+    ` "chef_package_url" : "https://packages.chef.io/files/stable/chef/15.11.8/windows/10/chef-client-15.11.8-1-x64.msi" `
 
   ***Note***: Set these options under `properties` --> `settings` section of the `Microsoft.Compute/virtualMachines/extensions` resource type as shown in the below example:
 
