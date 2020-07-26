@@ -50,6 +50,9 @@ function Install-ChefClient {
   $retrycount = 0
   $completed = $false
 
+  # Disable progress bar for massive speedup on Invoke-WebRequest (particularly with Azure Blob Stores)
+  $ProgressPreference = 'SilentlyContinue'
+
   while (-not $completed) {
     echo "Checking Chef Client ..."
     Try {
