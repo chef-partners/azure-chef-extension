@@ -17,7 +17,7 @@ read_environment_variables $chef_extension_root
 # install azure chef extension gem
 install_chef_extension_gem(){
  echo "[$(date)] Installing Azure Chef Extension gem"
- gem install "$1" --no-document
+ gem install "$1" --local --no-document
 
   if test $? -ne 0; then
     echo "[$(date)] Azure Chef Extension gem installation failed"
