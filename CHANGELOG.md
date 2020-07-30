@@ -1,6 +1,10 @@
 # azure-chef-extension Change Log
 
-## Latest Release: 1210.13.3.2 (2020/07/03)
+## Latest Release: 1210.13.3.3 (2020/07/30)
+* [azure-chef-extension #304](https://github.com/chef-partners/azure-chef-extension/pull/304) Fix for #303: enable times out with chef_package_url param
+* [azure-chef-extension #306](https://github.com/chef-partners/azure-chef-extension/pull/306) Fix for #305: Install fails on Linux when proxy does SSL int.
+
+## Release: 1210.13.3.2 (2020/07/03)
 * [azure-chef-extension #300](https://github.com/chef-partners/azure-chef-extension/pull/300) Added a new parameter called `chef_package_url` which specifies a url to download Chef Infra Client package (.msi .rpm .deb) and subsequently install.
 
 ## Release: 1210.13.3.1 (2020/06/04)
