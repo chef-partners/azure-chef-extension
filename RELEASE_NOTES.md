@@ -9,7 +9,8 @@ Details about the thing that changed that needs to get included in the Release N
 
 # azure-chef-extension 1210.13.3.2 release notes:
 In this release, we have fixed below bug:
-* [azure-chef-extension #297](https://github.com/chef-partners/azure-chef-extension/issues/297) Feature Request: Download Chef from URL in air gapped environments
+* [azure-chef-extension #303](https://github.com/chef-partners/azure-chef-extension/issues/303) Install/Enable fails when using chef_package_url.
+* [azure-chef-extension #305](https://github.com/chef-partners/azure-chef-extension/issues/305) Install fails on Linux and Windows when proxy does SSL intercept
 
 See the [CHANGELOG](https://github.com/chef-partners/azure-chef-extension/blob/master/CHANGELOG.md) for a list of all changes in this release, and review.
 
