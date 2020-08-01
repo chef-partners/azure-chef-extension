@@ -9,6 +9,13 @@ class Chef
       #
       class BootstrapContext
 
+        # TODO Fix this little workaround which is needed because knife_config was renamed to chef_config in Chef Client 16+
+        # Fixes #298. Once ChefClient 15 goes EOS, we can just replace all references to knife_config with chef_config.
+        unless instance_methods.include? :knife_config
+          alias_method :knife_config, :chef_config
+        end
+
+
         def validation_key
           @chef_config[:validation_key_content]
         end
