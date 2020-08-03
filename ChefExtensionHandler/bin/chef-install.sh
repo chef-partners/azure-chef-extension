@@ -69,8 +69,8 @@ chef_install_from_script(){
       curl -L -o /tmp/$platform-install.sh https://omnitruck.chef.io/install.sh
       echo "Install.sh script downloaded at /tmp/$platform-install.sh"
       if [ -z "$chef_version" ] && [ -z "$chef_channel" ]; then
-        echo "Installing latest chef-15 client"
-        sh /tmp/$platform-install.sh -v "15" # Until Chef-16 is Verified
+        echo "Installing latest chef client"
+        sh /tmp/$platform-install.sh
       elif [ ! -z "$chef_version" ] && [ -z "$chef_channel" ]; then
         echo "Installing chef client version $chef_version"
         sh /tmp/$platform-install.sh -v $chef_version
