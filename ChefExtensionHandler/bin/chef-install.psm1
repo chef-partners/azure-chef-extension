@@ -83,7 +83,7 @@ function Install-ChefClient {
         $chef_package_channel = Get-PublicSettings-From-Config-Json "bootstrap_channel" $powershellVersion
 
         if (-Not $chef_package_version) {
-          $chef_package_version = "15" # Until Chef-16 is Verified
+          $chef_package_version = "latest"
         }
         if (-Not $chef_package_channel) {
           $chef_package_channel = "stable"
