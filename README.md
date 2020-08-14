@@ -97,7 +97,8 @@ publicconfig.config example:
   "CHEF_LICENSE" : "accept-no-persist",
   "custom_json_attr": {
     "container_service": { "chef-init-test": { "command": "C:\\opscode\\chef\\bin" } },
-    "custom_json_attr": { "policy_group": "azuregrp", "policy_name": "azurepolicy" }
+    "policy_group": "azuregrp",
+    "policy_name": "azurepolicy"
   },
   "bootstrap_options": {
     "chef_node_name":"mynode3",
