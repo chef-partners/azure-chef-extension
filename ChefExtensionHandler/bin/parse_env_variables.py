@@ -6,4 +6,4 @@ data = data['runtimeSettings'][0]['handlerSettings']['publicSettings']['environm
 commands=""
 for key, value in data.items():
     commands=commands+'export '+key+'="'+value+'";'
-print commands
+print(commands)
