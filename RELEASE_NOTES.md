@@ -7,10 +7,10 @@ Example Note:
 Details about the thing that changed that needs to get included in the Release Notes in markdown.
 -->
 
-# azure-chef-extension 1210.13.3.2 release notes:
+# azure-chef-extension 1210.13.4.1 release notes:
 In this release, we have fixed below bug:
-* [azure-chef-extension #303](https://github.com/chef-partners/azure-chef-extension/issues/303) Install/Enable fails when using chef_package_url.
-* [azure-chef-extension #305](https://github.com/chef-partners/azure-chef-extension/issues/305) Install fails on Linux and Windows when proxy does SSL intercept
+* [azure-chef-extension #298](https://github.com/chef-partners/azure-chef-extension/issues/298) Remove pinned of chef 15 to latest chef-client.
+* [azure-chef-extension #319](https://github.com/chef-partners/azure-chef-extension/issues/319) Getting python syntax error for Redhat 8 for Environment variable option.
 
 See the [CHANGELOG](https://github.com/chef-partners/azure-chef-extension/blob/master/CHANGELOG.md) for a list of all changes in this release, and review.
 

@@ -1,6 +1,11 @@
 # azure-chef-extension Change Log
 
-## Latest Release: 1210.13.3.3 (2020/07/30)
+## Latest Release: 1210.13.4.1 (2020/08/19)
+* [azure-chef-extension #320](https://github.com/chef-partners/azure-chef-extension/pull/320) Fix python syntax error found while testing Redhat 8 for environment variable and Updated example of custom_json_attr.
+* [azure-chef-extension #309](https://github.com/chef-partners/azure-chef-extension/pull/309) Unpin Chef 15 and pin to latest chef version.
+* [azure-chef-extension #308](https://github.com/chef-partners/azure-chef-extension/pull/308) Add support for Chef Client 16.
+
+## Release: 1210.13.3.3 (2020/07/30)
 * [azure-chef-extension #304](https://github.com/chef-partners/azure-chef-extension/pull/304) Fix for #303: enable times out with chef_package_url param
 * [azure-chef-extension #306](https://github.com/chef-partners/azure-chef-extension/pull/306) Fix for #305: Install fails on Linux when proxy does SSL int.
 
