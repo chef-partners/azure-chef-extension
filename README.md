@@ -12,7 +12,7 @@ Azure resource extension to enable Chef on Azure virtual machine instances.
 
 | Platform | Version      |
 |----------|--------------|
-| Ubuntu   | 12.04, 14+   |
+| Ubuntu   | 16+          |
 | Windows  | 2008r2 +     |
 | Centos   | 6.5+         |
 | RHEL     | 6+           |
@@ -148,7 +148,7 @@ New-AzureVM -Location 'West US' -ServiceName $svc -VM $vObj1
 
 #### Updating Extension manually
 
-1. Suppose you have a VM with extension version 1205 .12
+1. Suppose you have a VM with extension version 1205.12
 2. `$vmm = Get-AzureVM -Name "<vm-name>" -ServiceName "<cloud-service-name>"`
 3. Update to latest version- Ex- 1206.12
 ```
