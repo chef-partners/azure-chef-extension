@@ -20,13 +20,13 @@ get_linux_distributor(){
 # TYPE is "rpm", "deb", "solaris", "sh", etc.
 install_file() {
   package_name=$2
-  echo "Installing package $file_name"
+  echo "Installing package $package_name"
   package_type=$1
   case "$package_type" in
     "rpm")
       if test "x$platform" = "xnexus" || test "x$platform" = "xios_xr"; then
         echo "installing with yum..."
-        yum install -yv "$file_name"
+        yum install -yv "$package_name"
       else
         echo "installing with rpm..."
         rpm -Uvh --oldpackage --replacepkgs "$package_name"
