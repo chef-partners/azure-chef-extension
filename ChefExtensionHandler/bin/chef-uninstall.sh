@@ -31,7 +31,8 @@ else
   if test "$azure_chef_extn_gem" = "azure-chef-extension" ; then
     echo "[$(date)] Removing azure-chef-extension gem."
     gem uninstall azure-chef-extension
-    if [ $? -ne 0 ]; then
+    azure_chef_extension_gem_status=$?
+    if [ $azure_chef_extension_gem_status -ne 0 ]; then
       echo "[$(date)] Unable to uninstall gem azure-chef-extension."
     else
       echo "[$(date)] Uninstalled azure-chef-extension gem successfully."
