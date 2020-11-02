@@ -100,18 +100,18 @@ get_value_from_setting_file() {
 
 # Get file path of parse_env_variables.py file
 get_file_path_to_parse_env_variables(){
-  azure_chef_extension_path=$1
-  path_to_parse_env_variables="$azure_chef_extension_path/bin/parse_env_variables.py"
+  chef_extension_directory_path=$1
+  path_to_parse_env_variables="$chef_extension_directory_path/bin/parse_env_variables.py"
   echo $path_to_parse_env_variables
 }
 
 # Execute parse_env_variables.py file to fetch values of `environment_variables` from 0.setting files
 export_env_vars() {
-  config_0settings_path=$1
+  config_file_name=$1
   if ( python -mplatform || /usr/libexec/platform-python -mplatform ) | grep "redhat-8" > /dev/null; then
-    commands="`/usr/libexec/platform-python $path_to_parse_env_variables \"$config_0settings_path\"`"
+    commands="`/usr/libexec/platform-python $path_to_parse_env_variables \"$config_file_name\"`"
   else
-    commands="`python $path_to_parse_env_variables \"$config_0settings_path\"`"
+    commands="`python $path_to_parse_env_variables \"$config_file_name\"`"
   fi
   # $commands will echo the key values under `environment_variables` which will be eval later
   # eg : eval export abc="xyz";
@@ -120,10 +120,10 @@ export_env_vars() {
 
 # To set environment variable to new shell
 read_environment_variables(){
-  azure_chef_extension_path=$1
+  chef_extension_directory_path=$1
   echo "[$(date)] Reading environment variables"
-  config_file_name=$(get_config_settings_file $azure_chef_extension_path)
-  path_to_parse_env_variables=$(get_file_path_to_parse_env_variables $azure_chef_extension_path)
+  config_file_name=$(get_config_settings_file $chef_extension_directory_path)
+  path_to_parse_env_variables=$(get_file_path_to_parse_env_variables $chef_extension_directory_path)
 
   echo "Reading chef licence value from settings file"
   chef_licence_value=$(get_value_from_setting_file $config_file_name "CHEF_LICENSE" &)
