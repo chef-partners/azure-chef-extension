@@ -100,8 +100,8 @@ get_value_from_setting_file() {
 
 # Get file path of parse_env_variables.py file
 get_file_path_to_parse_env_variables(){
-  ChefBootstrapWindowsAzureLinuxChefClient_path=$1
-  path_to_parse_env_variables="$ChefBootstrapWindowsAzureLinuxChefClient_path/bin/parse_env_variables.py"
+  azure_chef_extension_path=$1
+  path_to_parse_env_variables="$azure_chef_extension_path/bin/parse_env_variables.py"
   echo $path_to_parse_env_variables
 }
 
@@ -120,10 +120,10 @@ export_env_vars() {
 
 # To set environment variable to new shell
 read_environment_variables(){
-  ChefBootstrapWindowsAzureLinuxChefClient_path=$1
+  azure_chef_extension_path=$1
   echo "[$(date)] Reading environment variables"
-  config_file_name=$(get_config_settings_file $ChefBootstrapWindowsAzureLinuxChefClient_path)
-  path_to_parse_env_variables=$(get_file_path_to_parse_env_variables $ChefBootstrapWindowsAzureLinuxChefClient_path)
+  config_file_name=$(get_config_settings_file $azure_chef_extension_path)
+  path_to_parse_env_variables=$(get_file_path_to_parse_env_variables $azure_chef_extension_path)
 
   echo "Reading chef licence value from settings file"
   chef_licence_value=$(get_value_from_setting_file $config_file_name "CHEF_LICENSE" &)
