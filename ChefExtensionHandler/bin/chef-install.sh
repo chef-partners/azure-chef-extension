@@ -17,9 +17,10 @@ read_environment_variables $chef_extension_root
 # install azure chef extension gem
 install_chef_extension_gem(){
  echo "[$(date)] Installing Azure Chef Extension gem"
- gem install "$1" --local --no-document
-
-  if test $? -ne 0; then
+ azure_chef_extension_gem=$1
+ gem install "$azure_chef_extension_gem" --local --no-document
+ azure_chef_extension_gem_status=$?
+  if test $azure_chef_extension_gem_status -ne 0; then
     echo "[$(date)] Azure Chef Extension gem installation failed"
     exit 1
   else
@@ -32,8 +33,9 @@ curl_check(){
   if command -v curl > /dev/null; then
     echo "Detected curl..."
   else
+    OS=$1
     echo "Installing curl..."
-    if [ "$1" = "centos" -o "$1" = "rhel" -o "$1" = "linuxoracle" ]; then
+    if [ "$OS" = "centos" -o "$OS" = "rhel" -o "$OS" = "linuxoracle" ]; then
       yum install -d0 -e0 -y curl
     else
       apt-get install -q -y curl
@@ -64,7 +66,8 @@ chef_install_from_script(){
     elif [ "$platform" = "centos" -o "$platform" = "rhel" -o "$platform" = "linuxoracle" ]; then
       yum list installed | grep -w "chef"
     fi
-    if [ $? -ne 0 ] && [ -z "$chef_downloaded_package" ] && [ -z "$chef_package_url" ]; then
+    chef_install_status=$?
+    if [ $chef_install_status -ne 0 ] && [ -z "$chef_downloaded_package" ] && [ -z "$chef_package_url" ]; then
       curl_check $platform
       curl -L -o /tmp/$platform-install.sh https://omnitruck.chef.io/install.sh
       echo "Install.sh script downloaded at /tmp/$platform-install.sh"
@@ -83,12 +86,12 @@ chef_install_from_script(){
       fi
       echo "Deleting Install.sh script present at /tmp/$platform-install.sh"
       rm /tmp/$platform-install.sh -f
-    elif [ $? -ne 0 ] && [ ! -z "$chef_downloaded_package" ]; then
+    elif [ $chef_install_status -ne 0 ] && [ ! -z "$chef_downloaded_package" ]; then
       echo "Installing downloaded chef client from $chef_downloaded_package path"
       filename=`echo $chef_downloaded_package | sed -e 's/^.*\///'`
       filetype=`echo $filename | sed -e 's/^.*\.//'`
       install_file $filetype "$chef_downloaded_package"
-    elif [ $? -ne 0 ] && [ ! -z "$chef_package_url" ]; then
+    elif [ $chef_install_status -ne 0 ] && [ ! -z "$chef_package_url" ]; then
       echo "Checking url $chef_package_url"
       url_check="$(curl -Is $chef_package_url | head -1 | grep 404)"
       if [ -z $(echo $url_check | xargs) ]; then
