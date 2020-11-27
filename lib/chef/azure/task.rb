@@ -69,7 +69,7 @@ class ChefTask
 
   def install_service(bootstrap_directory, log_location, chef_daemon_interval)
     puts "#{Time.now} Installing chef-client scheduled task..."
-    result = shell_out("SCHTASKS.EXE /CREATE /TN \"chef-client\" /F /SC \"MINUTE\" /MO \"#{chef_daemon_interval}\" /TR \"cmd /c 'ruby chef-client -L #{log_location}/chef-client.log -c #{bootstrap_directory}/client.rb'\" /RU \"NT Authority\\System\" /RP /RL \"HIGHEST\"")
+    result = shell_out("SCHTASKS.EXE /CREATE /TN \"chef-client\" /F /SC \"MINUTE\" /MO \"#{chef_daemon_interval}\" /TR \"cmd /c 'C:/opscode/chef/embedded/bin/ruby.exe C:/opscode/chef/bin/chef-client -L C:/chef/chef-client.log -c #{bootstrap_directory}/client.rb'\" /RU \"NT Authority\\System\" /RP /RL \"HIGHEST\"")
     result.error? ? result.error! : (puts "#{Time.now} Installed chef-client scheduled task.")
   end
 
