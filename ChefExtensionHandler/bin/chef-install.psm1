@@ -27,7 +27,7 @@ function Chef-GetExtensionRoot {
 }
 
 function Get-ChefPackage {
-  Get-WmiObject -Class Win32_Product | where -Property Name -CLike "Chef *Client*"
+  Get-ItemProperty HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\* | Where -Property DisplayName -CLike "Chef *Client*"
 }
 
 function Read-Environment-Variables {
