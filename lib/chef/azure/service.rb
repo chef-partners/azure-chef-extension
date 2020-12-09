@@ -10,6 +10,13 @@ class ChefService
   CLIENT_RB_INTERVAL_ATTRIBUTE_NAME = 'interval'
 
   def enable(extension_root, bootstrap_directory, log_location, chef_daemon_interval = DEFAULT_CHEF_DAEMON_INTERVAL)
+    if windows? 
+      result = shell_out("SCHTASKS.EXE /QUERY /TN \"chef-client\"")
+      if !result.error?
+        disable = shell_out("SCHTASKS.EXE /CHANGE /TN \"chef-client\" /DISABLE")
+        disable.error? ? disable.error! : (puts "#{Time.now} Disabled chef-client scheduled task.")
+      end
+    end
     log_location = log_location || bootstrap_directory
     exit_code = 0
     message = "success"
