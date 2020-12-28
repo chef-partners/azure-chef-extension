@@ -25,10 +25,7 @@ describe ChefService do
             allow(instance).to receive(:chef_daemon_interval_changed?).and_return(true)
           end
 
-          it 'updates the interval in client.rb file and restarts the service' do
-            expect(instance).to receive(:interval_in_seconds).and_return(1020)
-            expect(instance).to receive(:set_interval).with(
-              "/bootstrap_directory\\client.rb", 1020)
+          it 'updates the interval in client.rb file and restarts the service' do            
             expect(instance).to receive(:restart_service)
             response = instance.send(:enable, '/extension_root', '/bootstrap_directory', '/log_location', 17)
             expect(response).to be == [0, 'success']
@@ -78,10 +75,7 @@ describe ChefService do
             allow(instance).to receive(:is_running?).and_return(false)
           end
 
-          it 'invokes methods to set the interval in client.rb file, enable and start the chef-service' do
-            expect(instance).to receive(:interval_in_seconds).and_return(300)
-            expect(instance).to receive(:set_interval).with(
-              '/bootstrap_directory\\client.rb', 300)
+          it 'invokes methods to set the interval in client.rb file, enable and start the chef-service' do            
             expect(instance).to receive(:install_service)
             expect(instance).to receive(:start_service).with(
               '/bootstrap_directory', '/log_location')
@@ -95,10 +89,7 @@ describe ChefService do
             allow(instance).to receive(:is_running?).and_return(true)
           end
 
-          it 'invokes methods to set the interval in client.rb file and enable the chef-service' do
-            expect(instance).to receive(:interval_in_seconds).and_return(1800)
-            expect(instance).to receive(:set_interval).with(
-              '/bootstrap_directory\\client.rb', 1800)
+          it 'invokes methods to set the interval in client.rb file and enable the chef-service' do            
             expect(instance).to receive(:install_service)
             expect(instance).to_not receive(:start_service).with(
               '/bootstrap_directory', '/log_location')
