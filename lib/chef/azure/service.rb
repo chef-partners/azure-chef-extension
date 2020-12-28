@@ -27,11 +27,7 @@ class ChefService
         puts "#{Time.now} chef-client service is already installed."
         if chef_daemon_interval_changed?(chef_daemon_interval, "#{bootstrap_directory}\\client.rb")
           puts "#{Time.now} yes..chef-client service interval has been changed by the user..updating the interval value to #{chef_daemon_interval} minutes."
-          if windows?
-            set_interval(
-              "#{bootstrap_directory}\\client.rb",
-              interval_in_seconds(chef_daemon_interval)
-            )
+          if windows?            
             restart_service
           else
             disable_cron
@@ -42,11 +38,7 @@ class ChefService
           puts "#{Time.now} no..chef-client service interval has not been changed by the user..exiting."
         end
       else
-        if windows?
-          set_interval(
-            "#{bootstrap_directory}\\client.rb",
-            interval_in_seconds(chef_daemon_interval)
-          )
+        if windows?          
           install_service
           start_service(bootstrap_directory, log_location) if !is_running?
         else
