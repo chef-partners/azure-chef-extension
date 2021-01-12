@@ -15,16 +15,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+require 'chef/azure/helpers/shared'
 
-class ChefTask
+class ChefTask  
   include Chef::Mixin::ShellOut
+  include ChefAzure::Shared
   DEFAULT_CHEF_DAEMON_INTERVAL = 30
 
   def enable(bootstrap_directory, log_location, chef_daemon_interval = DEFAULT_CHEF_DAEMON_INTERVAL)
-  	result = shell_out("sc.exe query chef-client")
-    if result.exitstatus == 0 and result.stdout.include?("RUNNING")
-      stop = shell_out("sc.exe stop chef-client")
-      stop.error? ? stop.error! : (puts "#{Time.now} Stopped chef-client service.")
+    if windows?
+      result = shell_out("sc.exe query chef-client")
+      if result.exitstatus == 0 and result.stdout.include?("RUNNING")
+        stop = shell_out("sc.exe stop chef-client")
+        stop.error? ? stop.error! : (puts "#{Time.now} Stopped chef-client service.")
+      end 
     end 
   	log_location = log_location || bootstrap_directory
     exit_code = 0
