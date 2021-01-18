@@ -23,11 +23,11 @@ class ChefTask
   DEFAULT_CHEF_DAEMON_INTERVAL = 30
 
   def enable(bootstrap_directory, log_location, chef_daemon_interval = DEFAULT_CHEF_DAEMON_INTERVAL)
+    # Checking if chef-client service is running or not and if running then stop that service.
     if windows?
       result = shell_out("sc.exe query chef-client")
       if result.exitstatus == 0 and result.stdout.include?("RUNNING")
-        stop = shell_out("sc.exe stop chef-client")
-        stop.error? ? stop.error! : (puts "#{Time.now} Stopped chef-client service.")
+        stop_service
       end 
     end 
   	log_location = log_location || bootstrap_directory
@@ -90,5 +90,16 @@ class ChefTask
 
   def total_minutes(hours, minutes)
     (hours * 60) + minutes
+  end
+
+
+  def stop_service
+    stop = shell_out("sc.exe stop chef-client")
+    if stop.error?
+       puts "Could not Stop chef-client service as chef-client cannot run as service and task simultaneously.. exiting"
+       stop.error!           
+    else
+       puts "#{Time.now} Stopped chef-client service."
+    end
   end
 end
