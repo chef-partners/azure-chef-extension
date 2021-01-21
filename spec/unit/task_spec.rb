@@ -81,7 +81,7 @@ describe ChefTask do
       chef_daemon_interval = 17
       log_location = "log"
       bootstrap_directory = "bootstrap_dir"
-      expect(instance).to receive(:shell_out).with("SCHTASKS.EXE /CREATE /TN \"chef-client\" /F /SC \"MINUTE\" /MO \"#{chef_daemon_interval}\" /TR \"cmd /c 'C:/opscode/chef/embedded/bin/ruby.exe C:/opscode/chef/bin/chef-client -L C:/chef/chef-client.log -c #{bootstrap_directory}/client.rb'\" /RU \"NT Authority\\System\" /RP /RL \"HIGHEST\"").and_return(double("result", :error? => false))
+      expect(instance).to receive(:shell_out).with("SCHTASKS.EXE /CREATE /TN \"chef-client\" /F /SC \"MINUTE\" /MO \"#{chef_daemon_interval}\" /TR \"cmd /c 'C:/opscode/chef/embedded/bin/ruby.exe C:/opscode/chef/bin/chef-client -L #{bootstrap_directory}/chef-client.log -c #{bootstrap_directory}/client.rb'\" /RU \"NT Authority\\System\" /RP /RL \"HIGHEST\"").and_return(double("result", :error? => false))
       instance.send(:install_service, bootstrap_directory, log_location, chef_daemon_interval)
     end
   end
