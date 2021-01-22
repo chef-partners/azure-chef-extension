@@ -15,12 +15,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+require 'chef/azure/helpers/shared'
 
-class ChefTask
+class ChefTask  
   include Chef::Mixin::ShellOut
+  include ChefAzure::Shared
   DEFAULT_CHEF_DAEMON_INTERVAL = 30
 
   def enable(bootstrap_directory, log_location, chef_daemon_interval = DEFAULT_CHEF_DAEMON_INTERVAL)
+    # Checking if chef-client service is running or not and if running then stop that service.
+    if windows?
+      result = shell_out("sc.exe query chef-client")
+      if result.exitstatus == 0 and result.stdout.include?("RUNNING")
+        stop_service
+      end 
+    end 
   	log_location = log_location || bootstrap_directory
     exit_code = 0
     message = "success"
@@ -69,7 +78,7 @@ class ChefTask
 
   def install_service(bootstrap_directory, log_location, chef_daemon_interval)
     puts "#{Time.now} Installing chef-client scheduled task..."
-    result = shell_out("SCHTASKS.EXE /CREATE /TN \"chef-client\" /F /SC \"MINUTE\" /MO \"#{chef_daemon_interval}\" /TR \"cmd /c 'ruby chef-client -L #{log_location}/chef-client.log -c #{bootstrap_directory}/client.rb'\" /RU \"NT Authority\\System\" /RP /RL \"HIGHEST\"")
+    result = shell_out("SCHTASKS.EXE /CREATE /TN \"chef-client\" /F /SC \"MINUTE\" /MO \"#{chef_daemon_interval}\" /TR \"cmd /c 'C:/opscode/chef/embedded/bin/ruby.exe C:/opscode/chef/bin/chef-client -L #{bootstrap_directory}/chef-client.log -c #{bootstrap_directory}/client.rb'\" /RU \"NT Authority\\System\" /RP /RL \"HIGHEST\"")
     result.error? ? result.error! : (puts "#{Time.now} Installed chef-client scheduled task.")
   end
 
@@ -81,5 +90,16 @@ class ChefTask
 
   def total_minutes(hours, minutes)
     (hours * 60) + minutes
+  end
+
+
+  def stop_service
+    stop = shell_out("sc.exe stop chef-client")
+    if stop.error?
+       puts "Could not Stop chef-client service as chef-client cannot run as service and task simultaneously.. exiting"
+       stop.error!           
+    else
+       puts "#{Time.now} Stopped chef-client service."
+    end
   end
 end

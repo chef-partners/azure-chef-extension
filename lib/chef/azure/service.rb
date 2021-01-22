@@ -10,6 +10,13 @@ class ChefService
   CLIENT_RB_INTERVAL_ATTRIBUTE_NAME = 'interval'
 
   def enable(extension_root, bootstrap_directory, log_location, chef_daemon_interval = DEFAULT_CHEF_DAEMON_INTERVAL)
+    # Checking if chef-client task is enabled and if enabled then disabling it.
+    if windows? 
+      result = shell_out("SCHTASKS.EXE /QUERY /TN \"chef-client\"")
+      if !result.error?
+        disable_task
+      end
+    end
     log_location = log_location || bootstrap_directory
     exit_code = 0
     message = "success"
@@ -20,11 +27,7 @@ class ChefService
         puts "#{Time.now} chef-client service is already installed."
         if chef_daemon_interval_changed?(chef_daemon_interval, "#{bootstrap_directory}\\client.rb")
           puts "#{Time.now} yes..chef-client service interval has been changed by the user..updating the interval value to #{chef_daemon_interval} minutes."
-          if windows?
-            set_interval(
-              "#{bootstrap_directory}\\client.rb",
-              interval_in_seconds(chef_daemon_interval)
-            )
+          if windows?            
             restart_service
           else
             disable_cron
@@ -35,11 +38,7 @@ class ChefService
           puts "#{Time.now} no..chef-client service interval has not been changed by the user..exiting."
         end
       else
-        if windows?
-          set_interval(
-            "#{bootstrap_directory}\\client.rb",
-            interval_in_seconds(chef_daemon_interval)
-          )
+        if windows?          
           install_service
           start_service(bootstrap_directory, log_location) if !is_running?
         else
@@ -252,5 +251,15 @@ class ChefService
   def set_startup_type
     startup_type = shell_out("powershell.exe -Command Set-Service -Name 'chef-client' -StartupType automatic")
     startup_type.error!
+  end
+
+  def disable_task
+     disable = shell_out("SCHTASKS.EXE /CHANGE /TN \"chef-client\" /DISABLE")
+     if !disable.error?   
+       puts "#{Time.now} Disabled chef-client scheduled task"            
+     else
+       puts "Unable to disable chef-client task as chef-client cannot run as task and service simultaneously.. exiting"
+       disable.error!
+     end
   end
 end
