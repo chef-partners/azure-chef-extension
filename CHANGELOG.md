@@ -1,6 +1,11 @@
 # azure-chef-extension Change Log
 
-## Latest Release: 1210.13.4.1 (2020/08/19)
+## Latest Release: 1210.13.4.2 (2021/02/02)
+* [azure-chef-extension #333](https://github.com/chef-partners/azure-chef-extension/pull/333) Remove use of Get Win32_Product API Call.
+* [azure-chef-extension #332](https://github.com/chef-partners/azure-chef-extension/pull/332) Fix for inconsistent behavior with System Path and error while running dameon as service.
+* [azure-chef-extension #330](https://github.com/chef-partners/azure-chef-extension/pull/330) Improvement in code of chef-install.sh.
+
+## Release: 1210.13.4.1 (2020/08/19)
 * [azure-chef-extension #320](https://github.com/chef-partners/azure-chef-extension/pull/320) Fix python syntax error found while testing Redhat 8 for environment variable and Updated example of custom_json_attr.
 * [azure-chef-extension #309](https://github.com/chef-partners/azure-chef-extension/pull/309) Unpin Chef 15 and pin to latest chef version.
 * [azure-chef-extension #308](https://github.com/chef-partners/azure-chef-extension/pull/308) Add support for Chef Client 16.
