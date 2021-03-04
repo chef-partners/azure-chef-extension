@@ -96,7 +96,7 @@ chef_install_from_script(){
       url_check="$(curl -Is $chef_package_url | head -1 | grep 404)"
       if [ -z $(echo $url_check | xargs) ]; then
         echo "Downloading chef client package from $chef_package_url"
-        filetype=`echo $chef_package_url | sed -e 's/^.*\.//'`
+        filetype=`echo $chef_package_url | sed -e 's/^.*\.//' | sed -e 's/?.*//'`
         chef_downloaded_package="/tmp/chef-client.$filetype"
         curl_check $platform
         curl -L -o $chef_downloaded_package $chef_package_url
