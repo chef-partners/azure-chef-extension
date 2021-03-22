@@ -1,6 +1,9 @@
 # azure-chef-extension Change Log
 
-## Latest Release: 1210.13.4.2 (2021/02/02)
+## Latest Release: 1210.13.4.3 (2021/03/16)
+* [azure-chef-extension #339](https://github.com/chef-partners/azure-chef-extension/pull/339) Remove query params from chef_package_url.
+
+## Release: 1210.13.4.2 (2021/02/02)
 * [azure-chef-extension #333](https://github.com/chef-partners/azure-chef-extension/pull/333) Remove use of Get Win32_Product API Call.
 * [azure-chef-extension #332](https://github.com/chef-partners/azure-chef-extension/pull/332) Fix for inconsistent behavior with System Path and error while running dameon as service.
 * [azure-chef-extension #330](https://github.com/chef-partners/azure-chef-extension/pull/330) Improvement in code of chef-install.sh.
