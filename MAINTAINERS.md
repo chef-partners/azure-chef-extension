@@ -5,6 +5,5 @@ This file lists how the azure-chef-extension project is maintained. When making 
 
 ##Maintainers
 * [Stuart Preston](https://github.com/stuartpreston)
-* [Vasundhara Jagdale](https://github.com/vasu1105)
-
+* [Dheeraj Dubey](https://github.com/dheerajd-msys)
 
