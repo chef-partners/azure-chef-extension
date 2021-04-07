@@ -1,6 +1,9 @@
 # azure-chef-extension Change Log
 
-## Latest Release: 1210.13.4.3 (2021/03/16)
+## Latest Release: 1210.13.5.1 (2021/04/01)
+* [azure-chef-extension #337](https://github.com/chef-partners/azure-chef-extension/pull/337) Fix for failing deployment of Azure Chef extension in Ubuntu 20.04.
+
+## Release: 1210.13.4.3 (2021/03/16)
 * [azure-chef-extension #339](https://github.com/chef-partners/azure-chef-extension/pull/339) Remove query params from chef_package_url.
 
 ## Release: 1210.13.4.2 (2021/02/02)
