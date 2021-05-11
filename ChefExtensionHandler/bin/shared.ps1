@@ -230,14 +230,15 @@ function Get-PublicSettings-From-Config-Json($key, $powershellVersion) {
 }
 
 Function Install-ChefMsi($msi, $addlocal) {
+  $msiLogName = "C:\\WindowsAzure\\Logs\\ChefMsiInstaller-" + $(Get-Date -Format "yyyy-mm-dd-HH.mm.ss") + ".log"
   if ($addlocal -eq "service") {
-    $p = Start-Process -FilePath "msiexec.exe" -ArgumentList "/qn /i $msi ADDLOCAL=`"ChefClientFeature,ChefServiceFeature`"" -Passthru -Wait -NoNewWindow
+    $p = Start-Process -FilePath "msiexec.exe" -ArgumentList "/qn /l*v $msiLogName /i $msi ADDLOCAL=`"ChefClientFeature,ChefServiceFeature`"" -Passthru -Wait -NoNewWindow
   }
   ElseIf ($addlocal -eq "task") {
-    $p = Start-Process -FilePath "msiexec.exe" -ArgumentList "/qn /i $msi ADDLOCAL=`"ChefClientFeature,ChefSchTaskFeature`"" -Passthru -Wait -NoNewWindow
+    $p = Start-Process -FilePath "msiexec.exe" -ArgumentList "/qn /l*v $msiLogName /i $msi ADDLOCAL=`"ChefClientFeature,ChefSchTaskFeature`"" -Passthru -Wait -NoNewWindow
   }
   ElseIf ($addlocal -eq "auto") {
-    $p = Start-Process -FilePath "msiexec.exe" -ArgumentList "/qn /i $msi" -Passthru -Wait -NoNewWindow
+    $p = Start-Process -FilePath "msiexec.exe" -ArgumentList "/qn /l*v $msiLogName /i $msi" -Passthru -Wait -NoNewWindow
   }
 
   $p.WaitForExit()
