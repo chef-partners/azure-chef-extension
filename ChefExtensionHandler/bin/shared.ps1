@@ -230,7 +230,8 @@ function Get-PublicSettings-From-Config-Json($key, $powershellVersion) {
 }
 
 Function Install-ChefMsi($msi, $addlocal) {
-  $msiLogName = "C:\\WindowsAzure\\Logs\\ChefMsiInstaller-" + $(Get-Date -Format "yyyy-mm-dd-HH.mm.ss") + ".log"
+  $msiLogName = "C:\WindowsAzure\Logs\ChefMsiInstaller-" + $(Get-Date -Format "yyyy-mm-dd-HH.mm.ss") + ".log"
+  Write-Host "MSI log file will be written to $msiLogName"
   if ($addlocal -eq "service") {
     $p = Start-Process -FilePath "msiexec.exe" -ArgumentList "/qn /l*v $msiLogName /i $msi ADDLOCAL=`"ChefClientFeature,ChefServiceFeature`"" -Passthru -Wait -NoNewWindow
   }
