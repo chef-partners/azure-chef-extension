@@ -18,7 +18,7 @@ Gem::Specification.new do |s|
   s.executables   = `git ls-files -- bin/*`.split("\n").map{ |f| File.basename(f) }
   s.require_paths = ["lib", "spec"]
 
-  s.add_development_dependency "chef"
+  s.add_development_dependency "chef", '<= 16.13.16'
   s.add_development_dependency 'rubyzip', '>= 1.0.0'
   s.add_development_dependency 'nokogiri'
 
