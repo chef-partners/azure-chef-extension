@@ -10,7 +10,7 @@ require 'base64'
 require 'tempfile'
 require 'chef/azure/core/windows_bootstrap_context'
 require 'erubis'
-require 'chef/knife'
+require 'chef/knife/lib/chef/knife'
 
 class EnableChef
   include Chef::Mixin::ShellOut
