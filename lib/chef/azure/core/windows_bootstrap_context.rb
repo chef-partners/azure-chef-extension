@@ -16,7 +16,7 @@
 # limitations under the License.
 #
 
-require 'chef/knife/core/bootstrap_context'
+require 'chef/knife/lib/chef/knife/core/bootstrap_context'
 # Chef::Util::PathHelper in Chef 11 is a bit juvenile still
   require 'chef/azure/core/path_helper'
 
