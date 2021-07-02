@@ -75,7 +75,7 @@ function Install-ChefClient {
         $daemon = "auto"
       }
       if (-Not $daemon) {
-        $daemon = "service"
+        $daemon = "task"
       }
       if (-Not $chef_pkg -and -Not $chef_downloaded_package -and -Not $chef_package_url) {
         echo "Downloading Chef Client ..."
