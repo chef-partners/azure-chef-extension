@@ -10,7 +10,18 @@ require 'base64'
 require 'tempfile'
 require 'chef/azure/core/windows_bootstrap_context'
 require 'erubis'
-require 'chef/knife'
+# Using knife from separately extracted knife gem
+if RUBY_PLATFORM =~ /mswin|mingw|windows/
+  find = Dir["C:/opscode/chef/knife/*"]
+  path1 = find.join('/')
+  path2 = path1 + '/lib/chef/knife'
+  require path2
+else
+  find = Dir["/opt/chef/knife/*"]
+  path1 = find.join('/')
+  path2 = path1 + '/lib/chef/knife'
+  require path2
+end
 
 class EnableChef
   include Chef::Mixin::ShellOut

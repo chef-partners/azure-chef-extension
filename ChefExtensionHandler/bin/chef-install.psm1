@@ -120,6 +120,7 @@ function Install-ChefClient {
   $env:Path = "C:\\opscode\\chef\\bin;C:\\opscode\\chef\\embedded\\bin;" + $env:Path
   $chefExtensionRoot = Chef-GetExtensionRoot
   Install-AzureChefExtensionGem $chefExtensionRoot
+  gem unpack knife --target C:\opscode\chef\knife
 }
 
 function Get-SharedHelper {

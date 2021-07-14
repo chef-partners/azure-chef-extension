@@ -16,7 +16,19 @@
 # limitations under the License.
 #
 
-require 'chef/knife/core/bootstrap_context'
+#Using bootstrap_context file from separately extracted knife gem
+if RUBY_PLATFORM =~ /mswin|mingw|windows/
+  find = Dir["C:/opscode/chef/knife/*"]
+  path1 = find.join('/')
+  path2 = path1 + '/lib/chef/knife/core/bootstrap_context'
+  require path2
+else
+  find = Dir["/opt/chef/knife/*"]
+  path1 = find.join('/')
+  path2 = path1 + '/lib/chef/knife/core/bootstrap_context'
+  require path2
+end
+
 # Chef::Util::PathHelper in Chef 11 is a bit juvenile still
   require 'chef/azure/core/path_helper'
 

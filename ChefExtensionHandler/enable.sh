@@ -2,6 +2,8 @@
 
 export PATH=/opt/chef/bin:/opt/chef/embedded/bin:$PATH
 
+gem unpack knife --target /opt/chef/knife
+
 SCRIPT=$(readlink -f "$0")
 
 CHEF_EXT_DIR=$(dirname "$SCRIPT")
