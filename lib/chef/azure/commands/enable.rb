@@ -11,10 +11,17 @@ require 'tempfile'
 require 'chef/azure/core/windows_bootstrap_context'
 require 'erubis'
 # Using knife from separately extracted knife gem
-find = RUBY_PLATFORM =~ /mswin|mingw|windows/ ? Dir["C:/opscode/chef/knife/*"] : Dir["/opt/chef/knife/*"]
-path1 = find.join('/')
-path2 = path1 + '/lib/chef/knife'
-require path2
+include Chef::Mixin::ShellOut
+ver = shell_out("chef-client -v").stdout
+arr = ver.split(': ')
+if arr[1].start_with?("15") || arr[1].start_with?("16")
+  require 'chef/knife/core/bootstrap_context'
+else
+  find = RUBY_PLATFORM =~ /mswin|mingw|windows/ ? Dir["C:/opscode/chef/knife/*"] : Dir["/opt/chef/knife/*"]
+  path1 = find.join('/')
+  path2 = path1 + '/lib/chef/knife'
+  require path2
+end
 
 class EnableChef
   include Chef::Mixin::ShellOut

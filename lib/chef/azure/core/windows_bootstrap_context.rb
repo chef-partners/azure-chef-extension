@@ -17,10 +17,18 @@
 #
 
 #Using bootstrap_context file from separately extracted knife gem
-find = RUBY_PLATFORM =~ /mswin|mingw|windows/ ? Dir["C:/opscode/chef/knife/*"] : Dir["/opt/chef/knife/*"]
-path1 = find.join('/')
-path2 = path1 + '/lib/chef/knife/core/bootstrap_context'
-require path2
+include Chef::Mixin::ShellOut
+ver = shell_out("chef-client -v").stdout
+arr = ver.split(': ')
+if arr[1].start_with?("15") || arr[1].start_with?("16")
+  require 'chef/knife/core/bootstrap_context'
+else
+  find = RUBY_PLATFORM =~ /mswin|mingw|windows/ ? Dir["C:/opscode/chef/knife/*"] : Dir["/opt/chef/knife/*"]
+  path1 = find.join('/')
+  path2 = path1 + '/lib/chef/knife/core/bootstrap_context'
+  require path2
+end
+
 
 # Chef::Util::PathHelper in Chef 11 is a bit juvenile still
   require 'chef/azure/core/path_helper'
