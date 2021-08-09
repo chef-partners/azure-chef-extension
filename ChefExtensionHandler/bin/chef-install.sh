@@ -72,22 +72,22 @@ chef_install_from_script(){
       curl -L -o /tmp/$platform-install.sh https://omnitruck.chef.io/install.sh
       echo "Install.sh script downloaded at /tmp/$platform-install.sh"
       if [ -z "$chef_version" ] && [ -z "$chef_channel" ]; then
-        echo "Installing latest chef client"
+        echo "Installing latest Chef Infra Client"
         sh /tmp/$platform-install.sh  
       elif [ ! -z "$chef_version" ] && [ -z "$chef_channel" ]; then
-        echo "Installing chef client version $chef_version"
+        echo "Installing Chef Infra Client version $chef_version"
         sh /tmp/$platform-install.sh -v $chef_version
       elif [ -z "$chef_version" ] && [ ! -z "$chef_channel" ]; then
-        echo "Installing latest chef client from $chef_channel"
+        echo "Installing latest Chef Infra Client from $chef_channel"
         sh /tmp/$platform-install.sh -c $chef_channel
       else
-        echo "Installing chef client version $chef_version from $chef_channel channel"
+        echo "Installing Chef Infra Client version $chef_version from $chef_channel channel"
         sh /tmp/$platform-install.sh -v $chef_version -c $chef_channel
       fi
       echo "Deleting Install.sh script present at /tmp/$platform-install.sh"
       rm /tmp/$platform-install.sh -f
     elif [ $chef_install_status -ne 0 ] && [ ! -z "$chef_downloaded_package" ]; then
-      echo "Installing downloaded chef client from $chef_downloaded_package path"
+      echo "Installing downloaded Chef Infra Client from $chef_downloaded_package path"
       filename=`echo $chef_downloaded_package | sed -e 's/^.*\///'`
       filetype=`echo $filename | sed -e 's/^.*\.//'`
       install_file $filetype "$chef_downloaded_package"
@@ -95,7 +95,7 @@ chef_install_from_script(){
       echo "Checking url $chef_package_url"
       url_check="$(curl -Is $chef_package_url | head -1 | grep 404)"
       if [ -z $(echo $url_check | xargs) ]; then
-        echo "Downloading chef client package from $chef_package_url"
+        echo "Downloading Chef Infra Client package from $chef_package_url"
         filetype=`echo $chef_package_url | sed -e 's/^.*\.//' | sed -e 's/?.*//'`
         chef_downloaded_package="/tmp/chef-client.$filetype"
         curl_check $platform
