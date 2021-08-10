@@ -24,9 +24,8 @@ if arr[1].start_with?("15") || arr[1].start_with?("16")
   require 'chef/knife/core/bootstrap_context'
 else
   find = RUBY_PLATFORM =~ /mswin|mingw|windows/ ? Dir["C:/opscode/chef/knife/*"] : Dir["/opt/chef/knife/*"]
-  path1 = find.join('/')
-  path2 = path1 + '/lib/chef/knife/core/bootstrap_context'
-  require path2
+  path = find.join('/') + '/lib/chef/knife/core/bootstrap_context'
+  require path
 end
 
 

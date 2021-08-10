@@ -15,12 +15,11 @@ include Chef::Mixin::ShellOut
 ver = shell_out("chef-client -v").stdout
 arr = ver.split(': ')
 if arr[1].start_with?("15") || arr[1].start_with?("16")
-  require 'chef/knife/core/bootstrap_context'
+  require 'chef/knife'
 else
   find = RUBY_PLATFORM =~ /mswin|mingw|windows/ ? Dir["C:/opscode/chef/knife/*"] : Dir["/opt/chef/knife/*"]
-  path1 = find.join('/')
-  path2 = path1 + '/lib/chef/knife'
-  require path2
+  path = find.join('/') + '/lib/chef/knife'
+  require path
 end
 
 class EnableChef
