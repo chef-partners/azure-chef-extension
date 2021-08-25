@@ -16,7 +16,6 @@
 # limitations under the License.
 #
 
-require 'chef/knife/core/bootstrap_context'
 # Chef::Util::PathHelper in Chef 11 is a bit juvenile still
   require 'chef/azure/core/path_helper'
 
@@ -29,29 +28,27 @@ class Chef
       # * @config   - a hash of knife's config values
       # * @run_list - the run list for the node to boostrap
       #
-      class WindowsBootstrapContext < BootstrapContext
+      class WindowsBootstrapContext
+        attr_accessor :chef_config 
         PathHelper = ::Knife::Windows::PathHelper
 
+        unless instance_methods.include? :knife_config
+          alias_method :knife_config, :chef_config
+        end
+ 
         def initialize(config, run_list, chef_config, secret=nil)
           @config       = config
           @run_list     = run_list
           @chef_config  = chef_config
-          # Compatibility with Chef 12 and Chef 11 versions
-          begin
-            # Pass along the secret parameter for Chef 12
-            super(config, run_list, chef_config, secret)
-          rescue ArgumentError
-            # The Chef 11 base class only has parameters for initialize
-            super(config, run_list, chef_config)
-          end
+          @secret       = secret
         end
 
         def validation_key
-          escape_and_echo(super)
+          escape_and_echo(@chef_config[:validation_key_content])
         end
 
         def client_key
-          escape_and_echo(super)
+          escape_and_echo(@chef_config[:validation_key_content])
         end
 
         def secret
