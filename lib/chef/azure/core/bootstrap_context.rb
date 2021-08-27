@@ -8,13 +8,23 @@ class Chef
       # * @run_list - the run list for the node to boostrap
       #
       class BootstrapContext
-
+        attr_accessor :chef_config
         # TODO Fix this little workaround which is needed because knife_config was renamed to chef_config in Chef Client 16+
         # Fixes #298. Once ChefClient 15 goes EOS, we can just replace all references to knife_config with chef_config.
         unless instance_methods.include? :knife_config
           alias_method :knife_config, :chef_config
         end
+        
+        def initialize(config, run_list, chef_config, secret=nil)
+          @config       = config
+          @run_list     = run_list
+          @chef_config  = chef_config
+          @secret       = secret
+        end
 
+        def encrypted_data_bag_secret
+          @secret
+        end
 
         def validation_key
           @chef_config[:validation_key_content]
