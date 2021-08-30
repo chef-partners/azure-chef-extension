@@ -54,7 +54,7 @@ function Install-ChefClient {
   $ProgressPreference = 'SilentlyContinue'
 
   while (-not $completed) {
-    echo "Checking Chef Client ..."
+    echo "Checking Chef Infra Client ..."
     Try {
       ## Get chef_pkg by matching "chef client" string with $_.Name
       $chef_pkg = Get-ChefPackage
@@ -78,12 +78,12 @@ function Install-ChefClient {
         $daemon = "service"
       }
       if (-Not $chef_pkg -and -Not $chef_downloaded_package -and -Not $chef_package_url) {
-        echo "Downloading Chef Client ..."
+        echo "Downloading Chef Infra Client ..."
         $chef_package_version = Get-PublicSettings-From-Config-Json "bootstrap_version" $powershellVersion
         $chef_package_channel = Get-PublicSettings-From-Config-Json "bootstrap_channel" $powershellVersion
 
         if (-Not $chef_package_version) {
-          $chef_package_version = "16" # Until chef-17 is verified
+          $chef_package_version = "latest" 
         }
         if (-Not $chef_package_channel) {
           $chef_package_channel = "stable"
@@ -95,9 +95,9 @@ function Install-ChefClient {
       } elseif ( -Not $chef_pkg -and $chef_package_url ) {
         # Saving .msi in TEMP folder with pattern accepted by `Invoke-WebRequest`
         $chef_downloaded_package = "$env:TEMP\chef-client.msi"
-        echo "Downloading chef client package from $chef_package_url"
+        echo "Downloading Chef Infra Client package from $chef_package_url"
         Invoke-WebRequest -Uri $chef_package_url -OutFile $chef_downloaded_package
-        echo "Installing chef client from path $chef_downloaded_package"
+        echo "Installing Chef Infra Client from path $chef_downloaded_package"
         Install-ChefMsi $chef_downloaded_package $daemon
       }
       $completed = $true
@@ -105,13 +105,13 @@ function Install-ChefClient {
     Catch [System.Net.WebException] {
       ## this catch is for the WebException raised during a WebClient request while downloading the chef-client package ##
       if ($retrycount -ge $retries) {
-        echo "Chef Client Downloading failed after 3 retries."
+        echo "Chef Infra Client Downloading failed after 3 retries."
         $ErrorMessage = $_.Exception.Message
         # log to CommandExecution log:
         echo "Error running install: $ErrorMessage"
         exit 1
       } else {
-        echo "Chef Client package download failed. Retrying in 20s..."
+        echo "Chef Infra Client package download failed. Retrying in 20s..."
         sleep 20
         $retrycount++
       }

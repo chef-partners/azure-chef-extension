@@ -50,11 +50,11 @@ chef_install_from_script(){
       echo "Configuration error. Azure chef extension Settings file missing."
       exit 1
     fi
-    echo "Reading chef-client version from settings file"
+    echo "Reading Chef-Infra-Client version from settings file"
     chef_version=$(get_value_from_setting_file $config_file_name "bootstrap_version" &)
-    echo "Reading chef-client release channel from settings file"
+    echo "Reading Chef-Infra-Client release channel from settings file"
     chef_channel=$(get_value_from_setting_file $config_file_name "bootstrap_channel" &)
-    echo "Reading downloaded chef-client path from settings file"
+    echo "Reading downloaded Chef-Infra-Client path from settings file"
     chef_downloaded_package=$(get_value_from_setting_file $config_file_name "chef_package_path" &)
     echo "Reading chef package url from settings file"
     chef_package_url=$(get_value_from_setting_file $config_file_name "chef_package_url" &)
@@ -72,22 +72,22 @@ chef_install_from_script(){
       curl -L -o /tmp/$platform-install.sh https://omnitruck.chef.io/install.sh
       echo "Install.sh script downloaded at /tmp/$platform-install.sh"
       if [ -z "$chef_version" ] && [ -z "$chef_channel" ]; then
-        echo "Installing latest chef-16 client"
-        sh /tmp/$platform-install.sh -v "16" # Until chef-17 is verified
+        echo "Installing latest Chef Infra Client"
+        sh /tmp/$platform-install.sh
       elif [ ! -z "$chef_version" ] && [ -z "$chef_channel" ]; then
-        echo "Installing chef client version $chef_version"
+        echo "Installing Chef Infra Client version $chef_version"
         sh /tmp/$platform-install.sh -v $chef_version
       elif [ -z "$chef_version" ] && [ ! -z "$chef_channel" ]; then
-        echo "Installing latest chef client from $chef_channel"
+        echo "Installing latest Chef Infra Client from $chef_channel"
         sh /tmp/$platform-install.sh -c $chef_channel
       else
-        echo "Installing chef client version $chef_version from $chef_channel channel"
+        echo "Installing Chef Infra Client version $chef_version from $chef_channel channel"
         sh /tmp/$platform-install.sh -v $chef_version -c $chef_channel
       fi
       echo "Deleting Install.sh script present at /tmp/$platform-install.sh"
       rm /tmp/$platform-install.sh -f
     elif [ $chef_install_status -ne 0 ] && [ ! -z "$chef_downloaded_package" ]; then
-      echo "Installing downloaded chef client from $chef_downloaded_package path"
+      echo "Installing downloaded Chef Infra Client from $chef_downloaded_package path"
       filename=`echo $chef_downloaded_package | sed -e 's/^.*\///'`
       filetype=`echo $filename | sed -e 's/^.*\.//'`
       install_file $filetype "$chef_downloaded_package"
@@ -100,13 +100,13 @@ chef_install_from_script(){
         chef_downloaded_package="/tmp/chef-client.$filetype"
         curl_check $platform
         curl -L -o $chef_downloaded_package $chef_package_url
-        echo "Installing chef client from path $chef_downloaded_package"
+        echo "Installing Chef Infra Client from path $chef_downloaded_package"
         install_file $filetype "$chef_downloaded_package"
       else
         echo "ERROR: 404 'Url $chef_package_url not found'"
       fi
     else
-      echo "Chef-client is already installed"
+      echo "Chef Infra Client is already installed"
     fi
 }
 
