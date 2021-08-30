@@ -53,6 +53,9 @@ function Install-ChefClient {
   # Disable progress bar for massive speedup on Invoke-WebRequest (particularly with Azure Blob Stores)
   $ProgressPreference = 'SilentlyContinue'
 
+  # Allow earlier Windows (Such as Win2016) to auto-negotiate instead of pinning to TLSv1 (For Azure Blob stores with TLSv2 ensbled)
+  [Net.ServicePointManager]::SecurityProtocol = "Tls12, Tls11, Tls"
+
   while (-not $completed) {
     echo "Checking Chef Infra Client ..."
     Try {
