@@ -72,7 +72,11 @@ class EnableChef
 
       daemon = value_from_json_file(handler_settings_file, 'runtimeSettings', '0', 'handlerSettings', 'publicSettings', 'daemon')
 
-      daemon = "service" if daemon.nil? || daemon.empty?
+      if windows?
+       daemon = "task" if daemon.nil? || daemon.empty?
+      else
+       daemon = "service" if daemon.nil? || daemon.empty?   
+      end
 
       if daemon == "service"
         @msg_option = "service"
