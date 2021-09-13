@@ -1,6 +1,13 @@
 # azure-chef-extension Change Log
 
-## Latest Release: 1210.13.5.2 (2021/05/17)
+## Latest Release: 1210.14.1.0 (2021/09/01)
+* [azure-chef-extension #353](https://github.com/chef-partners/azure-chef-extension/pull/353) Changing the default daemon setting to task for windows.
+* [azure-chef-extension #357](https://github.com/chef-partners/azure-chef-extension/pull/357) Fix TLS for installs from Azure Blob Stores.
+* [azure-chef-extension #358](https://github.com/chef-partners/azure-chef-extension/pull/358) Removing knife dependency from azure chef extension
+* [azure-chef-extension #359](https://github.com/chef-partners/azure-chef-extension/pull/359) Unpinning Chef-Infra-Client-16 from azure-chef-extension.
+* [azure-chef-extension #360](https://github.com/chef-partners/azure-chef-extension/pull/360) Unpinning chef-16 gem from gemspec file.
+
+## Release: 1210.13.5.2 (2021/05/17)
 * [azure-chef-extension #345](https://github.com/chef-partners/azure-chef-extension/pull/345) Pin to chef 16 until chef 17 is tested and verified in Azure.
 * [azure-chef-extension #347](https://github.com/chef-partners/azure-chef-extension/pull/347) Pinned to chef-16 gem to fix rspec.
 * [azure-chef-extension #344](https://github.com/chef-partners/azure-chef-extension/pull/344) Add MSI installer logging.
