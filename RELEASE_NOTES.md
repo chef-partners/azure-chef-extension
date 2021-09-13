@@ -7,10 +7,12 @@ Example Note:
 Details about the thing that changed that needs to get included in the Release Notes in markdown.
 -->
 
-# azure-chef-extension 1210.13.5.2 release notes:
-In this release, we have fixed below bug:
-* [azure-chef-extension #349](https://github.com/chef-partners/azure-chef-extension/issues/349) 
-Pin azure chef extension to chef 16 until chef 17 is tested and verified in Azure.
+# azure-chef-extension 1210.14.1.0 release notes:
+In this release, we have fixed below bugs:
+* [azure-chef-extension #352](https://github.com/chef-partners/azure-chef-extension/issues/352) 
+With chef17 chef-client no longer installs as a service in windows.
+* [azure-chef-extension #346](https://github.com/chef-partners/azure-chef-extension/issues/346) 
+Install fails with CC17 due to dependency on knife libraries.
 
 See the [CHANGELOG](https://github.com/chef-partners/azure-chef-extension/blob/master/CHANGELOG.md) for a list of all changes in this release, and review.
 
