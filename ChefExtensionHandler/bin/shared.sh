@@ -7,7 +7,7 @@ get_linux_distributor(){
       linux_distributor='centos'
     elif ( cat /etc/os-release || python3 -mplatform ) | grep Ubuntu > /dev/null; then
       linux_distributor='ubuntu'
-    elif ( python3 -mplatform || cat /etc/os-release ) | grep debian > /dev/null; then
+    elif ( cat /etc/os-release || python3 -mplatform ) | grep debian > /dev/null; then
       linux_distributor='debian'
     elif ( python3 -mplatform || /usr/libexec/platform-python -mplatform || cat /etc/os-release ) | grep redhat > /dev/null; then
       linux_distributor='rhel'
@@ -122,7 +122,7 @@ get_file_path_to_parse_env_variables(){
 # Execute parse_env_variables.py file to fetch values of `environment_variables` from 0.setting files
 export_env_vars() {
   config_file_name=$1
-  if ( command -v python3) &> /dev/null;then
+  if ( command -v python3) > /dev/null;then
     commands="`python3 $path_to_parse_env_variables \"$config_file_name\"`"
   else
     commands="`python $path_to_parse_env_variables \"$config_file_name\"`"
