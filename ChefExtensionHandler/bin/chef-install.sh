@@ -92,10 +92,15 @@ chef_install_from_script(){
       filetype=`echo $filename | sed -e 's/^.*\.//'`
       install_file $filetype "$chef_downloaded_package"
     elif [ $chef_install_status -ne 0 ] && [ ! -z "$chef_package_url" ]; then
-      echo "Checking url $chef_package_url"
+      if (echo $chef_package_url) | grep "@" > /dev/null; then
+        updated_url=`echo $chef_package_url | sed -e 's/\/\/.*@/\/\/xxxxxx:xxxxxx@/'`
+      else
+        updated_url=$chef_package_url
+      fi
+      echo "Checking url $updated_url"
       url_check="$(curl -Is $chef_package_url | head -1 | grep 404)"
       if [ -z $(echo $url_check | xargs) ]; then
-        echo "Downloading chef client package from $chef_package_url"
+        echo "Downloading Chef Infra Client package from $updated_url"
         filetype=`echo $chef_package_url | sed -e 's/^.*\.//' | sed -e 's/?.*//'`
         chef_downloaded_package="/tmp/chef-client.$filetype"
         curl_check $platform
@@ -103,7 +108,7 @@ chef_install_from_script(){
         echo "Installing Chef Infra Client from path $chef_downloaded_package"
         install_file $filetype "$chef_downloaded_package"
       else
-        echo "ERROR: 404 'Url $chef_package_url not found'"
+        echo "ERROR: 404 'Url $updated_url not found"
       fi
     else
       echo "Chef Infra Client is already installed"

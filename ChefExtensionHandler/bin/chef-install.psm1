@@ -98,7 +98,13 @@ function Install-ChefClient {
       } elseif ( -Not $chef_pkg -and $chef_package_url ) {
         # Saving .msi in TEMP folder with pattern accepted by `Invoke-WebRequest`
         $chef_downloaded_package = "$env:TEMP\chef-client.msi"
-        echo "Downloading Chef Infra Client package from $chef_package_url"
+        if ($chef_package_url -Match "@."){
+          $updated_url = $chef_package_url -Replace "//.*@","//xxxxxx:xxxxxx@"
+          echo "Downloading Chef Infra Client package from $updated_url"
+        }
+        else{
+          echo "Downloading Chef Infra Client package from $chef_package_url"
+        }
         Invoke-WebRequest -Uri $chef_package_url -OutFile $chef_downloaded_package
         echo "Installing Chef Infra Client from path $chef_downloaded_package"
         Install-ChefMsi $chef_downloaded_package $daemon
