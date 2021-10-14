@@ -2,7 +2,7 @@
 
 get_linux_distributor(){
 #### Using python -mplatform command to get distributor name #####
-  if(command -v python3)  > /dev/null; then
+  if (command -v python3)  > /dev/null; then
     if ( python3 -mplatform || /usr/libexec/platform-python -mplatform || cat /etc/os-release) | grep centos > /dev/null; then
       linux_distributor='centos'
     elif ( cat /etc/os-release || python3 -mplatform ) | grep Ubuntu > /dev/null; then
@@ -15,7 +15,7 @@ get_linux_distributor(){
       linux_distributor='linuxoracle'
     fi
   else
-    if( python -mplatform || /usr/libexec/platform-python -mplatform || cat /etc/os-release) | grep centos > /dev/null; then
+    if ( python -mplatform || /usr/libexec/platform-python -mplatform || cat /etc/os-release) | grep centos > /dev/null; then
       linux_distributor='centos'
     elif ( python -mplatform || cat /etc/os-release ) | grep Ubuntu > /dev/null; then
       linux_distributor='ubuntu'
