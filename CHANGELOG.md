@@ -1,6 +1,11 @@
 # azure-chef-extension Change Log
 
-## Latest Release: 1210.14.1.0 (2021/09/01)
+## Latest Release: 1210.14.1.1 (2021/10/14)
+* [azure-chef-extension #363] https://github.com/chef-partners/azure-chef-extension/pull/363 Fix for python not found error in latest Linux versions
+* [azure-chef-extension #366] https://github.com/chef-partners/azure-chef-extension/pull/366 Masking the credentials from chef-package-url
+* [azure-chef-extension #368] https://github.com/chef-partners/azure-chef-extension/pull/368 Fix for shared.sh script file according to ruby code conventions.
+
+## Release: 1210.14.1.0 (2021/09/01)
 * [azure-chef-extension #353](https://github.com/chef-partners/azure-chef-extension/pull/353) Changing the default daemon setting to task for windows.
 * [azure-chef-extension #357](https://github.com/chef-partners/azure-chef-extension/pull/357) Fix TLS for installs from Azure Blob Stores.
 * [azure-chef-extension #358](https://github.com/chef-partners/azure-chef-extension/pull/358) Removing knife dependency from azure chef extension

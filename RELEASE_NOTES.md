@@ -7,12 +7,12 @@ Example Note:
 Details about the thing that changed that needs to get included in the Release Notes in markdown.
 -->
 
-# azure-chef-extension 1210.14.1.0 release notes:
+# azure-chef-extension 1210.14.1.1 release notes:
 In this release, we have fixed below bugs:
-* [azure-chef-extension #352](https://github.com/chef-partners/azure-chef-extension/issues/352) 
-With chef17 chef-client no longer installs as a service in windows.
-* [azure-chef-extension #346](https://github.com/chef-partners/azure-chef-extension/issues/346) 
-Install fails with CC17 due to dependency on knife libraries.
+* [azure-chef-extension #362](https://github.com/chef-partners/azure-chef-extension/issues/362)
+Python not found error is occuring in Redhat 8.4.
+* [azure-chef-extension #364](https://github.com/chef-partners/azure-chef-extension/issues/364)
+When using chef-Azure-extention 1210.13.x, credentials are being printed on the logs during client converge.
 
 See the [CHANGELOG](https://github.com/chef-partners/azure-chef-extension/blob/master/CHANGELOG.md) for a list of all changes in this release, and review.
 
