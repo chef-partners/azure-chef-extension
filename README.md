@@ -113,8 +113,18 @@ publicconfig.config example:
 ```javascript
 {
   "validation_key": "<your chef organisation validation key as a JSON escaped string>",
-  "secret": "<your encrypted data bag secret key contents>"
+  "secret": "<your encrypted data bag secret key contents>",
+  "chef_server_crt": "<your ssl certificate for validation with chef server as a JSON escaped string>"
 }
+```
+`chef_server_crt` : Set this option to provide certificate for ssl validation during bootstrapping, It saves the certificate in /etc/chef/trusted_certs or C:/chef/trusted_certs.
+
+***Note***: For passing multiple certificates with `chef_server_crt` option, use `-----END CERTIFICATE-----\n` to separate multiple certificates. This will create different certificates in trusted_certs directory.
+
+Example :
+
+```javascript
+{"chef_server_crt": "-----BEGIN CERTIFICATE----------END CERTIFICATE-----\n-----BEGIN CERTIFICATE----------END CERTIFICATE-----"}
 ```
 
 #### Following are the References to doc for different Azure command line tools
@@ -216,6 +226,7 @@ Update-AzureVM -VM $vmOb.VM -Name "<vm-name>" -ServiceName "<cloud-service-name>
       },
       "protectedSettings": {
         "validation_key": "[parameters('validation_key')]",
+        "chef_server_crt": "[parameters('chef_server_crt')]",
         "secret": "[parameters('secret')]"
       }
     }
