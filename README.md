@@ -117,7 +117,7 @@ publicconfig.config example:
   "chef_server_crt": "<your ssl certificate for validation with chef server as a JSON escaped string>"
 }
 ```
-`chef_server_crt` : Set this option to provide certificate for ssl validation during bootstrapping, it saves the certificate in /etc/chef/trusted_certs or C:/chef/trusted_certs.
+`chef_server_crt` : Set this option to provide certificate for ssl validation during bootstrapping, It saves the certificate in /etc/chef/trusted_certs or C:/chef/trusted_certs.
 
 ***Note***: For passing multiple certificates with `chef_server_crt` option, use `-----END CERTIFICATE-----\n` to separate multiple certificates. This will create different certificates in trusted_certs directory.
 
