@@ -9,5 +9,5 @@ WORKDIR /workdir/azure-chef-extension
 RUN bundle install
 RUN git config --global core.autocrlf false
 WORKDIR /workdir
-RUN chmod +x /workdir/envvar.sh
-CMD "/workdir/envvar.sh"
+RUN chmod +x /workdir/publicenvvar.sh
+CMD "/workdir/publicenvvar.sh"
