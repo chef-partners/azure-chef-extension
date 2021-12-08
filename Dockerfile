@@ -1,7 +1,6 @@
 FROM chefes/releng-base
 ENV VAULT_ADDR="https://vault.es.chef.co"
 ENV VAULT_NAMESPACE="releng"
-ARG token
 WORKDIR /workdir
 COPY . /workdir
 RUN git clone https://github.com/chef-partners/azure-chef-extension.git
