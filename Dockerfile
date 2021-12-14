@@ -9,4 +9,7 @@ RUN bundle install
 RUN git config --global core.autocrlf false
 WORKDIR /workdir
 RUN chmod +x /workdir/publicenvvar.sh
+#for public delivery
 CMD "/workdir/publicenvvar.sh"
+#for government delivery we have to run
+#CMD "/workdir/govenvvar.sh"
