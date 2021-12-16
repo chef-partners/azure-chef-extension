@@ -55,7 +55,7 @@ create.azure-environment: setup
 list.versions: setup
 	$(azure_extension_cli) list-versions
 
-#publish.internally:	@ Publish extension internally to public Azure cloud
+#publish.internally:	@ Publish extension internally to public or government Azure cloud
 publish.internally: setup
 	bundle exec rake publish[deploy_to_$(DEPLOY_TYPE),$(PLATFORM),$(VERSION),$(EXTENSION_NAMESPACE),update,confirm_internal_deployment]
 
