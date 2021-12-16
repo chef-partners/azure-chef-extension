@@ -85,4 +85,4 @@ unpublish: setup
 
 #delete:	@ Delete the azure chef extension from public or government Azure cloud
 delete: setup
-	bundle exec rake delete[delete_from_$(DEPLOY_TYPE),$(PLATFORM),$(VERSION)]
+	bundle exec rake delete[delete_from_$(DEPLOY_TYPE),$(PLATFORM),$(EXTENSION_NAMESPACE),$(VERSION)]
