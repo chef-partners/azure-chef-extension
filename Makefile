@@ -57,10 +57,7 @@ list.versions: setup
 
 #publish.internally:	@ Publish extension internally to public Azure cloud
 publish.internally: setup
-ifneq ($(AZURE_CLOUD), public)
-	$(error AZURE_PORTAL must be set to "public" when publishing internally)
-endif
-	bundle exec rake publish[deploy_to_production,$(PLATFORM),$(VERSION),$(EXTENSION_NAMESPACE),update,confirm_internal_deployment]
+	bundle exec rake publish[deploy_to_$(DEPLOY_TYPE),$(PLATFORM),$(VERSION),$(EXTENSION_NAMESPACE),update,confirm_internal_deployment]
 
 #publish.all-regions:	@ Publish extension to all regions in public or government Azure cloud
 publish.all-regions: setup
