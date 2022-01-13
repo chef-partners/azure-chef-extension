@@ -1,0 +1,12 @@
+expeditor:
+  secrets: true
+
+steps:
+- label: List versions
+  commands:
+    - make list.versions
+  env:
+    AZURE_CLOUD: public
+  expeditor:
+    executor:
+      docker:
