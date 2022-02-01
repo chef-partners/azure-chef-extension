@@ -5,8 +5,12 @@ steps:
 - label: List versions
   commands:
     - make list.versions
+    - PLATFORM=ubuntu VERSION="1217.17.7.7" make publish.internally
+    - make list.versions
   env:
     AZURE_CLOUD: public
+    EXTENSION_NAMESPACE: Chef.Bootstrap.WindowsAzure
+
   expeditor:
     executor:
       docker:
