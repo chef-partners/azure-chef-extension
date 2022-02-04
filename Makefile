@@ -8,6 +8,12 @@ else
 $(error AZURE_CLOUD must be set to "government" or "public")
 endif
 
+ifeq ($(CI), true)
+CONFIRM_REQUIRED := false
+else
+CONFIRM_REQUIRED := true
+endif
+
 DATE_OF_PUBLISHING ?= $(shell date +%Y%m%d)
 PLATFORM ?= windows
 VERSION ?= $(shell cat VERSION)
@@ -57,18 +63,18 @@ list.versions: setup
 
 #publish.internally:	@ Publish extension internally to public or government Azure cloud
 publish.internally: setup
-	bundle exec rake publish[deploy_to_$(DEPLOY_TYPE),$(PLATFORM),$(VERSION),$(EXTENSION_NAMESPACE),update,confirm_internal_deployment]
+	bundle exec rake publish[deploy_to_$(DEPLOY_TYPE),$(PLATFORM),$(VERSION),$(EXTENSION_NAMESPACE),update,confirm_internal_deployment,$(CONFIRM_REQUIRED)]
 
 #publish.all-regions:	@ Publish extension to all regions in public or government Azure cloud
 publish.all-regions: setup
-	bundle exec rake update[deploy_to_$(DEPLOY_TYPE),$(PLATFORM),$(VERSION),$(DATE_OF_PUBLISHING),$(EXTENSION_NAMESPACE),confirm_public_deployment]
+	bundle exec rake update[deploy_to_$(DEPLOY_TYPE),$(PLATFORM),$(VERSION),$(DATE_OF_PUBLISHING),$(EXTENSION_NAMESPACE),confirm_public_deployment,$(CONFIRM_REQUIRED)]
 
 #promote.single-region:	@ Promote extension to a single region in public or government Azure cloud
 promote.single-region: setup
 ifndef REGION1
 	$(error REGION1 is not set)
 endif
-	bundle exec rake promote_single_region[deploy_to_$(DEPLOY_TYPE),$(PLATFORM),$(VERSION),$(DATE_OF_PUBLISHING),$(REGION1)]
+	bundle exec rake promote_single_region[deploy_to_$(DEPLOY_TYPE),$(PLATFORM),$(VERSION),$(DATE_OF_PUBLISHING),$(REGION1),$(CONFIRM_REQUIRED)]
 
 #promote.two-regions:	@ Promote extension to two regions in public or government Azure cloud
 promote.two-regions: setup
@@ -77,12 +83,12 @@ ifndef REGION1
 else ifndef REGION2
 	$(error REGION2 is not set)
 endif
-	bundle exec rake promote_two_regions[deploy_to_$(DEPLOY_TYPE),$(PLATFORM),$(VERSION),$(DATE_OF_PUBLISHING),$(REGION1),$(REGION2)]
+	bundle exec rake promote_two_regions[deploy_to_$(DEPLOY_TYPE),$(PLATFORM),$(VERSION),$(DATE_OF_PUBLISHING),$(REGION1),$(REGION2),$(CONFIRM_REQUIRED)]
 
 #unpublish:	@ Unpublish the azure chef extension from public or government Azure cloud
 unpublish: setup
-	bundle exec rake unpublish_version[delete_from_$(DEPLOY_TYPE),$(PLATFORM),$(VERSION)]
+	bundle exec rake unpublish_version[delete_from_$(DEPLOY_TYPE),$(PLATFORM),$(VERSION),$(CONFIRM_REQUIRED)]
 
 #delete:	@ Delete the azure chef extension from public or government Azure cloud
 delete: setup
-	bundle exec rake delete[delete_from_$(DEPLOY_TYPE),$(PLATFORM),$(EXTENSION_NAMESPACE),$(VERSION)]
+	bundle exec rake delete[delete_from_$(DEPLOY_TYPE),$(PLATFORM),$(EXTENSION_NAMESPACE),$(VERSION),$(CONFIRM_REQUIRED)]
