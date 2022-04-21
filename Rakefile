@@ -136,6 +136,12 @@ def confirm!(type)
   end
 end
 
+desc "List extension versions"
+task :list_versions do
+  resource_type = "Microsoft.Compute/sharedVMExtensions/versions"
+  system("az resource list --resource-type #{resource_type}")    
+end
+
 desc "Publishes the azure chef extension package using publish.json Ex: publish[deploy_type, platform, extension_version], default is build[preview,windows]."
 task :publish, [:deploy_type, :target_type, :extension_version, :chef_deploy_namespace, :operation, :internal_or_public, :confirmation_required] => [:build] do |t, args|
   
@@ -193,9 +199,14 @@ CONFIRMATION
   end
   data_hash['variables']['version']=args.extension_version
   data_hash['variables']['regions']=["*"]
-  data_hash['variables']['mediaLink']="https://#{storageAccount}.blob.core.windows.net/#{storageContainer}/#{package}"
-  # https://extpublish.blob.core.windows.net/extension/ChefExtensionHandler
-  puts(data_hash)
+  if args.deploy_type == GOV
+    data_hash['variables']['mediaLink']="https://#{storageAccount}.blob.core.usgovcloudapi.net/#{storageContainer}/#{package}"
+    #https://azurechefextensions.blob.core.usgovcloudapi.net/published-packages/ChefExtensionHandler_1216.16.6.6_20220421_ubuntu.zip
+  else  
+    data_hash['variables']['mediaLink']="https://#{storageAccount}.blob.core.windows.net/#{storageContainer}/#{package}"
+  end
+    # https://extpublish.blob.core.windows.net/extension/ChefExtensionHandler
+  # puts(data_hash)
   File.write(__dir__+"/publish-template.json", JSON.dump(data_hash))
   puts "Deploying package to storage account"
   upload_to_storage(package,storageAccount,storageContainer)
@@ -271,9 +282,13 @@ CONFIRMATION
   else
    data_hash['variables']['regions']=args.region1,args.region2
   end
-   data_hash['variables']['mediaLink']="https://#{storageAccount}.blob.core.windows.net/#{storageContainer}/#{package}"
-  # https://extpublish.blob.core.windows.net/extension/ChefExtensionHandler
-  puts(data_hash)
+  if args.deploy_type == GOV
+    data_hash['variables']['mediaLink']="https://#{storageAccount}.blob.core.usgovcloudapi.net/#{storageContainer}/#{package}"
+    #https://azurechefextensions.blob.core.usgovcloudapi.net/published-packages/ChefExtensionHandler_1216.16.6.6_20220421_ubuntu.zip
+  else  
+    data_hash['variables']['mediaLink']="https://#{storageAccount}.blob.core.windows.net/#{storageContainer}/#{package}"
+  end
+  #puts(data_hash)
   File.write(__dir__+"/publish-template.json", JSON.dump(data_hash))
   puts "Deploying package to storage account"
   upload_to_storage(package,storageAccount,storageContainer)
