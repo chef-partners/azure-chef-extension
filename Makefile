@@ -1,5 +1,7 @@
 .DEFAULT_GOAL := help
 
+export EXTENSION_NAMESPACE := Chef.Bootstrap.WindowsAzure
+
 #Fetches login credentials according to gov or public cloud.
 ifeq ($(AZURE_CLOUD), government)
 DEPLOY_TYPE := gov
@@ -7,8 +9,9 @@ export USERNAME := $(shell vault kv get -field username secret/azure-chef-extens
 export PASSWORD := $(shell vault kv get -field password secret/azure-chef-extension/gov-publishing-credentials)
 else ifeq ($(AZURE_CLOUD), public)
 DEPLOY_TYPE := production
-export USERNAME := $(shell vault kv get -field username secret/azure-chef-extension/public-publishing-credential)
-export PASSWORD := $(shell vault kv get -field password secret/azure-chef-extension/public-publishing-credential)
+export USERNAME := $(shell vault kv get -field username secret/azure-chef-extension/public-publishing-credentials)
+export PASSWORD := $(shell vault kv get -field password secret/azure-chef-extension/public-publishing-credentials)
+export TENANT := $(shell vault kv get -field tenant secret/azure-chef-extension/public-publishing-credentials)
 else
 $(error AZURE_CLOUD must be set to "government" or "public")
 endif
@@ -16,8 +19,6 @@ endif
 DATE_OF_PUBLISHING ?= $(shell date +%Y%m%d)
 PLATFORM ?= windows
 VERSION ?= $(shell cat VERSION)
-
-export EXTENSION_NAMESPACE := Chef.Bootstrap.WindowsAzure
 
 ifeq ($(AZURE_CLOUD), government)
 	export MANAGEMENT_URL := https://management.core.usgovcloudapi.net
@@ -40,14 +41,13 @@ login: bundle.install
 ifeq ($(AZURE_CLOUD), government)
 	az cloud set --name AzureUSGovernment
 	az login -u '$(USERNAME)' -p '$(PASSWORD)'
-	az account set --subscription "Azure Government - Chef VM Extension Publishing Subscription"	
+	az account set --subscription "Azure Government - Chef VM Extension Publishing Subscription"
 else
-    az cloud set --name AzureCloud
-	az login -u '$(USERNAME)' -p '$(PASSWORD)'
+	az cloud set --name AzureCloud
+	az login --service-principal --username '$(USERNAME)' --password '$(PASSWORD)' --tenant '$(TENANT)'
 endif
-	@echo "$(USERNAME) password - $(PASSWORD)"	
+	@echo "$(USERNAME) password - $(PASSWORD)"
 	az account show
-	
 
 #list.versions:	@ Lists the internally and externally published extension
 list.versions: login
@@ -76,11 +76,3 @@ else ifndef REGION2
 	$(error REGION2 is not set)
 endif
 	bundle exec rake promote_regions[deploy_to_$(DEPLOY_TYPE),$(PLATFORM),$(VERSION),$(EXTENSION_NAMESPACE),update,$(INTERNAL_OR_PUBLIC),$(CONFIRMATION),$(REGION1),$(REGION2)]
-
-#unpublish:	@ Unpublish the azure chef extension from public or government Azure cloud
-# unpublish: login
-# 	bundle exec rake unpublish_version[delete_from_$(DEPLOY_TYPE),$(PLATFORM),$(VERSION)]
-
-# #delete:	@ Delete the azure chef extension from public or government Azure cloud
-# delete: login
-# 	bundle exec rake delete[delete_from_$(DEPLOY_TYPE),$(PLATFORM),$(EXTENSION_NAMESPACE),$(VERSION)]
