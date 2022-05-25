@@ -8,7 +8,6 @@ require 'nokogiri'
 require 'mixlib/shellout'
 require './lib/chef/azure/helpers/erb.rb'
 
-
 PACKAGE_NAME = "ChefExtensionHandler"
 MANIFEST_NAME = "publishDefinitionXml"
 EXTENSION_VERSION = "1.0"
@@ -139,7 +138,7 @@ end
 desc "List extension versions"
 task :list_versions do
   resource_type = "Microsoft.Compute/sharedVMExtensions/versions"
-  system("az resource list --resource-type #{resource_type}")    
+  system("az resource list --resource-type #{resource_type}")
 end
 
 desc "Publishes the azure chef extension package using publish.json Ex: publish[deploy_type, platform, extension_version], default is build[preview,windows]."
@@ -202,7 +201,7 @@ CONFIRMATION
   if args.deploy_type == GOV
     data_hash['variables']['mediaLink']="https://#{storageAccount}.blob.core.usgovcloudapi.net/#{storageContainer}/#{package}"
     #https://azurechefextensions.blob.core.usgovcloudapi.net/published-packages/ChefExtensionHandler_1216.16.6.6_20220421_ubuntu.zip
-  else  
+  else
     data_hash['variables']['mediaLink']="https://#{storageAccount}.blob.core.windows.net/#{storageContainer}/#{package}"
   end
     # https://extpublish.blob.core.windows.net/extension/ChefExtensionHandler
@@ -285,7 +284,7 @@ CONFIRMATION
   if args.deploy_type == GOV
     data_hash['variables']['mediaLink']="https://#{storageAccount}.blob.core.usgovcloudapi.net/#{storageContainer}/#{package}"
     #https://azurechefextensions.blob.core.usgovcloudapi.net/published-packages/ChefExtensionHandler_1216.16.6.6_20220421_ubuntu.zip
-  else  
+  else
     data_hash['variables']['mediaLink']="https://#{storageAccount}.blob.core.windows.net/#{storageContainer}/#{package}"
   end
   #puts(data_hash)
