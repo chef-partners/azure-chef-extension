@@ -101,3 +101,5 @@
   [20210901, windows, 1210.14.1.0, master, a2fa18557a65e7a17e1c5d1057f09c42d6d1f29c]
   [20211014, ubuntu, 1210.14.1.1, master, 09a0fd63a78e2febaebd823b0abd389dcee7e7c3]
   [20211014, windows, 1210.14.1.1, master, 09a0fd63a78e2febaebd823b0abd389dcee7e7c3]
+  [20220624, windows, 1210.14.1.2, main, a5e57f5c880ceaf6ccd757193b2b555944f3cb81]
+  [20220624, ubuntu, 1210.14.1.2, main, a5e57f5c880ceaf6ccd757193b2b555944f3cb81]
