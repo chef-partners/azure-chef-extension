@@ -7,12 +7,18 @@ Example Note:
 Details about the thing that changed that needs to get included in the Release Notes in markdown.
 -->
 
-# azure-chef-extension 1210.14.1.1 release notes:
-In this release, we have fixed below bugs:
-* [azure-chef-extension #362](https://github.com/chef-partners/azure-chef-extension/issues/362)
-Python not found error is occuring in Redhat 8.4.
-* [azure-chef-extension #364](https://github.com/chef-partners/azure-chef-extension/issues/364)
-When using chef-Azure-extention 1210.13.x, credentials are being printed on the logs during client converge.
+# azure-chef-extension 1210.14.1.2 release notes:
+In this release, we have added the following enhancements:
+* [azure-chef-extension #371](https://github.com/chef-partners/azure-chef-extension/pull/371)
+Documented the use of chef_server_crt option in azure-chef-extension
+* [azure-chef-extension #373](https://github.com/chef-partners/azure-chef-extension/pull/373)
+ Add files to help with release process
+* [azure-chef-extension #376](https://github.com/chef-partners/azure-chef-extension/pull/376)
+Changes for Rakefile for new process of publishing
+* [azure-chef-extension #377](https://github.com/chef-partners/azure-chef-extension/issues/377)
+Update in makefile for automating the process
+* [azure-chef-extension #378](https://github.com/chef-partners/azure-chef-extension/pull/378)
+Upgrade rack version to 2.14 for azure-chef-extension
 
 See the [CHANGELOG](https://github.com/chef-partners/azure-chef-extension/blob/master/CHANGELOG.md) for a list of all changes in this release, and review.
 

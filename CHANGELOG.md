@@ -1,6 +1,13 @@
 # azure-chef-extension Change Log
 
-## Latest Release: 1210.14.1.1 (2021/10/14)
+## Latest Release: 1210.14.1.2 (2022/06/24)
+* [azure-chef-extension #371] https://github.com/chef-partners/azure-chef-extension/pull/371 Documented the use of chef_server_crt option in azure-chef-extension
+* [azure-chef-extension #373] https://github.com/chef-partners/azure-chef-extension/pull/373 Add files to help with release process
+* [azure-chef-extension #376] https://github.com/chef-partners/azure-chef-extension/pull/376 Changes for Rakefile for new process of publishing
+* [azure-chef-extension #377] https://github.com/chef-partners/azure-chef-extension/pull/377 Update in makefile for automating the process
+* [azure-chef-extension #378] https://github.com/chef-partners/azure-chef-extension/pull/378 Upgrade rack version to 2.14 for azure-chef-extension 
+
+## Release: 1210.14.1.1 (2021/10/14)
 * [azure-chef-extension #363] https://github.com/chef-partners/azure-chef-extension/pull/363 Fix for python not found error in latest Linux versions
 * [azure-chef-extension #366] https://github.com/chef-partners/azure-chef-extension/pull/366 Masking the credentials from chef-package-url
 * [azure-chef-extension #368] https://github.com/chef-partners/azure-chef-extension/pull/368 Fix for shared.sh script file according to ruby code conventions.
