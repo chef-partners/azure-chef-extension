@@ -15,7 +15,7 @@ Documented the use of chef_server_crt option in azure-chef-extension
  Add files to help with release process
 * [azure-chef-extension #376](https://github.com/chef-partners/azure-chef-extension/pull/376)
 Changes for Rakefile for new process of publishing
-* [azure-chef-extension #377](https://github.com/chef-partners/azure-chef-extension/issues/377)
+* [azure-chef-extension #377](https://github.com/chef-partners/azure-chef-extension/pull/377)
 Update in makefile for automating the process
 * [azure-chef-extension #378](https://github.com/chef-partners/azure-chef-extension/pull/378)
 Upgrade rack version to 2.14 for azure-chef-extension
