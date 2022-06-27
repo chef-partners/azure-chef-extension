@@ -13,16 +13,14 @@ github:
   delete_branch_on_merge: true
 
 pipelines:
-  - publish/public:
-      description: Publish azure-chef-extension to public Azure cloud
+  - publish/pipeline:
+      description: Publish azure-chef-extension to Azure cloud
       definition: .expeditor/publish.pipeline.yml
-      env:
-        - AZURE_CLOUD: public
-
+  
 subscriptions:
   - workload: pull_request_merged:{{github_repo}}:{{release_branch}}:*
     actions:
-      - trigger_pipeline:publish/public:
+      - trigger_pipeline:publish/pipeline:
           ignore_labels:
             - "Expeditor: Skip Publish to Public"
             - "Expeditor: Skip All"
