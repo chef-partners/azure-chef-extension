@@ -19,8 +19,7 @@ if [[ ${REGION1} != "fail" && ${REGION2} != "fail" ]]; then
 elif [[ ${REGION1} != "fail" ]] ; then
   CONFIRM_DEPLOYMENT_TYPE=$(buildkite-agent meta-data get deployment-type)
   make promote.single-region AZURE_CLOUD=${AZURE_CLOUD} PLATFORM=${RELEASE_PLATFORM} VERSION=${RELEASE_VERSION} INTERNAL_OR_PUBLIC=${CONFIRM_DEPLOYMENT_TYPE} CONFIRMATION=${CONFIRMATION} REGION1="${REGION1}"
-  else
-    echo "Publishing internally..."
-    make publish.internally AZURE_CLOUD=${AZURE_CLOUD} PLATFORM=${RELEASE_PLATFORM} VERSION=${RELEASE_VERSION} CONFIRMATION=${CONFIRMATION}
+else
+  echo "Publishing externally to all regions..."
+  make publish.all-regions AZURE_CLOUD=${AZURE_CLOUD} PLATFORM=${RELEASE_PLATFORM} VERSION=${RELEASE_VERSION} CONFIRMATION=${CONFIRMATION}
 fi
-

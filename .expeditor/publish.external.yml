@@ -1,0 +1,51 @@
+expeditor:
+  secrets: true
+
+steps:
+- block: "External Publish"
+  prompt: "Fill out the details for release"
+  fields:
+    - select: "Platform"
+      key: "azure-platform"
+      options:
+        - label: "Ubuntu"
+          value: "ubuntu"
+        - label: "Windows"
+          value: "windows"
+    - select: "Cloud"
+      key: "azure-cloud"
+      options:
+        - label: "Public"
+          value: "public"
+        - label: "Government"
+          value: "government"
+    - select: "Confirmation"
+      key: "azure-confirmation"
+      default: "true"
+      options:
+        - label: "True"
+          value: "true"
+        - label: "False"
+          value: "false"
+    - text: "Release Version"
+      key: "release-version"
+      hint: "121X.XX.X.X"
+    - text: "Region 1"
+      key: "deploy-region1"
+      hint: "Which first region should we deploy this to? Please enter region without any quotations, eg., East US"
+      required: false
+    - text: "Region 2"
+      key: "deploy-region2"
+      hint: "Which second region should we deploy this to? Please enter region without any quotations, eg., East US"
+      required: false
+    - select: "Confirme deployment type"
+      key: "deployment-type"
+      default: "confirm_public_deployment"
+      options:
+        - label: "Public Deployment"
+          value: "confirm_public_deployment"   
+- command: /workdir/scripts/external-publish.sh
+  label: ":rocket:"
+  expeditor:
+    executor:
+      docker:
