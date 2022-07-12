@@ -13,10 +13,15 @@ github:
   delete_branch_on_merge: true
 
 pipelines:
-  - publish/pipeline:
+  - publish/internal:
       description: Publish azure-chef-extension to Azure cloud
-      definition: .expeditor/publish.pipeline.yml
-  
+      definition: .expeditor/publish.internal.yml
+      env:
+        - AZURE_CLOUD: public
+  - publish/external:
+      description: Publish azure-chef-extension externally to Azure cloud
+      definition: .expeditor/publish.external.yml
+
 subscriptions:
   - workload: pull_request_merged:{{github_repo}}:{{release_branch}}:*
     actions:
