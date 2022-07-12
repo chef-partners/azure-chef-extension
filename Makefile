@@ -26,6 +26,23 @@ else
 	export MANAGEMENT_URL := https://management.core.windows.net/
 endif
 
+ifeq ($(CONFIRMATION), true)
+CONFIRM_REQUIRED := false
+else
+CONFIRM_REQUIRED := true
+endif
+
+ifdef REGION1
+ifdef REGION2
+REGIONA = "${REGION1}"
+REGIONB = "${REGION2}"
+$(info Publishing to regions $(REGIONA) and $(REGIONB)...)
+else
+$(info Publishing to region $(REGION1)...)
+REGION = "${REGION1}"
+endif
+endif
+
 #help:	@ List available tasks on this project
 help:
 	@grep -h -E '[a-zA-Z\.\-]+:.*?@ .*$$' $(MAKEFILE_LIST) | sort | tr -d '#' | awk 'BEGIN {FS = ":.*?@ "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
@@ -55,18 +72,18 @@ list.versions: login
 
 #publish.internally:	@ Publish extension internally to public or government Azure cloud
 publish.internally: login
-	bundle exec rake publish[deploy_to_$(DEPLOY_TYPE),$(PLATFORM),$(VERSION),$(EXTENSION_NAMESPACE),update,confirm_internal_deployment,$(CONFIRMATION)]
+	bundle exec rake publish[deploy_to_$(DEPLOY_TYPE),$(PLATFORM),$(VERSION),$(EXTENSION_NAMESPACE),update,confirm_internal_deployment,$(CONFIRM_REQUIRED)]
 
 #publish.all-regions:	@ Publish extension to all regions in public or government Azure cloud
 publish.all-regions: login
-	bundle exec rake publish[deploy_to_$(DEPLOY_TYPE),$(PLATFORM),$(VERSION),$(EXTENSION_NAMESPACE),update,confirm_public_deployment,$(CONFIRMATION)]
+	bundle exec rake publish[deploy_to_$(DEPLOY_TYPE),$(PLATFORM),$(VERSION),$(EXTENSION_NAMESPACE),update,confirm_public_deployment,$(CONFIRM_REQUIRED)]
 
 #promote.single-region:	@ Promote extension to a single region in public or government Azure cloud
 promote.single-region: login
 ifndef REGION1
 	$(error REGION1 is not set)
 endif
-	bundle exec rake promote_regions[deploy_to_$(DEPLOY_TYPE),$(PLATFORM),$(VERSION),$(EXTENSION_NAMESPACE),update,$(INTERNAL_OR_PUBLIC),$(CONFIRMATION),$(REGION1)]
+	bundle exec rake promote_regions[deploy_to_$(DEPLOY_TYPE),$(PLATFORM),$(VERSION),$(EXTENSION_NAMESPACE),update,$(INTERNAL_OR_PUBLIC),$(CONFIRM_REQUIRED),$(REGION)]
 
 #promote.two-regions:	@ Promote extension to two regions in public or government Azure cloud
 promote.two-regions: login
@@ -75,4 +92,4 @@ ifndef REGION1
 else ifndef REGION2
 	$(error REGION2 is not set)
 endif
-	bundle exec rake promote_regions[deploy_to_$(DEPLOY_TYPE),$(PLATFORM),$(VERSION),$(EXTENSION_NAMESPACE),update,$(INTERNAL_OR_PUBLIC),$(CONFIRMATION),$(REGION1),$(REGION2)]
+	bundle exec rake promote_regions[deploy_to_$(DEPLOY_TYPE),$(PLATFORM),$(VERSION),$(EXTENSION_NAMESPACE),update,$(INTERNAL_OR_PUBLIC),$(CONFIRM_REQUIRED),$(REGIONA),$(REGIONB)]
