@@ -1,4 +1,5 @@
-
+# [DEPRECATED]
+***Note*** Please refer to https://github.com/chef-partners/azure-chef-extension/blob/main/AUTOMATED_RELEASE_PROCESS.md for the new publish/release process.
 # Process to publish / release the azure-chef-extension
 ## Document Purpose
 

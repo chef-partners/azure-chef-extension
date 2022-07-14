@@ -7,6 +7,7 @@ steps:
   fields:
     - select: "Platform"
       key: "azure-platform"
+      default: "windows"
       options:
         - label: "Ubuntu"
           value: "ubuntu"
@@ -14,6 +15,7 @@ steps:
           value: "windows"
     - select: "Cloud"
       key: "azure-cloud"
+      default: "public"
       options:
         - label: "Public"
           value: "public"
@@ -38,7 +40,7 @@ steps:
       key: "deploy-region2"
       hint: "Which second region should we deploy this to? Please enter region without any quotations, eg., East US"
       required: false
-    - select: "Confirme deployment type"
+    - select: "Confirm deployment type"
       key: "deployment-type"
       default: "confirm_internal_deployment"
       options:
