@@ -1,0 +1,60 @@
+name: Specs
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+jobs:
+  ps-specs:
+    name: PowerShell Specs (Windows)
+    runs-on: windows-2025
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Pester
+        shell: pwsh
+        run: |
+          Install-Module -Name Pester -RequiredVersion 5.6.1 -Force -SkipPublisherCheck
+          Import-Module Pester
+
+      - name: Run PowerShell specs
+        shell: pwsh
+        run: |
+          $config = New-PesterConfiguration
+          $config.Run.Path = 'spec/ps_specs'
+          $config.Output.Verbosity = 'Detailed'
+          $config.TestResult.Enabled = $true
+          $config.TestResult.OutputPath = 'test-results-ps.xml'
+          $config.TestResult.OutputFormat = 'NUnitXml'
+          Invoke-Pester -Configuration $config
+
+      - name: Upload PS test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ps-test-results
+          path: test-results-ps.xml
+
+  shell-specs:
+    name: Shell Specs (Linux)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.2"
+          bundler-cache: true
+
+      - name: Run shell specs
+        run: bundle exec rspec spec/shell_specs --format documentation
+
+      - name: Upload shell test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: shell-test-results
+          path: spec/results/
