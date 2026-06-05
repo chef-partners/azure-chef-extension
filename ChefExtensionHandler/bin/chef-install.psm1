@@ -69,6 +69,11 @@ function Install-ChefClient {
         Chef-SetCustomEnvVariables $chef_licence_env $powershellVersion
         Write-Host "Set CHEF_LICENSE Environment variable as" $env:CHEF_LICENSE
       }
+      ## Get chef_license_key from config file and set CHEF_LICENSE_KEY for licensed downloads.
+      $chef_license_key = Get-ChefLicenseKey $powershellVersion
+      if ( $chef_license_key ) {
+        Set-ChefLicenseKeyEnv $chef_license_key
+      }
       ## Get msi url from config file.
       $chef_package_url = Get-PublicSettings-From-Config-Json "chef_package_url" $powershellVersion
       ## Get locally downloaded msi path string from config file.
