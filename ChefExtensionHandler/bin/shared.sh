@@ -132,6 +132,17 @@ export_env_vars() {
   eval $commands
 }
 
+# Read chef_license_key from settings and export CHEF_LICENSE_KEY
+read_chef_license_key(){
+  chef_extension_directory_path=$1
+  config_file_name=$(get_config_settings_file $chef_extension_directory_path)
+  chef_license_key_value=$(get_value_from_setting_file $config_file_name "chef_license_key" &)
+  if [ ! -z "$chef_license_key_value" ]; then
+    eval "export CHEF_LICENSE_KEY=$chef_license_key_value;"
+    echo "Set CHEF_LICENSE_KEY environment variable"
+  fi
+}
+
 # To set environment variable to new shell
 read_environment_variables(){
   chef_extension_directory_path=$1

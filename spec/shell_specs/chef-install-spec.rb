@@ -6,7 +6,7 @@ describe 'Chef Install' do
 
   let(:stubbed_env) { create_stubbed_env }
 
-  it 'Installs chef for linux' do
+  it 'installs chef for linux' do
     stdout, stderr, status = stubbed_env.execute(
       'bin/chef-install.sh',
       { 'SOME_OPTIONAL' => 'env vars' }

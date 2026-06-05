@@ -202,6 +202,18 @@ function Get-autoUpdateClientSetting{
   Get-JsonValueUsingRuby "$chefExtensionParent\\$extensionPreviousVersion\\RuntimeSettings\\$latestSettingFile" "runtimeSettings" 0 "handlerSettings" "publicSettings" "autoUpdateClient"
 }
 
+function Get-ChefLicenseKey($powershellVersion) {
+  Get-PublicSettings-From-Config-Json "chef_license_key" $powershellVersion
+}
+
+function Set-ChefLicenseKeyEnv($licenseKey) {
+  if ($licenseKey) {
+    $envObj = New-Object -TypeName System.Management.Automation.PSObject -Property @{CHEF_LICENSE_KEY=$licenseKey}
+    Chef-SetCustomEnvVariables $envObj (Get-PowershellVersion)
+    Write-Host "Set CHEF_LICENSE_KEY environment variable"
+  }
+}
+
 function Get-PublicSettings-From-Config-Json($key, $powershellVersion) {
   Try
   {
