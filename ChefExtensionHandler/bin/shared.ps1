@@ -214,6 +214,14 @@ function Set-ChefLicenseKeyEnv($licenseKey) {
   }
 }
 
+function Write-LicenseKeyStatus($licenseKey) {
+  if (-Not $licenseKey) {
+    Write-Host "[$(Get-Date)] CHEF_LICENSE_KEY not set; omitruck download will be used (no licensed download)"
+  } else {
+    Write-Host "[$(Get-Date)] CHEF_LICENSE_KEY is set; licensed download will be attempted"
+  }
+}
+
 function Get-PublicSettings-From-Config-Json($key, $powershellVersion) {
   Try
   {

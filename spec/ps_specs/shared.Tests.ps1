@@ -237,3 +237,17 @@ describe "#Set-ChefLicenseKeyEnv" {
     Assert-MockCalled Chef-SetCustomEnvVariables -Times 0
   }
 }
+
+describe "#Write-LicenseKeyStatus" {
+  it "logs absent key message when license key is empty" {
+    mock Write-Host
+    Write-LicenseKeyStatus ""
+    Assert-MockCalled Write-Host -Times 1
+  }
+
+  it "logs present key message when license key is provided" {
+    mock Write-Host
+    Write-LicenseKeyStatus "some-key"
+    Assert-MockCalled Write-Host -Times 1
+  }
+}

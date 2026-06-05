@@ -14,6 +14,7 @@ chef_extension_root=$commands_script_path/../
 
 read_environment_variables $chef_extension_root
 read_chef_license_key $chef_extension_root
+log_license_key_status
 
 # install azure chef extension gem
 install_chef_extension_gem(){

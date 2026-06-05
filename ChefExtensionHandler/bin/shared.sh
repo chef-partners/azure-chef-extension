@@ -143,6 +143,15 @@ read_chef_license_key(){
   fi
 }
 
+# Log the license key status for observability
+log_license_key_status(){
+  if [ -z "$CHEF_LICENSE_KEY" ]; then
+    echo "[$(date)] CHEF_LICENSE_KEY not set; omnitruck download will be used (no licensed download)"
+  else
+    echo "[$(date)] CHEF_LICENSE_KEY is set; licensed download will be attempted"
+  fi
+}
+
 # To set environment variable to new shell
 read_environment_variables(){
   chef_extension_directory_path=$1
