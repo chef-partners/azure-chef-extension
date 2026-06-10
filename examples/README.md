@@ -7,7 +7,7 @@
 
 ## Licensed Download Support
 
-To use licensed Chef Infra Client downloads, set both `CHEF_LICENSE` and `chef_license_key` in your extension public settings:
+To use licensed Chef Infra Client downloads, set both `CHEF_LICENSE` and `chef_license_key` in your extension public settings. The handler reads `chef_license_key` and automatically exports it as `CHEF_LICENSE_KEY` before the installer runs.
 
 ```json
 {
@@ -23,4 +23,4 @@ To use licensed Chef Infra Client downloads, set both `CHEF_LICENSE` and `chef_l
 }
 ```
 
-When `chef_license_key` is present, the extension sets `CHEF_LICENSE_KEY` as an environment variable before invoking the installer, enabling authenticated access to licensed Chef Infra Client packages.
+Use the raw license key value as a JSON string; do not set `CHEF_LICENSE_KEY` directly. Keep `chef_license_key` in the same public settings payload that you use for `runlist`, `bootstrap_options`, and `CHEF_LICENSE`.
