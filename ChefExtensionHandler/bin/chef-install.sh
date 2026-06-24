@@ -45,6 +45,15 @@ curl_check(){
   fi
 }
 
+run_omnitruck_install(){
+  if [ ! -z "$CHEF_LICENSE_KEY" ]; then
+    echo "Using chef_license_key for Omnitruck install request"
+    sh /tmp/$platform-install.sh "$@" -L "$CHEF_LICENSE_KEY"
+  else
+    sh /tmp/$platform-install.sh "$@"
+  fi
+}
+
 chef_install_from_script(){
     echo "Fetching settings file"
     config_file_name=$(get_config_settings_file $chef_extension_root)
@@ -75,16 +84,16 @@ chef_install_from_script(){
       echo "Install.sh script downloaded at /tmp/$platform-install.sh"
       if [ -z "$chef_version" ] && [ -z "$chef_channel" ]; then
         echo "Installing latest Chef Infra Client"
-        sh /tmp/$platform-install.sh
+        run_omnitruck_install
       elif [ ! -z "$chef_version" ] && [ -z "$chef_channel" ]; then
         echo "Installing Chef Infra Client version $chef_version"
-        sh /tmp/$platform-install.sh -v $chef_version
+        run_omnitruck_install -v $chef_version
       elif [ -z "$chef_version" ] && [ ! -z "$chef_channel" ]; then
         echo "Installing latest Chef Infra Client from $chef_channel"
-        sh /tmp/$platform-install.sh -c $chef_channel
+        run_omnitruck_install -c $chef_channel
       else
         echo "Installing Chef Infra Client version $chef_version from $chef_channel channel"
-        sh /tmp/$platform-install.sh -v $chef_version -c $chef_channel
+        run_omnitruck_install -v $chef_version -c $chef_channel
       fi
       echo "Deleting Install.sh script present at /tmp/$platform-install.sh"
       rm /tmp/$platform-install.sh -f

@@ -98,7 +98,13 @@ function Install-ChefClient {
           $chef_package_channel = "stable"
         }
 
-        iex (new-object net.webclient).downloadstring('https://omnitruck.chef.io/install.ps1');install -daemon $daemon -version $chef_package_version -channel $chef_package_channel
+        iex (new-object net.webclient).downloadstring('https://omnitruck.chef.io/install.ps1')
+        if ( $chef_license_key ) {
+          Write-Host "Using chef_license_key for Omnitruck install request"
+          install -daemon $daemon -version $chef_package_version -channel $chef_package_channel -license_id $chef_license_key
+        } else {
+          install -daemon $daemon -version $chef_package_version -channel $chef_package_channel
+        }
       } elseif ( -Not $chef_pkg -and $chef_downloaded_package ) {
         Install-ChefMsi $chef_downloaded_package $daemon
       } elseif ( -Not $chef_pkg -and $chef_package_url ) {

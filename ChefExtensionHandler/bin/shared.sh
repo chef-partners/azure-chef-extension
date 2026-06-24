@@ -139,7 +139,7 @@ read_chef_license_key(){
   chef_license_key_value=$(get_value_from_setting_file $config_file_name "chef_license_key" &)
   if [ ! -z "$chef_license_key_value" ]; then
     eval "export CHEF_LICENSE_KEY=$chef_license_key_value;"
-    echo "Set CHEF_LICENSE_KEY environment variable"
+    echo "Set CHEF_LICENSE_KEY environment variable from chef_license_key setting"
   fi
 }
 
@@ -148,7 +148,7 @@ log_license_key_status(){
   if [ -z "$CHEF_LICENSE_KEY" ]; then
     echo "[$(date)] CHEF_LICENSE_KEY not set; omnitruck download will be used (no licensed download)"
   else
-    echo "[$(date)] CHEF_LICENSE_KEY is set; licensed download will be attempted"
+    echo "[$(date)] CHEF_LICENSE_KEY is set from chef_license_key; licensed download will be attempted"
   fi
 }
 

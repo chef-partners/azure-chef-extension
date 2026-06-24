@@ -210,7 +210,7 @@ function Set-ChefLicenseKeyEnv($licenseKey) {
   if ($licenseKey) {
     $envObj = New-Object -TypeName System.Management.Automation.PSObject -Property @{CHEF_LICENSE_KEY=$licenseKey}
     Chef-SetCustomEnvVariables $envObj (Get-PowershellVersion)
-    Write-Host "Set CHEF_LICENSE_KEY environment variable"
+    Write-Host "Set CHEF_LICENSE_KEY environment variable from chef_license_key setting"
   }
 }
 
@@ -218,7 +218,7 @@ function Write-LicenseKeyStatus($licenseKey) {
   if (-Not $licenseKey) {
     Write-Host "[$(Get-Date)] CHEF_LICENSE_KEY not set; omitruck download will be used (no licensed download)"
   } else {
-    Write-Host "[$(Get-Date)] CHEF_LICENSE_KEY is set; licensed download will be attempted"
+    Write-Host "[$(Get-Date)] CHEF_LICENSE_KEY is set from chef_license_key; licensed download will be attempted"
   }
 }
 
