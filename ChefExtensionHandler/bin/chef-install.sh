@@ -47,8 +47,23 @@ curl_check(){
 
 run_omnitruck_install(){
   if [ ! -z "$CHEF_LICENSE_KEY" ]; then
-    echo "Using chef_license_key for Omnitruck install request"
-    sh /tmp/$platform-install.sh "$@" -L "$CHEF_LICENSE_KEY"
+    echo "Using chef_license_key for Omnitruck download"
+    # packages.chef.io requires ?licenseId=<key> in the download URL for gated versions.
+    # Fetch the base URL from the omnitruck metadata endpoint, then append the licenseId.
+    _pv=$(. /etc/os-release 2>/dev/null && echo "$VERSION_ID")
+    [ -z "$_pv" ] && _pv=$(lsb_release -rs 2>/dev/null || uname -r)
+    _arch=$(uname -m)
+    _ch="${chef_channel:-stable}"
+    _meta_url="https://omnitruck.chef.io/${_ch}/chef/metadata?p=${platform}&pv=${_pv}&m=${_arch}"
+    [ -n "$chef_version" ] && _meta_url="${_meta_url}&v=${chef_version}"
+    _download_url=$(curl -fsSL "${_meta_url}" 2>/dev/null | grep '^url' | awk '{print $2}')
+    if [ -n "$_download_url" ]; then
+      echo "Downloading with licenseId from ${_download_url}"
+      sh /tmp/$platform-install.sh "$@" -l "${_download_url}?licenseId=${CHEF_LICENSE_KEY}"
+    else
+      echo "Warning: could not resolve download URL from omnitruck; attempting install without licenseId"
+      sh /tmp/$platform-install.sh "$@"
+    fi
   else
     sh /tmp/$platform-install.sh "$@"
   fi
