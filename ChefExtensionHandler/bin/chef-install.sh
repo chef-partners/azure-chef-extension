@@ -191,7 +191,7 @@ chef_install_from_script
 # ponytail: HAB_CHEF_BIN_STUB is /usr/bin/chef-client; update if ice install path changes
 HAB_CHEF_BIN_STUB=/usr/bin/chef-client
 if [ -f "$HAB_CHEF_BIN_STUB" ]; then
-  export PATH=/hab/bin:/opt/chef-ice/bin:/opt/chef-ice/embedded/bin:$PATH
+  export PATH=/hab/bin:$PATH
 else
   export PATH=/opt/chef/bin/:/opt/chef/embedded/bin:$PATH
 fi
