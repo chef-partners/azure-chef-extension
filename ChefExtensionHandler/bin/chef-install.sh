@@ -69,6 +69,37 @@ run_omnitruck_install(){
   fi
 }
 
+# Chef >= 19 ships as chef-ice via chefdownload-commercial.chef.io.
+# The API uses p=linux|windows, pm=deb|rpm|msi, m=x86_64|aarch64 — no platform version needed.
+# Requires CHEF_LICENSE_KEY.
+install_chef_ice(){
+  if [ -z "$CHEF_LICENSE_KEY" ]; then
+    echo "ERROR: chef-ice (Chef >= 19) requires a license key — set chef_license_key in extension settings"
+    exit 1
+  fi
+  _arch=$(uname -m)
+  _ch="${chef_channel:-stable}"
+  # Detect package manager to choose installer format
+  if command -v dpkg > /dev/null 2>&1; then
+    _pm=deb
+  elif command -v rpm > /dev/null 2>&1; then
+    _pm=rpm
+  else
+    echo "ERROR: could not detect package manager (dpkg or rpm) for chef-ice install"
+    exit 1
+  fi
+  _url="https://chefdownload-commercial.chef.io/${_ch}/chef-ice/download?eol=false&license_id=${CHEF_LICENSE_KEY}&m=${_arch}&p=linux&pm=${_pm}&v=${chef_version}"
+  echo "Downloading chef-ice ${chef_version} (${_arch}/${_pm}) from commercial endpoint"
+  _tmp_pkg="/tmp/chef-ice-${_arch}.${_pm}"
+  if curl -fSL -o "${_tmp_pkg}" "${_url}" 2>&1; then
+    install_file "${_pm}" "${_tmp_pkg}"
+    rm -f "${_tmp_pkg}"
+  else
+    echo "ERROR: Failed to download chef-ice ${chef_version} from commercial endpoint"
+    exit 1
+  fi
+}
+
 chef_install_from_script(){
     echo "Fetching settings file"
     config_file_name=$(get_config_settings_file $chef_extension_root)
@@ -77,41 +108,53 @@ chef_install_from_script(){
       exit 1
     fi
     echo "Reading Chef-Infra-Client version from settings file"
-    chef_version=$(get_value_from_setting_file $config_file_name "bootstrap_version" &)
+    chef_version=$(get_value_from_setting_file $config_file_name "bootstrap_version")
     echo "Reading Chef-Infra-Client release channel from settings file"
-    chef_channel=$(get_value_from_setting_file $config_file_name "bootstrap_channel" &)
+    chef_channel=$(get_value_from_setting_file $config_file_name "bootstrap_channel")
     echo "Reading downloaded Chef-Infra-Client path from settings file"
-    chef_downloaded_package=$(get_value_from_setting_file $config_file_name "chef_package_path" &)
+    chef_downloaded_package=$(get_value_from_setting_file $config_file_name "chef_package_path")
     echo "Reading chef package url from settings file"
-    chef_package_url=$(get_value_from_setting_file $config_file_name "chef_package_url" &)
+    chef_package_url=$(get_value_from_setting_file $config_file_name "chef_package_url")
     echo "Call for Checking linux distributor"
     platform=$(get_linux_distributor)
-    #check if chef-client is already installed
-    if [ "$platform" = "ubuntu" -o "$platform" = "debian" ]; then
+    # Check if chef or chef-ice is already installed
+    _major=$(echo "${chef_version}" | cut -d. -f1)
+    _is_ice=0
+    [ -n "$chef_version" ] && [ "$_major" -ge 19 ] 2>/dev/null && _is_ice=1
+    HAB_CHEF_BIN_STUB=/usr/bin/chef-client
+    if [ "$_is_ice" -eq 1 ]; then
+      [ -f "$HAB_CHEF_BIN_STUB" ]
+    elif [ "$platform" = "ubuntu" -o "$platform" = "debian" ]; then
       dpkg-query -s chef > /dev/null 2>&1
     elif [ "$platform" = "centos" -o "$platform" = "rhel" -o "$platform" = "linuxoracle" ]; then
       yum list installed | grep -w "chef"
     fi
-    chef_install_status=$?
     if [ $chef_install_status -ne 0 ] && [ -z "$chef_downloaded_package" ] && [ -z "$chef_package_url" ]; then
-      curl_check $platform
-      curl -L -o /tmp/$platform-install.sh https://omnitruck.chef.io/install.sh
-      echo "Install.sh script downloaded at /tmp/$platform-install.sh"
-      if [ -z "$chef_version" ] && [ -z "$chef_channel" ]; then
-        echo "Installing latest Chef Infra Client"
-        run_omnitruck_install
-      elif [ ! -z "$chef_version" ] && [ -z "$chef_channel" ]; then
-        echo "Installing Chef Infra Client version $chef_version"
-        run_omnitruck_install -v $chef_version
-      elif [ -z "$chef_version" ] && [ ! -z "$chef_channel" ]; then
-        echo "Installing latest Chef Infra Client from $chef_channel"
-        run_omnitruck_install -c $chef_channel
+      # Chef >= 19 ships as chef-ice via chefdownload-commercial.chef.io, not omnitruck
+      _major=$(echo "${chef_version}" | cut -d. -f1)
+      if [ -n "$chef_version" ] && [ "$_major" -ge 19 ] 2>/dev/null; then
+        echo "Chef version ${chef_version} >= 19: using chef-ice commercial download"
+        install_chef_ice
       else
-        echo "Installing Chef Infra Client version $chef_version from $chef_channel channel"
-        run_omnitruck_install -v $chef_version -c $chef_channel
+        curl_check $platform
+        curl -L -o /tmp/$platform-install.sh https://omnitruck.chef.io/install.sh
+        echo "Install.sh script downloaded at /tmp/$platform-install.sh"
+        if [ -z "$chef_version" ] && [ -z "$chef_channel" ]; then
+          echo "Installing latest Chef Infra Client"
+          run_omnitruck_install
+        elif [ ! -z "$chef_version" ] && [ -z "$chef_channel" ]; then
+          echo "Installing Chef Infra Client version $chef_version"
+          run_omnitruck_install -v $chef_version
+        elif [ -z "$chef_version" ] && [ ! -z "$chef_channel" ]; then
+          echo "Installing latest Chef Infra Client from $chef_channel"
+          run_omnitruck_install -c $chef_channel
+        else
+          echo "Installing Chef Infra Client version $chef_version from $chef_channel channel"
+          run_omnitruck_install -v $chef_version -c $chef_channel
+        fi
+        echo "Deleting Install.sh script present at /tmp/$platform-install.sh"
+        rm /tmp/$platform-install.sh -f
       fi
-      echo "Deleting Install.sh script present at /tmp/$platform-install.sh"
-      rm /tmp/$platform-install.sh -f
     elif [ $chef_install_status -ne 0 ] && [ ! -z "$chef_downloaded_package" ]; then
       echo "Installing downloaded Chef Infra Client from $chef_downloaded_package path"
       filename=`echo $chef_downloaded_package | sed -e 's/^.*\///'`
@@ -145,7 +188,13 @@ chef_install_from_script(){
 
 chef_install_from_script
 
-export PATH=/opt/chef/bin/:/opt/chef/embedded/bin:$PATH
+# ponytail: HAB_CHEF_BIN_STUB is /usr/bin/chef-client; update if ice install path changes
+HAB_CHEF_BIN_STUB=/usr/bin/chef-client
+if [ -f "$HAB_CHEF_BIN_STUB" ]; then
+  export PATH=/hab/bin:/opt/chef-ice/bin:/opt/chef-ice/embedded/bin:$PATH
+else
+  export PATH=/opt/chef/bin/:/opt/chef/embedded/bin:$PATH
+fi
 
 # check if azure-chef-extension is installed
 azure_chef_extn_gem=`gem list azure-chef-extension | grep azure-chef-extension | awk '{print $1}'`
