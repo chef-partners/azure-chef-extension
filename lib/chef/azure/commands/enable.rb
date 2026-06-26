@@ -265,8 +265,9 @@ class EnableChef
     begin
       current_dir = File.expand_path(File.dirname(File.dirname(__FILE__)))
       first_client_run_recipe_path = windows? ? "#{current_dir}\\first_client_run_recipe.rb" : "#{current_dir}/first_client_run_recipe.rb"
-      if !config[:first_boot_attributes]["policy_name"].nil? and !config[:first_boot_attributes]["policy_group"].nil?
-        command = "chef-client -j #{bootstrap_directory}/first-boot.json -c #{bootstrap_directory}/client.rb -L #{@azure_plugin_log_location}/chef-client.log --once"
+      if policyfile_mode?(config)
+        chef_client_cmd = config[:local_mode] ? "chef-client --local-mode" : "chef-client"
+        command = "#{chef_client_cmd} -j #{bootstrap_directory}/first-boot.json -c #{bootstrap_directory}/client.rb -L #{@azure_plugin_log_location}/chef-client.log --once"
       else
         command = "chef-client #{first_client_run_recipe_path} -j #{bootstrap_directory}/first-boot.json -c #{bootstrap_directory}/client.rb -L #{@azure_plugin_log_location}/chef-client.log --once"
       end
@@ -282,12 +283,13 @@ class EnableChef
       @chef_client_error = "First chef-client run failed (#{e})"
     end
 
+    chef_client_cmd = config[:local_mode] ? "chef-client --local-mode" : "chef-client"
     params = "-c #{bootstrap_directory}/client.rb -L #{@azure_plugin_log_location}/chef-client.log --once "
 
     # Runs chef-client in background using scheduled task if windows else using process
     if windows?
       puts "#{Time.now} Creating scheduled task with runlist #{runlist}.."
-      schtask = "SCHTASKS.EXE /Create /TN \"Chef Client First Run\" /RU \"NT Authority\\System\" /RP /RL \"HIGHEST\" /SC ONCE /TR \"cmd /c 'C:\\opscode\\chef\\bin\\chef-client #{params}'\" /ST \"#{Time.now.strftime('%H:%M')}\" /F"
+      schtask = "SCHTASKS.EXE /Create /TN \"Chef Client First Run\" /RU \"NT Authority\\System\" /RP /RL \"HIGHEST\" /SC ONCE /TR \"cmd /c 'C:\\opscode\\chef\\bin\\#{chef_client_cmd} #{params}'\" /ST \"#{Time.now.strftime('%H:%M')}\" /F"
 
       begin
         result = @extended_logs == 'true' ? shell_out("#{schtask} && touch #{@chef_client_success_file}") : shell_out(schtask)
@@ -306,7 +308,7 @@ class EnableChef
       end
       puts "#{Time.now} Created and ran scheduled task for first chef-client run with runlist #{runlist}"
     else
-      command = @extended_logs == 'true' ? "chef-client #{params} && touch #{@chef_client_success_file}" : "chef-client #{params}"
+      command = @extended_logs == 'true' ? "#{chef_client_cmd} #{params} && touch #{@chef_client_success_file}" : "#{chef_client_cmd} #{params}"
       @child_pid = Process.spawn command
       @chef_client_run_start_time = Time.now
       Process.detach @child_pid
@@ -330,6 +332,10 @@ class EnableChef
     config[:validation_client_name] =  bootstrap_options['validation_client_name'] if bootstrap_options['validation_client_name']
     config[:node_verify_api_cert] =  bootstrap_options['node_verify_api_cert'] if bootstrap_options['node_verify_api_cert']
     config[:node_ssl_verify_mode] =  bootstrap_options['node_ssl_verify_mode'] if bootstrap_options['node_ssl_verify_mode']
+    config[:policy_name] = bootstrap_options['policy_name'] if bootstrap_options['policy_name']
+    config[:policy_group] = bootstrap_options['policy_group'] if bootstrap_options['policy_group']
+    config[:local_mode] = bootstrap_options['local_mode'] if bootstrap_options['local_mode']
+    config[:policy_document_relative_path] = @policy_document_relative_path unless @policy_document_relative_path.to_s.empty?
 
     config
   end
@@ -377,6 +383,7 @@ class EnableChef
     @extended_logs = value_from_json_file(handler_settings_file, 'runtimeSettings', '0', 'handlerSettings', 'publicSettings', 'extendedLogs')
     @ohai_hints = value_from_json_file(handler_settings_file, 'runtimeSettings', '0', 'handlerSettings', 'publicSettings', 'hints')
     @first_boot_attributes = JSON.parse(value_from_json_file(handler_settings_file, 'runtimeSettings', '0', 'handlerSettings', 'publicSettings', 'custom_json_attr').gsub("=>", ":")) rescue nil || {}
+    @policy_document_relative_path = value_from_json_file(handler_settings_file, 'runtimeSettings', '0', 'handlerSettings', 'publicSettings', 'policy_document_relative_path')
   end
 
   def escape_runlist(run_list)
@@ -495,5 +502,16 @@ class EnableChef
       Chef::Log.info "Copying setting file to #{bootstrap_directory}"
       FileUtils.cp(settings_file, bootstrap_directory)
     end
+  end
+
+  # Returns true when policy_name + policy_group are set (via bootstrap_options or
+  # custom_json_attr), or when local_mode is requested. In these cases the run_list
+  # bootstrap recipe is skipped and client.rb is configured for policyfile mode.
+  def policyfile_mode?(config)
+    (config[:policy_name] && !config[:policy_name].to_s.empty? &&
+     config[:policy_group] && !config[:policy_group].to_s.empty?) ||
+    config[:local_mode] ||
+    (!config[:first_boot_attributes]["policy_name"].nil? &&
+     !config[:first_boot_attributes]["policy_group"].nil?)
   end
 end

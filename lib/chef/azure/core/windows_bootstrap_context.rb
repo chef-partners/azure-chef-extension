@@ -119,10 +119,19 @@ CONFIG
           end
 
           client_rb <<  %Q{log_location       '#{@config[:log_location]}/chef-client.log'\n}
-          client_rb <<  %Q{chef_server_url       '#{@config[:chef_server_url]}'\n} if @config[:chef_server_url]
-          client_rb <<  %Q{validation_client_name       '#{@config[:validation_client_name]}'\n} if @config[:validation_client_name]
-          client_rb <<  %Q{client_key      'c:/chef/client.pem'\n}
-          client_rb <<  %Q{validation_key      'c:/chef/validation.pem'\n}
+
+          if policyfile_mode?
+            client_rb << %Q{policy_name         '#{@config[:policy_name]}'\n} if @config[:policy_name]
+            client_rb << %Q{policy_group        '#{@config[:policy_group]}'\n} if @config[:policy_group]
+            # chef_server_url is optional in local mode; required for Chef Server policyfile mode
+            client_rb <<  %Q{chef_server_url       '#{@config[:chef_server_url]}'\n} if @config[:chef_server_url]
+            client_rb <<  %Q{client_key      'c:/chef/client.pem'\n}
+          else
+            client_rb <<  %Q{chef_server_url       '#{@config[:chef_server_url]}'\n} if @config[:chef_server_url]
+            client_rb <<  %Q{validation_client_name       '#{@config[:validation_client_name]}'\n} if @config[:validation_client_name]
+            client_rb <<  %Q{client_key      'c:/chef/client.pem'\n}
+            client_rb <<  %Q{validation_key      'c:/chef/validation.pem'\n}
+          end
 
           client_rb << <<-CONFIG
 # Add support to use chef Handlers for heartbeat and
@@ -146,8 +155,9 @@ CONFIG
 
         def first_boot
           attributes = (@config[:first_boot_attributes] || {})
-          first_boot_attributes_and_run_list = @run_list.empty? ? attributes : attributes.merge(:target_runlist => @run_list)
-          escape_and_echo(first_boot_attributes_and_run_list.to_json)
+          # ponytail: skip target_runlist in policyfile mode; the policy defines the run list
+          first_boot_hash = policyfile_mode? || @run_list.empty? ? attributes : attributes.merge(:target_runlist => @run_list)
+          escape_and_echo(first_boot_hash.to_json)
         end
 
         # escape WIN BATCH special chars
@@ -162,6 +172,12 @@ CONFIG
         end
 
         private
+
+        def policyfile_mode?
+          (@config[:policy_name] && !@config[:policy_name].to_s.empty? &&
+           @config[:policy_group] && !@config[:policy_group].to_s.empty?) ||
+          @config[:local_mode]
+        end
       end
     end
   end

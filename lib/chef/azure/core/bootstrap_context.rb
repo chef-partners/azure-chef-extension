@@ -35,7 +35,10 @@ class Chef
         end
 
         def first_boot
-          @run_list.empty? ? Hash(@config[:first_boot_attributes]) : Hash(@config[:first_boot_attributes]).merge(:target_runlist => @run_list)
+          attrs = Hash(@config[:first_boot_attributes])
+          # ponytail: skip target_runlist in policyfile mode; the policy defines the run list
+          return attrs if policyfile_mode?
+          @run_list.empty? ? attrs : attrs.merge(:target_runlist => @run_list)
         end
 
         def config_content
@@ -101,10 +104,19 @@ class Chef
           end
 
           client_rb <<  %Q{log_location       "#{@config[:log_location]}/chef-client.log"\n}
-          client_rb <<  %Q{chef_server_url       "#{@config[:chef_server_url]}"\n} if @config[:chef_server_url]
-          client_rb <<  %Q{validation_client_name       "#{@config[:validation_client_name]}"\n} if @config[:validation_client_name]
-          client_rb <<  %Q{client_key      "/etc/chef/client.pem"\n}
-          client_rb <<  %Q{validation_key      "/etc/chef/validation.pem"\n}
+
+          if policyfile_mode?
+            client_rb << %Q{policy_name         "#{@config[:policy_name]}"\n} if @config[:policy_name]
+            client_rb << %Q{policy_group        "#{@config[:policy_group]}"\n} if @config[:policy_group]
+            # chef_server_url is optional in local mode; required for Chef Server policyfile mode
+            client_rb << %Q{chef_server_url       "#{@config[:chef_server_url]}"\n} if @config[:chef_server_url]
+            client_rb <<  %Q{client_key      "/etc/chef/client.pem"\n}
+          else
+            client_rb <<  %Q{chef_server_url       "#{@config[:chef_server_url]}"\n} if @config[:chef_server_url]
+            client_rb <<  %Q{validation_client_name       "#{@config[:validation_client_name]}"\n} if @config[:validation_client_name]
+            client_rb <<  %Q{client_key      "/etc/chef/client.pem"\n}
+            client_rb <<  %Q{validation_key      "/etc/chef/validation.pem"\n}
+          end
 
           client_rb << <<-CONFIG
 # Add support to use chef Handlers for heartbeat and
@@ -122,6 +134,13 @@ CONFIG
           client_rb
         end
 
+        private
+
+        def policyfile_mode?
+          (@config[:policy_name] && !@config[:policy_name].to_s.empty? &&
+           @config[:policy_group] && !@config[:policy_group].to_s.empty?) ||
+          @config[:local_mode]
+        end
       end
     end
   end

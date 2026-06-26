@@ -1,0 +1,170 @@
+require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
+require 'chef/azure/core/bootstrap_context'
+require 'chef/azure/core/windows_bootstrap_context'
+
+describe Chef::Knife::Core::BootstrapContext do
+  let(:chef_config) { { knife: {} } }
+  let(:run_list) { [] }
+
+  def ctx(config_overrides = {})
+    config = {
+      user_client_rb: '',
+      log_location: '/var/log/azure',
+      chef_extension_root: '/var/lib/waagent/chef',
+      first_boot_attributes: {}
+    }.merge(config_overrides)
+    described_class.new(config, run_list, chef_config)
+  end
+
+  context "standard (run_list) mode" do
+    it "emits chef_server_url and validation_key path in client.rb" do
+      c = ctx(chef_server_url: 'https://chef.example.com', validation_client_name: 'org-validator')
+      content = c.config_content
+      expect(content).to include('chef_server_url')
+      expect(content).to include('validation_key')
+      expect(content).to include('validation_client_name')
+    end
+
+    it "includes target_runlist in first_boot when run_list is present" do
+      c = described_class.new(
+        { user_client_rb: '', log_location: '/tmp', chef_extension_root: '/', first_boot_attributes: {} },
+        ['recipe[foo]'],
+        chef_config
+      )
+      expect(c.first_boot).to include(:target_runlist)
+    end
+  end
+
+  context "policyfile mode (policy_name + policy_group in config)" do
+    let(:policy_config) do
+      {
+        policy_name: 'my-policy',
+        policy_group: 'production',
+        chef_server_url: 'https://chef.example.com',
+        user_client_rb: '',
+        log_location: '/var/log/azure',
+        chef_extension_root: '/var/lib/waagent/chef',
+        first_boot_attributes: {}
+      }
+    end
+
+    it "emits policy_name and policy_group in client.rb" do
+      c = described_class.new(policy_config, run_list, chef_config)
+      content = c.config_content
+      expect(content).to include('policy_name')
+      expect(content).to include('policy_group')
+      expect(content).to include('my-policy')
+      expect(content).to include('production')
+    end
+
+    it "does not emit validation_key path in client.rb" do
+      c = described_class.new(policy_config, run_list, chef_config)
+      expect(c.config_content).not_to include('validation_key')
+    end
+
+    it "does not emit validation_client_name in client.rb" do
+      c = described_class.new(policy_config, run_list, chef_config)
+      expect(c.config_content).not_to include('validation_client_name')
+    end
+
+    it "does not add target_runlist to first_boot even when run_list is set" do
+      c = described_class.new(policy_config, ['recipe[foo]'], chef_config)
+      expect(c.first_boot).not_to include(:target_runlist)
+    end
+
+    it "still emits chef_server_url when provided" do
+      c = described_class.new(policy_config, run_list, chef_config)
+      expect(c.config_content).to include('chef_server_url')
+    end
+
+    it "omits chef_server_url in local mode" do
+      config = policy_config.merge(local_mode: true).tap { |h| h.delete(:chef_server_url) }
+      c = described_class.new(config, run_list, chef_config)
+      expect(c.config_content).not_to include('chef_server_url')
+    end
+  end
+
+  context "local mode (no Chef Server)" do
+    let(:local_config) do
+      {
+        local_mode: true,
+        user_client_rb: '',
+        log_location: '/var/log/azure',
+        chef_extension_root: '/var/lib/waagent/chef',
+        first_boot_attributes: {}
+      }
+    end
+
+    it "does not emit validation_key path in client.rb" do
+      c = described_class.new(local_config, run_list, chef_config)
+      expect(c.config_content).not_to include('validation_key')
+    end
+
+    it "does not add target_runlist to first_boot" do
+      c = described_class.new(local_config, ['recipe[foo]'], chef_config)
+      expect(c.first_boot).not_to include(:target_runlist)
+    end
+  end
+end
+
+describe Chef::Knife::Core::WindowsBootstrapContext do
+  let(:chef_config) { { knife: {} } }
+  let(:run_list) { [] }
+
+  def ctx(config_overrides = {})
+    config = {
+      user_client_rb: '',
+      log_location: 'c:/chef/log',
+      chef_extension_root: 'c:/chef',
+      first_boot_attributes: {}
+    }.merge(config_overrides)
+    described_class.new(config, run_list, chef_config)
+  end
+
+  context "standard mode" do
+    it "emits validation_key path in client.rb" do
+      c = ctx(chef_server_url: 'https://chef.example.com', validation_client_name: 'org-validator')
+      expect(c.config_content).to include('validation_key')
+    end
+
+    it "includes target_runlist in first_boot when run_list present" do
+      c = described_class.new(
+        { user_client_rb: '', log_location: 'c:/chef/log', chef_extension_root: 'c:/chef', first_boot_attributes: {} },
+        ['recipe[foo]'],
+        chef_config
+      )
+      # first_boot is escape_and_echo'd; check raw json contains the key
+      expect(c.first_boot).to include('target_runlist')
+    end
+  end
+
+  context "policyfile mode" do
+    let(:policy_config) do
+      {
+        policy_name: 'my-policy',
+        policy_group: 'production',
+        chef_server_url: 'https://chef.example.com',
+        user_client_rb: '',
+        log_location: 'c:/chef/log',
+        chef_extension_root: 'c:/chef',
+        first_boot_attributes: {}
+      }
+    end
+
+    it "does not emit validation_key path in client.rb" do
+      c = described_class.new(policy_config, run_list, chef_config)
+      expect(c.config_content).not_to include('validation_key')
+    end
+
+    it "emits policy_name and policy_group in client.rb" do
+      c = described_class.new(policy_config, run_list, chef_config)
+      expect(c.config_content).to include('my-policy')
+      expect(c.config_content).to include('production')
+    end
+
+    it "does not add target_runlist in first_boot even when run_list is set" do
+      c = described_class.new(policy_config, ['recipe[foo]'], chef_config)
+      expect(c.first_boot).not_to include('target_runlist')
+    end
+  end
+end
