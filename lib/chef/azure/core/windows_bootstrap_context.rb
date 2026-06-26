@@ -123,7 +123,6 @@ CONFIG
           if policyfile_mode?
             client_rb << %Q{policy_name         '#{@config[:policy_name]}'\n} if @config[:policy_name]
             client_rb << %Q{policy_group        '#{@config[:policy_group]}'\n} if @config[:policy_group]
-            # chef_server_url is optional in local mode; required for Chef Server policyfile mode
             client_rb <<  %Q{chef_server_url       '#{@config[:chef_server_url]}'\n} if @config[:chef_server_url]
             client_rb <<  %Q{client_key      'c:/chef/client.pem'\n}
           else
@@ -174,9 +173,8 @@ CONFIG
         private
 
         def policyfile_mode?
-          (@config[:policy_name] && !@config[:policy_name].to_s.empty? &&
-           @config[:policy_group] && !@config[:policy_group].to_s.empty?) ||
-          @config[:local_mode]
+          @config[:policy_name] && !@config[:policy_name].to_s.empty? &&
+          @config[:policy_group] && !@config[:policy_group].to_s.empty?
         end
       end
     end

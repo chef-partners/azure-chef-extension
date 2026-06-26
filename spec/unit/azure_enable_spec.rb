@@ -943,27 +943,6 @@ describe EnableChef do
       expect(config[:policy_name]).to eq('my-policy')
       expect(config[:policy_group]).to eq('production')
     end
-
-    it "extracts local_mode from bootstrap_options" do
-      opts = { 'policy_name' => 'my-policy', 'policy_group' => 'prod', 'local_mode' => true }
-      instance.instance_variable_set(:@first_boot_attributes, {})
-      instance.instance_variable_set(:@azure_plugin_log_location, '/tmp')
-      instance.instance_variable_set(:@client_rb, '')
-      instance.instance_variable_set(:@secret, nil)
-      config = instance.send(:configure_settings, opts)
-      expect(config[:local_mode]).to be true
-    end
-
-    it "includes policy_document_relative_path when set" do
-      opts = { 'policy_name' => 'my-policy', 'policy_group' => 'prod' }
-      instance.instance_variable_set(:@first_boot_attributes, {})
-      instance.instance_variable_set(:@azure_plugin_log_location, '/tmp')
-      instance.instance_variable_set(:@client_rb, '')
-      instance.instance_variable_set(:@secret, nil)
-      instance.instance_variable_set(:@policy_document_relative_path, '/etc/chef/Policyfile.lock.json')
-      config = instance.send(:configure_settings, opts)
-      expect(config[:policy_document_relative_path]).to eq('/etc/chef/Policyfile.lock.json')
-    end
   end
 
   describe "#policyfile_mode?" do
@@ -972,17 +951,12 @@ describe EnableChef do
       expect(instance.send(:policyfile_mode?, config)).to be true
     end
 
-    it "returns true when local_mode is set" do
-      config = { local_mode: true, first_boot_attributes: {} }
-      expect(instance.send(:policyfile_mode?, config)).to be true
-    end
-
     it "returns true when policy_name/policy_group in first_boot_attributes (backwards compat)" do
       config = { first_boot_attributes: { 'policy_name' => 'pol', 'policy_group' => 'grp' } }
       expect(instance.send(:policyfile_mode?, config)).to be true
     end
 
-    it "returns false when neither policy keys nor local_mode are set" do
+    it "returns false when policy keys are not set" do
       config = { first_boot_attributes: {}, chef_server_url: 'https://chef.example.com' }
       expect(instance.send(:policyfile_mode?, config)).to be_falsey
     end
@@ -1039,39 +1013,6 @@ describe EnableChef do
           OpenStruct.new(exitstatus: 0, stdout: ""))
         expect(Process).to receive(:spawn).with(
           /^chef-client -c .+ --once/).and_return(789)
-        instance.send(:configure_chef_only_once)
-      end
-    end
-
-    context "local mode policyfile" do
-      before do
-        allow(instance).to receive(:value_from_json_file) do |_file, *keys|
-          case keys.last
-          when 'bootstrap_options' then "{'policy_name'=>'my-policy','policy_group'=>'production','local_mode'=>true}"
-          when 'runlist' then ""
-          when 'extendedLogs' then "false"
-          when 'hints' then ""
-          when 'custom_json_attr' then "{}"
-          when 'policy_document_relative_path' then "/etc/chef/Policyfile.lock.json"
-          else ""
-          end
-        end
-        allow(instance).to receive(:get_decrypted_key).and_return("{}")
-        allow(instance).to receive(:copy_settings_file)
-      end
-
-      it "runs chef-client with --local-mode flag on linux" do
-        expect(Chef::Knife::Core::BootstrapContext).to receive(:new).and_return(
-          double('ctx', config_content: '', first_boot: {}, validation_key: '', client_key: '',
-                 encrypted_data_bag_secret: nil))
-        allow(Erubis::Eruby).to receive(:new).and_return(double('tmpl', evaluate: "bash -c 'true'"))
-        expect(instance).to receive(:shell_out).with(
-          /chef-client --local-mode -j .+\/first-boot\.json .+ --policyfile \/etc\/chef\/Policyfile\.lock\.json/
-        ).and_return(OpenStruct.new(exitstatus: 0, stdout: ""))
-        expect(instance).to receive(:shell_out).once.and_return(
-          OpenStruct.new(exitstatus: 0, stdout: ""))
-        expect(Process).to receive(:spawn).with(
-          /^chef-client --local-mode -c .+ --once/).and_return(790)
         instance.send(:configure_chef_only_once)
       end
     end

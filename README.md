@@ -74,13 +74,11 @@ It is an ordered list of roles and/or recipes that are run in the exact order de
 
 `bootstrap_options`: Set bootstrap options while adding chef extension to Azure VM. Bootstrap options used by Chef-Client during node converge. It overrides the configuration set in client_rb option. for e.g. node_name option i.e. if you set node_name as "foo" in the client_rb and in bootstrap_option you set chef_node_name as "bar" it will take "bar" as node name instead of "foo".
 
-***Supported options in bootstrap_options json:***  `chef_node_name`, `chef_server_url`, `validation_client_name`, `environment`, `secret`, `policy_name`, `policy_group`, `local_mode`
+***Supported options in bootstrap_options json:***  `chef_node_name`, `chef_server_url`, `validation_client_name`, `environment`, `secret`, `policy_name`, `policy_group`
 
-***Note***: `chef_server_url` and `validation_client_name` are mandatory for the standard run-list based bootstrap. When using policyfile mode (`policy_name` + `policy_group`), `validation_key` is optional and `chef_server_url` is required only when connecting to a Chef Server (not needed for `local_mode`).
+***Note***: `chef_server_url` and `validation_client_name` are mandatory for the standard run-list based bootstrap. When using policyfile mode (`policy_name` + `policy_group`), `validation_key` is optional and `chef_server_url` is required when connecting to a Chef Server.
 
 **Policyfile mode** (Chef Server): Set `policy_name` and `policy_group` in `bootstrap_options`. The extension configures `client.rb` with policyfile settings and skips the validation key requirement.
-
-**Local mode**: Set `local_mode: true` in `bootstrap_options` (and optionally set `policy_document_relative_path` in publicSettings to point to a pre-staged `Policyfile.lock.json` on the VM). No Chef Server connection is made.
 
 publicconfig.config example (standard run-list mode):
 
@@ -119,21 +117,6 @@ publicconfig.config example (policyfile mode with Chef Server):
   "bootstrap_options": {
     "chef_node_name": "mynode3",
     "chef_server_url": "https://api.opscode.com/organizations/some-org",
-    "policy_name": "my-base-policy",
-    "policy_group": "production"
-  }
-}
-```
-
-publicconfig.config example (local mode with pre-staged Policyfile):
-
-```javascript
-{
-  "CHEF_LICENSE": "accept-no-persist",
-  "policy_document_relative_path": "/etc/chef/Policyfile.lock.json",
-  "bootstrap_options": {
-    "chef_node_name": "mynode3",
-    "local_mode": true,
     "policy_name": "my-base-policy",
     "policy_group": "production"
   }

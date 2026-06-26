@@ -76,34 +76,6 @@ describe Chef::Knife::Core::BootstrapContext do
       c = described_class.new(policy_config, run_list, chef_config)
       expect(c.config_content).to include('chef_server_url')
     end
-
-    it "omits chef_server_url in local mode" do
-      config = policy_config.merge(local_mode: true).tap { |h| h.delete(:chef_server_url) }
-      c = described_class.new(config, run_list, chef_config)
-      expect(c.config_content).not_to include('chef_server_url')
-    end
-  end
-
-  context "local mode (no Chef Server)" do
-    let(:local_config) do
-      {
-        local_mode: true,
-        user_client_rb: '',
-        log_location: '/var/log/azure',
-        chef_extension_root: '/var/lib/waagent/chef',
-        first_boot_attributes: {}
-      }
-    end
-
-    it "does not emit validation_key path in client.rb" do
-      c = described_class.new(local_config, run_list, chef_config)
-      expect(c.config_content).not_to include('validation_key')
-    end
-
-    it "does not add target_runlist to first_boot" do
-      c = described_class.new(local_config, ['recipe[foo]'], chef_config)
-      expect(c.first_boot).not_to include(:target_runlist)
-    end
   end
 end
 

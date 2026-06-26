@@ -1,10 +1,8 @@
 #!/bin/bash
 # End-to-end test script for the Azure Chef Extension — policyfile mode.
 #
-# Validates the extension with and without policyfiles on a Linux VM:
+# Validates the extension with policyfiles on a Linux VM (Chef Server mode):
 #   - server mode: policy_name + policy_group pushed to a Chef Server
-#   - local mode:  chef-client --local-mode, no Chef Server (Policyfile.lock.json
-#                  pre-staged on the VM)
 #
 # Usage:
 #   bash testing/test-policyfile.sh [OPTIONS]
@@ -15,12 +13,7 @@
 #   point to a different file.  CLI options always override .env values.
 #   See testing/.env.example for supported variables (including POLICY_* ones).
 #
-# Policy mode options (required — pick one):
-#   --mode server              Test Chef Server policyfile mode (default)
-#   --mode local               Test local mode (chef-client --local-mode)
-#   --mode both                Run server mode then local mode sequentially
-#
-# Chef Server options (required unless --mode local or --build-chef-server):
+# Chef Server options (required unless --build-chef-server):
 #   --chef-server-url <url>          Chef Server URL
 #   --validation-client-name <name>  Validation client name (optional in policyfile mode)
 #   --validation-pem <path>          Validation PEM path (optional in policyfile mode)
@@ -31,8 +24,6 @@
 #   --policy-group <group>     Policy group to use (default: test-group)
 #   --policyfile-lock <path>   Path to an existing Policyfile.lock.json to push/use.
 #                              If omitted, a minimal stub lock file is generated.
-#   --policy-document-path <p> Path on the VM where the lock file will be written
-#                              (local mode only; default: /etc/chef/Policyfile.lock.json)
 #
 # Common options:
 #   --env-file <path>           Load configuration from a .env file
@@ -108,14 +99,12 @@ POLICY_MODE="${POLICY_MODE:-server}"
 POLICY_NAME="${POLICY_NAME:-azure-test-policy}"
 POLICY_GROUP="${POLICY_GROUP:-test-group}"
 POLICYFILE_LOCK_PATH="${POLICYFILE_LOCK_PATH:-}"
-POLICY_DOCUMENT_PATH="${POLICY_DOCUMENT_PATH:-/etc/chef/Policyfile.lock.json}"
 
 AZURE_TENANT="${AZURE_TENANT:-}"
 AZURE_SUBSCRIPTION="${AZURE_SUBSCRIPTION:-}"
 AZURE_USE_DEVICE_CODE="${AZURE_USE_DEVICE_CODE:-false}"
 
 LINUX_VM_SERVER="${LINUX_VM:-az-policy-server-vm}"
-LINUX_VM_LOCAL="${LINUX_VM_LOCAL:-az-policy-local-vm}"
 ADMIN_USER="${ADMIN_USER:-azureuser}"
 
 TMPDIR_CONFIGS="$(mktemp -d)"
@@ -161,7 +150,6 @@ while [[ $# -gt 0 ]]; do
     --policy-name)               POLICY_NAME="$2";               shift 2 ;;
     --policy-group)              POLICY_GROUP="$2";              shift 2 ;;
     --policyfile-lock)           POLICYFILE_LOCK_PATH="$2";      shift 2 ;;
-    --policy-document-path)      POLICY_DOCUMENT_PATH="$2";      shift 2 ;;
     --azure-tenant)              AZURE_TENANT="$2";              shift 2 ;;
     --azure-subscription)        AZURE_SUBSCRIPTION="$2";        shift 2 ;;
     --azure-use-device-code)     AZURE_USE_DEVICE_CODE=true;     shift ;;
@@ -184,23 +172,20 @@ info "Running preflight checks..."
 command -v az &>/dev/null || fail "Azure CLI (az) not found"
 command -v jq &>/dev/null || fail "jq not found"
 [[ -f "${SSH_PUBLIC_KEY_PATH}" ]] || fail "SSH public key not found: ${SSH_PUBLIC_KEY_PATH}"
-[[ "${POLICY_MODE}" =~ ^(server|local|both)$ ]] || fail "--mode must be server, local, or both"
 
 # Auto-generate USER_PEM if it doesn't exist (useful for testing without a real Chef Server).
 # Note: a generated key must be registered with the Chef Server before it can authenticate;
 # for --build-chef-server tests, provision_chef_server() overwrites USER_PEM with the real key.
-if [[ "${POLICY_MODE}" != "local" ]]; then
-  if [[ -z "${USER_PEM}" ]]; then
-    USER_PEM="${TMPDIR_CONFIGS}/user.pem"
-  fi
-  if [[ ! -f "${USER_PEM}" ]]; then
-    info "USER_PEM not found at '${USER_PEM}' — generating a test RSA key..."
-    command -v openssl &>/dev/null || fail "openssl not found — required to generate USER_PEM"
-    openssl genrsa -out "${USER_PEM}" 2048 2>/dev/null
-    chmod 0600 "${USER_PEM}"
-    warn "Generated test key at ${USER_PEM}. This key is NOT registered with the Chef Server."
-    warn "Policy push will only succeed if you use --build-chef-server (which registers it) or pre-push the policy manually."
-  fi
+if [[ -z "${USER_PEM}" ]]; then
+  USER_PEM="${TMPDIR_CONFIGS}/user.pem"
+fi
+if [[ ! -f "${USER_PEM}" ]]; then
+  info "USER_PEM not found at '${USER_PEM}' — generating a test RSA key..."
+  command -v openssl &>/dev/null || fail "openssl not found — required to generate USER_PEM"
+  openssl genrsa -out "${USER_PEM}" 2048 2>/dev/null
+  chmod 0600 "${USER_PEM}"
+  warn "Generated test key at ${USER_PEM}. This key is NOT registered with the Chef Server."
+  warn "Policy push will only succeed if you use --build-chef-server (which registers it) or pre-push the policy manually."
 fi
 
 azure_login() {
@@ -241,7 +226,7 @@ if [[ -n "${CHEF_INFRA_VERSION}" ]]; then
 fi
 
 # Server mode preflight: Chef Server must be reachable (or built)
-if [[ "${POLICY_MODE}" != "local" && "${BUILD_CHEF_SERVER}" == "false" ]]; then
+if [[ "${BUILD_CHEF_SERVER}" == "false" ]]; then
   [[ -z "${CHEF_SERVER_URL}" ]] && fail "--chef-server-url is required for server mode (or pass --build-chef-server)"
 fi
 
@@ -537,7 +522,7 @@ sh \"\$EXT_DIR/enable.sh\" 2>&1" \
 
 # ── Shared: verify policyfile client.rb settings on VM ───────────────────────
 verify_policyfile_clientrb() {
-  local vm_name="$1" expected_mode="$2"  # server | local
+  local vm_name="$1"
   info "Verifying client.rb contains policyfile settings on '${vm_name}'..."
 
   local out
@@ -570,15 +555,8 @@ grep -q 'chef_server_url' \"\$CLIENTRB\" && echo 'HAS_CHEF_SERVER_URL=yes' || ec
     || warn "client.rb contains validation_key — unexpected in policyfile mode"
   echo "${out}" | grep -q "HAS_VAL_CLIENT_NAME=no"     && success "client.rb correctly omits validation_client_name" \
     || warn "client.rb contains validation_client_name — unexpected in policyfile mode"
-
-  if [[ "${expected_mode}" == "local" ]]; then
-    echo "${out}" | grep -q "HAS_CHEF_SERVER_URL=no" \
-      && success "client.rb correctly omits chef_server_url in local mode" \
-      || warn "client.rb contains chef_server_url in local mode — may be intentional if set in client_rb option"
-  else
-    echo "${out}" | grep -q "HAS_CHEF_SERVER_URL=yes" \
-      || warn "client.rb missing chef_server_url in server mode — node may not connect to Chef Server"
-  fi
+  echo "${out}" | grep -q "HAS_CHEF_SERVER_URL=yes" \
+    || warn "client.rb missing chef_server_url in server mode — node may not connect to Chef Server"
 
   success "client.rb policyfile settings verified on '${vm_name}'"
 }
@@ -733,109 +711,15 @@ test_server_policyfile() {
   install_extension "${vm_name}" "${pubconfig}" "${privconfig}"
   check_extension_state "${vm_name}"
   fetch_extension_logs "${vm_name}"
-  verify_policyfile_clientrb "${vm_name}" "server"
+  verify_policyfile_clientrb "${vm_name}"
   verify_no_target_runlist "${vm_name}"
   verify_node_registered "${vm_name}"
 
   success "══ Chef Server policyfile test PASSED ══"
 }
 
-# ── Test: Local mode policyfile ───────────────────────────────────────────────
-test_local_policyfile() {
-  local vm_name="${LINUX_VM_LOCAL}"
-  local node_name="${NODE_NAME}-local"
-  local pubconfig="${TMPDIR_CONFIGS}/pubconfig-local.json"
-  local privconfig="${TMPDIR_CONFIGS}/privconfig-local.json"
-  local lock_file
-
-  info "══════ Local Mode Policyfile ══════"
-
-  # Prepare the Policyfile.lock.json
-  if [[ -n "${POLICYFILE_LOCK_PATH}" && -f "${POLICYFILE_LOCK_PATH}" ]]; then
-    lock_file="${POLICYFILE_LOCK_PATH}"
-    info "Using provided Policyfile.lock.json: ${lock_file}"
-  else
-    lock_file="${TMPDIR_CONFIGS}/Policyfile-local.lock.json"
-    info "No Policyfile.lock.json provided — generating a stub..."
-    generate_stub_policyfile_lock "${lock_file}"
-  fi
-
-  # Build public config — local_mode: true, no chef_server_url
-  jq -n \
-    --arg node      "${node_name}" \
-    --arg polname   "${POLICY_NAME}" \
-    --arg polgroup  "${POLICY_GROUP}" \
-    --arg docpath   "${POLICY_DOCUMENT_PATH}" \
-    --arg infra_ver "${CHEF_INFRA_VERSION}" \
-    --arg lickey    "${LICENSE_KEY}" \
-    '{
-      bootstrap_options: ({
-        chef_node_name:  $node,
-        policy_name:     $polname,
-        policy_group:    $polgroup,
-        local_mode:      true
-      }
-      + (if ($infra_ver | length) > 0 then {bootstrap_version: $infra_ver} else {} end)),
-      policy_document_relative_path: $docpath,
-      CHEF_LICENSE: "accept-no-persist"
-    }
-    + (if ($lickey | length) > 0 then {chef_license_key: $lickey} else {} end)
-    ' > "${pubconfig}"
-
-  # No validation_key needed in local mode
-  jq -n '{}' > "${privconfig}"
-
-  info "Public config (local mode):"
-  jq . "${pubconfig}"
-
-  create_linux_vm "${vm_name}"
-
-  # Pre-stage the Policyfile.lock.json on the VM before the extension runs
-  info "Pre-staging Policyfile.lock.json on '${vm_name}' at ${POLICY_DOCUMENT_PATH}..."
-  local lock_encoded
-  lock_encoded="$(base64 < "${lock_file}" | tr -d '\n')"
-  az vm run-command invoke \
-    -g "${RESOURCE_GROUP}" --name "${vm_name}" --command-id RunShellScript \
-    --scripts "
-set -e
-mkdir -p '$(dirname "${POLICY_DOCUMENT_PATH}")'
-printf '%s' '${lock_encoded}' | base64 -d > '${POLICY_DOCUMENT_PATH}'
-echo 'Policyfile.lock.json staged at ${POLICY_DOCUMENT_PATH}'
-cat '${POLICY_DOCUMENT_PATH}'
-" \
-    --query "value[0].message" -o tsv
-  success "Policyfile.lock.json staged on VM"
-
-  install_extension "${vm_name}" "${pubconfig}" "${privconfig}"
-  check_extension_state "${vm_name}"
-  fetch_extension_logs "${vm_name}"
-  verify_policyfile_clientrb "${vm_name}" "local"
-  verify_no_target_runlist "${vm_name}"
-  verify_node_registered "${vm_name}"
-
-  # Verify local mode flag in the chef-client invocation from logs
-  info "Checking logs for --local-mode flag..."
-  local log_out
-  log_out="$(az vm run-command invoke \
-    -g "${RESOURCE_GROUP}" --name "${vm_name}" --command-id RunShellScript \
-    --scripts "grep -r 'local-mode\|local_mode' /var/log/azure/ /var/lib/waagent/Chef.Bootstrap.WindowsAzure.LinuxChefClient-*/log/ 2>/dev/null | tail -10 || echo '__NO_MATCH__'" \
-    --query "value[0].message" -o tsv | tr -d '\r')"
-  echo "${log_out}"
-  if echo "${log_out}" | grep -qv "__NO_MATCH__"; then
-    success "local-mode reference found in extension logs"
-  else
-    warn "Could not confirm --local-mode in extension logs — verify manually"
-  fi
-
-  success "══ Local mode policyfile test PASSED ══"
-}
-
-# ── Run selected mode(s) ──────────────────────────────────────────────────────
-case "${POLICY_MODE}" in
-  server) test_server_policyfile ;;
-  local)  test_local_policyfile ;;
-  both)   test_server_policyfile; test_local_policyfile ;;
-esac
+# ── Run ───────────────────────────────────────────────────────────────────────
+test_server_policyfile
 
 echo ""
 success "All policyfile tests completed."
@@ -843,5 +727,5 @@ echo ""
 echo "  Resource group : ${RESOURCE_GROUP}"
 echo "  Policy name    : ${POLICY_NAME}"
 echo "  Policy group   : ${POLICY_GROUP}"
-[[ "${POLICY_MODE}" != "local" ]] && echo "  Chef Server    : ${CHEF_SERVER_URL}"
+echo "  Chef Server    : ${CHEF_SERVER_URL}"
 echo ""
