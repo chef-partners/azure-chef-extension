@@ -98,12 +98,26 @@ function Install-ChefClient {
           $chef_package_channel = "stable"
         }
 
+        # Determine product. Always pass -project explicitly — install.ps1 will default to
+        # chef-ice in a future release and this keeps the extension's behaviour stable.
+        $project = "chef"
+        if ($chef_package_version -ne "latest") {
+          $major = ($chef_package_version -split '\.')[0] -as [int]
+          if ($major -ge 19) {
+            if (-not $chef_license_key) {
+              Write-Error "chef-ice (v>=19) requires a license key — set chef_license_key in extension settings"
+              exit 1
+            }
+            $project = "chef-ice"
+          }
+        }
+
         iex (new-object net.webclient).downloadstring('https://omnitruck.chef.io/install.ps1')
         if ( $chef_license_key ) {
           Write-Host "Using chef_license_key for Omnitruck install request"
-          install -daemon $daemon -version $chef_package_version -channel $chef_package_channel -license_id $chef_license_key
+          install -project $project -daemon $daemon -version $chef_package_version -channel $chef_package_channel -license_id $chef_license_key
         } else {
-          install -daemon $daemon -version $chef_package_version -channel $chef_package_channel
+          install -project $project -daemon $daemon -version $chef_package_version -channel $chef_package_channel
         }
       } elseif ( -Not $chef_pkg -and $chef_downloaded_package ) {
         Install-ChefMsi $chef_downloaded_package $daemon
@@ -138,7 +152,11 @@ function Install-ChefClient {
       }
     }
   }
-  $env:Path = "C:\\opscode\\chef\\bin;C:\\opscode\\chef\\embedded\\bin;" + $env:Path
+  if ($project -eq "chef-ice") {
+    $env:Path = "C:\hab\bin;" + $env:Path
+  } else {
+    $env:Path = "C:\opscode\chef\bin;C:\opscode\chef\embedded\bin;" + $env:Path
+  }
   $chefExtensionRoot = Chef-GetExtensionRoot
   Install-AzureChefExtensionGem $chefExtensionRoot
 }

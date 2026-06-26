@@ -45,59 +45,34 @@ curl_check(){
   fi
 }
 
-run_omnitruck_install(){
-  if [ ! -z "$CHEF_LICENSE_KEY" ]; then
-    echo "Using chef_license_key for Omnitruck download"
-    # packages.chef.io requires ?licenseId=<key> in the download URL for gated versions.
-    # Fetch the base URL from the omnitruck metadata endpoint, then append the licenseId.
+# Downloads install.sh from omnitruck and installs the given product.
+# Usage: run_install_script <product> [flags passed to install.sh]
+# Always pass -P explicitly — install.sh defaults to chef today but will default to
+# chef-ice in a future release; explicit -P keeps this extension's behaviour stable.
+run_install_script(){
+  _product="$1"; shift
+  curl_check "$platform"
+  curl -L -o /tmp/install.sh https://omnitruck.chef.io/install.sh
+  echo "install.sh downloaded"
+  if [ -n "$CHEF_LICENSE_KEY" ]; then
     _pv=$(. /etc/os-release 2>/dev/null && echo "$VERSION_ID")
     [ -z "$_pv" ] && _pv=$(lsb_release -rs 2>/dev/null || uname -r)
     _arch=$(uname -m)
     _ch="${chef_channel:-stable}"
-    _meta_url="https://omnitruck.chef.io/${_ch}/chef/metadata?p=${platform}&pv=${_pv}&m=${_arch}"
+    _meta_url="https://omnitruck.chef.io/${_ch}/${_product}/metadata?p=${platform}&pv=${_pv}&m=${_arch}"
     [ -n "$chef_version" ] && _meta_url="${_meta_url}&v=${chef_version}"
-    _download_url=$(curl -fsSL "${_meta_url}" 2>/dev/null | grep '^url' | awk '{print $2}')
-    if [ -n "$_download_url" ]; then
-      echo "Downloading with licenseId from ${_download_url}"
-      sh /tmp/$platform-install.sh "$@" -l "${_download_url}?licenseId=${CHEF_LICENSE_KEY}"
+    _dl=$(curl -fsSL "${_meta_url}" 2>/dev/null | grep '^url' | awk '{print $2}')
+    if [ -n "$_dl" ]; then
+      echo "Downloading ${_product} with licenseId from ${_dl}"
+      sh /tmp/install.sh -P "$_product" "$@" -l "${_dl}?licenseId=${CHEF_LICENSE_KEY}"
     else
-      echo "Warning: could not resolve download URL from omnitruck; attempting install without licenseId"
-      sh /tmp/$platform-install.sh "$@"
+      echo "Warning: could not resolve download URL for ${_product}; attempting install without licenseId"
+      sh /tmp/install.sh -P "$_product" "$@"
     fi
   else
-    sh /tmp/$platform-install.sh "$@"
+    sh /tmp/install.sh -P "$_product" "$@"
   fi
-}
-
-# Chef >= 19 ships as chef-ice via chefdownload-commercial.chef.io.
-# The API uses p=linux|windows, pm=deb|rpm|msi, m=x86_64|aarch64 — no platform version needed.
-# Requires CHEF_LICENSE_KEY.
-install_chef_ice(){
-  if [ -z "$CHEF_LICENSE_KEY" ]; then
-    echo "ERROR: chef-ice (Chef >= 19) requires a license key — set chef_license_key in extension settings"
-    exit 1
-  fi
-  _arch=$(uname -m)
-  _ch="${chef_channel:-stable}"
-  # Detect package manager to choose installer format
-  if command -v dpkg > /dev/null 2>&1; then
-    _pm=deb
-  elif command -v rpm > /dev/null 2>&1; then
-    _pm=rpm
-  else
-    echo "ERROR: could not detect package manager (dpkg or rpm) for chef-ice install"
-    exit 1
-  fi
-  _url="https://chefdownload-commercial.chef.io/${_ch}/chef-ice/download?eol=false&license_id=${CHEF_LICENSE_KEY}&m=${_arch}&p=linux&pm=${_pm}&v=${chef_version}"
-  echo "Downloading chef-ice ${chef_version} (${_arch}/${_pm}) from commercial endpoint"
-  _tmp_pkg="/tmp/chef-ice-${_arch}.${_pm}"
-  if curl -fSL -o "${_tmp_pkg}" "${_url}" 2>&1; then
-    install_file "${_pm}" "${_tmp_pkg}"
-    rm -f "${_tmp_pkg}"
-  else
-    echo "ERROR: Failed to download chef-ice ${chef_version} from commercial endpoint"
-    exit 1
-  fi
+  rm -f /tmp/install.sh
 }
 
 chef_install_from_script(){
@@ -117,12 +92,20 @@ chef_install_from_script(){
     chef_package_url=$(get_value_from_setting_file $config_file_name "chef_package_url")
     echo "Call for Checking linux distributor"
     platform=$(get_linux_distributor)
-    # Check if chef or chef-ice is already installed
+
+    # Determine product. Always pass -P to install.sh explicitly —
+    # install.sh will default to chef-ice in a future release and this
+    # makes the extension's behaviour stable regardless of that change.
     _major=$(echo "${chef_version}" | cut -d. -f1)
-    _is_ice=0
-    [ -n "$chef_version" ] && [ "$_major" -ge 19 ] 2>/dev/null && _is_ice=1
+    if [ -n "$chef_version" ] && [ "$_major" -ge 19 ] 2>/dev/null; then
+      _product="chef-ice"
+    else
+      _product="chef"
+    fi
+
+    # Check if already installed
     HAB_CHEF_BIN_STUB=/usr/bin/chef-client
-    if [ "$_is_ice" -eq 1 ]; then
+    if [ "$_product" = "chef-ice" ]; then
       [ -f "$HAB_CHEF_BIN_STUB" ]
     elif [ "$platform" = "ubuntu" -o "$platform" = "debian" ]; then
       dpkg-query -s chef > /dev/null 2>&1
@@ -130,30 +113,22 @@ chef_install_from_script(){
       yum list installed | grep -w "chef"
     fi
     if [ $chef_install_status -ne 0 ] && [ -z "$chef_downloaded_package" ] && [ -z "$chef_package_url" ]; then
-      # Chef >= 19 ships as chef-ice via chefdownload-commercial.chef.io, not omnitruck
-      _major=$(echo "${chef_version}" | cut -d. -f1)
-      if [ -n "$chef_version" ] && [ "$_major" -ge 19 ] 2>/dev/null; then
-        echo "Chef version ${chef_version} >= 19: using chef-ice commercial download"
-        install_chef_ice
+      if [ "$_product" = "chef-ice" ] && [ -z "$CHEF_LICENSE_KEY" ]; then
+        echo "ERROR: chef-ice (v>=19) requires a license key — set chef_license_key in extension settings"
+        exit 1
+      fi
+      if [ -z "$chef_version" ] && [ -z "$chef_channel" ]; then
+        echo "Installing latest ${_product}"
+        run_install_script "$_product"
+      elif [ ! -z "$chef_version" ] && [ -z "$chef_channel" ]; then
+        echo "Installing ${_product} version $chef_version"
+        run_install_script "$_product" -v "$chef_version"
+      elif [ -z "$chef_version" ] && [ ! -z "$chef_channel" ]; then
+        echo "Installing latest ${_product} from $chef_channel"
+        run_install_script "$_product" -c "$chef_channel"
       else
-        curl_check $platform
-        curl -L -o /tmp/$platform-install.sh https://omnitruck.chef.io/install.sh
-        echo "Install.sh script downloaded at /tmp/$platform-install.sh"
-        if [ -z "$chef_version" ] && [ -z "$chef_channel" ]; then
-          echo "Installing latest Chef Infra Client"
-          run_omnitruck_install
-        elif [ ! -z "$chef_version" ] && [ -z "$chef_channel" ]; then
-          echo "Installing Chef Infra Client version $chef_version"
-          run_omnitruck_install -v $chef_version
-        elif [ -z "$chef_version" ] && [ ! -z "$chef_channel" ]; then
-          echo "Installing latest Chef Infra Client from $chef_channel"
-          run_omnitruck_install -c $chef_channel
-        else
-          echo "Installing Chef Infra Client version $chef_version from $chef_channel channel"
-          run_omnitruck_install -v $chef_version -c $chef_channel
-        fi
-        echo "Deleting Install.sh script present at /tmp/$platform-install.sh"
-        rm /tmp/$platform-install.sh -f
+        echo "Installing ${_product} version $chef_version from $chef_channel channel"
+        run_install_script "$_product" -v "$chef_version" -c "$chef_channel"
       fi
     elif [ $chef_install_status -ne 0 ] && [ ! -z "$chef_downloaded_package" ]; then
       echo "Installing downloaded Chef Infra Client from $chef_downloaded_package path"
