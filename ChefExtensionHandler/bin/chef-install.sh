@@ -52,19 +52,19 @@ curl_check(){
 run_install_script(){
   _product="$1"; shift
   curl_check "$platform"
-  curl -L -o /tmp/install.sh https://omnitruck.chef.io/install.sh
+  curl -L -o /tmp/install.sh https://chefdownload-commercial.chef.io/install.sh
   echo "install.sh downloaded"
   if [ -n "$CHEF_LICENSE_KEY" ]; then
     _pv=$(. /etc/os-release 2>/dev/null && echo "$VERSION_ID")
     [ -z "$_pv" ] && _pv=$(lsb_release -rs 2>/dev/null || uname -r)
     _arch=$(uname -m)
     _ch="${chef_channel:-stable}"
-    _meta_url="https://omnitruck.chef.io/${_ch}/${_product}/metadata?p=${platform}&pv=${_pv}&m=${_arch}"
+    _meta_url="https://chefdownload-commercial.chef.io/${_ch}/${_product}/metadata?p=${platform}&pv=${_pv}&m=${_arch}&license_id=${CHEF_LICENSE_KEY}"
     [ -n "$chef_version" ] && _meta_url="${_meta_url}&v=${chef_version}"
     _dl=$(curl -fsSL "${_meta_url}" 2>/dev/null | grep '^url' | awk '{print $2}')
     if [ -n "$_dl" ]; then
-      echo "Downloading ${_product} with licenseId from ${_dl}"
-      sh /tmp/install.sh -P "$_product" "$@" -l "${_dl}?licenseId=${CHEF_LICENSE_KEY}"
+      echo "Downloading ${_product} with license_id from ${_dl}"
+      sh /tmp/install.sh -P "$_product" "$@" -l "${_dl}"
     else
       echo "Warning: could not resolve download URL for ${_product}; attempting install without licenseId"
       sh /tmp/install.sh -P "$_product" "$@"

@@ -112,7 +112,7 @@ function Install-ChefClient {
           }
         }
 
-        iex (new-object net.webclient).downloadstring('https://omnitruck.chef.io/install.ps1')
+        iex (new-object net.webclient).downloadstring('https://chefdownload-commercial.chef.io/install.ps1')
         if ( $chef_license_key ) {
           Write-Host "Using chef_license_key for Omnitruck install request"
           install -project $project -daemon $daemon -version $chef_package_version -channel $chef_package_channel -license_id $chef_license_key

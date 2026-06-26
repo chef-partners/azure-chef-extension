@@ -437,13 +437,13 @@ VALIDATION_KEY_JSON="$(python3 -c "import json,sys; print(json.dumps(open(sys.ar
 LINUX_CHEF_PACKAGE_URL=""
 if [[ -n "${CHEF_INFRA_VERSION}" && -n "${LICENSE_KEY}" && "${PLATFORM}" != "windows" ]]; then
   _ch="${CHEF_INFRA_CHANNEL:-stable}"
-  _omni_meta="https://omnitruck.chef.io/${_ch}/chef/metadata?p=ubuntu&pv=22.04&m=x86_64&v=${CHEF_INFRA_VERSION}"
+  _omni_meta="https://chefdownload-commercial.chef.io/${_ch}/chef/metadata?p=ubuntu&pv=22.04&m=x86_64&v=${CHEF_INFRA_VERSION}&license_id=${LICENSE_KEY}"
   _base_url="$(curl -fsSL "${_omni_meta}" 2>/dev/null | grep '^url' | awk '{print $2}')"
   if [[ -n "${_base_url}" ]]; then
-    LINUX_CHEF_PACKAGE_URL="${_base_url}?licenseId=${LICENSE_KEY}"
-    info "Resolved licensed Chef ${CHEF_INFRA_VERSION} package URL (bypassing omnitruck install)"
+    LINUX_CHEF_PACKAGE_URL="${_base_url}"
+    info "Resolved licensed Chef ${CHEF_INFRA_VERSION} package URL (chefdownload-commercial.chef.io)"
   else
-    warn "Could not resolve omnitruck URL for Chef ${CHEF_INFRA_VERSION} — download may fail on the VM"
+    warn "Could not resolve download URL for Chef ${CHEF_INFRA_VERSION} — download may fail on the VM"
   fi
 fi
 
