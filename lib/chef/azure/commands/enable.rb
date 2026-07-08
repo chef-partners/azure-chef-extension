@@ -287,7 +287,9 @@ class EnableChef
     # Runs chef-client in background using scheduled task if windows else using process
     if windows?
       puts "#{Time.now} Creating scheduled task with runlist #{runlist}.."
-      schtask = "SCHTASKS.EXE /Create /TN \"Chef Client First Run\" /RU \"NT Authority\\System\" /RP /RL \"HIGHEST\" /SC ONCE /TR \"cmd /c 'C:\\opscode\\chef\\bin\\#{chef_client_cmd} #{params}'\" /ST \"#{Time.now.strftime('%H:%M')}\" /F"
+      # ponytail: check hab first, fall back to opscode; remove opscode path when chef-ice is universal
+      chef_bin_dir = File.directory?('C:\hab\bin') ? 'C:\hab\bin' : 'C:\opscode\chef\bin'
+      schtask = "SCHTASKS.EXE /Create /TN \"Chef Client First Run\" /RU \"NT Authority\\System\" /RP /RL \"HIGHEST\" /SC ONCE /TR \"cmd /c '#{chef_bin_dir}\\#{chef_client_cmd} #{params}'\" /ST \"#{Time.now.strftime('%H:%M')}\" /F"
 
       begin
         result = @extended_logs == 'true' ? shell_out("#{schtask} && touch #{@chef_client_success_file}") : shell_out(schtask)

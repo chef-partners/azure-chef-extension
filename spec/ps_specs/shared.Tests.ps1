@@ -239,9 +239,11 @@ describe "#Set-ChefLicenseKeyEnv" {
 }
 
 describe "#Write-LicenseKeyStatus" {
-  it "logs absent key message when license key is empty" {
+  it "logs deprecation warning when license key is empty" {
     mock Write-Host
+    mock Write-Warning
     Write-LicenseKeyStatus ""
+    Assert-MockCalled Write-Warning -Times 1
     Assert-MockCalled Write-Host -Times 1
   }
 

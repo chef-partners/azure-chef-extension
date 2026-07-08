@@ -146,7 +146,8 @@ read_chef_license_key(){
 # Log the license key status for observability
 log_license_key_status(){
   if [ -z "$CHEF_LICENSE_KEY" ]; then
-    echo "[$(date)] CHEF_LICENSE_KEY not set; omnitruck download will be used (no licensed download)"
+    echo "[$(date)] WARNING: No chef_license_key provided. Omnitruck is being shut down — unlicensed downloads will stop working in the near future. Set chef_license_key in your extension settings to use licensed/commercial downloads." >&2
+    echo "[$(date)] Falling back to omnitruck download (DEPRECATED — will stop working when omnitruck is shut down)"
   else
     echo "[$(date)] CHEF_LICENSE_KEY is set from chef_license_key; licensed download will be attempted"
   fi

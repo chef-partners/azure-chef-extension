@@ -216,9 +216,11 @@ function Set-ChefLicenseKeyEnv($licenseKey) {
 
 function Write-LicenseKeyStatus($licenseKey) {
   if (-Not $licenseKey) {
-    Write-Host "[$(Get-Date)] CHEF_LICENSE_KEY not set; omitruck download will be used (no licensed download)"
+    # ponytail: omnitruck shutdown is announced; warn loudly so users migrate before it breaks
+    Write-Warning "[$(Get-Date)] WARNING: No chef_license_key provided. Omnitruck is being shut down — unlicensed downloads will stop working in the near future. Set chef_license_key in your extension settings to use licensed/commercial downloads."
+    Write-Host "[$(Get-Date)] Falling back to omnitruck download (DEPRECATED — will stop working when omnitruck is shut down)"
   } else {
-    Write-Host "[$(Get-Date)] CHEF_LICENSE_KEY is set from chef_license_key; licensed download will be attempted"
+    Write-Host "[$(Get-Date)] CHEF_LICENSE_KEY is set from chef_license_key; licensed commercial download will be used"
   }
 }
 
