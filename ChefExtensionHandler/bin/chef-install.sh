@@ -163,11 +163,25 @@ chef_install_from_script(){
 
 chef_install_from_script
 
-# HAB_CHEF_BIN_STUB is /usr/bin/chef-client; update if ice install path changes
-HAB_CHEF_BIN_STUB=/usr/bin/chef-client
-if [ ! -f "$HAB_CHEF_BIN_STUB" ]; then
-  export PATH=/opt/chef/bin/:/opt/chef/embedded/bin:$PATH
+# Find chef-client in expected locations and update PATH accordingly
+_chef_bin=""
+for _path in /usr/bin/chef-client /hab/chef/bin/chef-client /hab/pkgs/chef/chef-infra-client/*/*/bin/chef-client /opt/chef/bin/chef-client; do
+  if test -x "$_path" 2>/dev/null; then
+    echo "Chef installation detected at $_path"
+    _chef_bin="$_path"
+    break
+  fi
+done
+if [ -z "$_chef_bin" ]; then
+  echo "chef-client executable not found in any expected location" >&2
+  exit 1
 fi
+_chef_bindir=$(dirname "$_chef_bin")
+case "$_chef_bindir" in
+  /usr/bin) ;; # already in PATH
+  /opt/chef/bin) export PATH="/opt/chef/bin:/opt/chef/embedded/bin:$PATH" ;;
+  *) export PATH="$_chef_bindir:$PATH" ;;
+esac
 
 # check if azure-chef-extension is installed
 azure_chef_extn_gem=`gem list azure-chef-extension | grep azure-chef-extension | awk '{print $1}'`
