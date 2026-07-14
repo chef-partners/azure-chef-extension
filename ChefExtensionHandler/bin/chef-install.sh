@@ -165,7 +165,7 @@ chef_install_from_script
 
 # Find chef-client in expected locations and update PATH accordingly
 _chef_bin=""
-for _path in /usr/bin/chef-client /hab/chef/bin/chef-client /hab/pkgs/chef/chef-infra-client/*/*/bin/chef-client /opt/chef/bin/chef-client; do
+for _path in /usr/bin/chef-client /hab/pkgs/chef/chef-infra-client/*/*/bin/chef-client /opt/chef/bin/chef-client; do
   if test -x "$_path" 2>/dev/null; then
     echo "Chef installation detected at $_path"
     _chef_bin="$_path"
