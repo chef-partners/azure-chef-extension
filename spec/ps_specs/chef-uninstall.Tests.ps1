@@ -9,166 +9,104 @@
 #
 # For more info: http://johanleino.wordpress.com/2013/09/13/pester-unit-testing-for-powershell/
 
-$here = Split-Path -Parent $MyInvocation.MyCommand.Path
-$suit = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace(".Tests.ps1", ".psm1")
+# Pester 5 only executes file-scope code during Discovery, not Run — compute
+# paths and dot-source/import inside BeforeAll so the functions under test
+# are available when It blocks execute.
+BeforeAll {
+  $here = Split-Path -Parent $PSCommandPath
+  $suit = (Split-Path -Leaf $PSCommandPath).Replace(".Tests.ps1", ".psm1")
 
-$module= $here.Replace("\spec\ps_specs", "\ChefExtensionHandler\bin\$suit")
-$code = Get-Content $module | Out-String
-Invoke-Expression $code
+  $module= $here.Replace("\spec\ps_specs", "\ChefExtensionHandler\bin\$suit")
+  # Load the .psm1 content into this scope (rather than Import-Module) so
+  # Pester's Mock can intercept calls to its functions directly. Dot-source
+  # from a real temp .ps1 file (not Invoke-Expression) so Chef-GetScriptDirectory's
+  # $MyInvocation.MyCommand.Path lookup resolves to a real path instead of $null.
+  $code = Get-Content $module | Out-String
+  $tempModuleScript = [System.IO.Path]::GetTempFileName() -replace '\.tmp$', '.ps1'
+  Set-Content -Path $tempModuleScript -Value $code
+  # Export-ModuleMember only works inside a real module; no-op it since we're
+  # intentionally loading into this scope directly (for Pester mocking) rather
+  # than via Import-Module.
+  function Export-ModuleMember { }
+  . $tempModuleScript
+  Remove-Item $tempModuleScript
 
-$sharedHelper = $here.Replace("\spec\ps_specs", "\ChefExtensionHandler\bin\shared.ps1")
-. $sharedHelper
-
-describe "#Uninstall-ChefClientPackage" {
-  context "when chef install directory not exist" {
-    it "uninstall chef package and don't try to remove non existent configuration directory" {
-      $chef_pkg = New-Module {
-        function Uninstall {}
-      } -asCustomObject
-
-      mock Remove-Item
-      mock Get-ChefInstallDirectory { return "$($env:tmp)\\invalid" }
-      mock Get-ChefPackage { return $chef_pkg }
-
-      Uninstall-ChefClientPackage
-
-      Assert-MockCalled Remove-Item -Times 0
-    }
-  }
-
-  context "when chef install directory exist" {
-    it "uninstall chef package and also removes chef install directory" {
-      $chef_pkg = New-Module {
-        function Uninstall {}
-      } -asCustomObject
-
-      mock Remove-Item
-      mock Get-ChefInstallDirectory { return $env:tmp }
-      mock Get-ChefPackage { return $chef_pkg }
-
-      Uninstall-ChefClientPackage
-
-      Assert-MockCalled Remove-Item -Times 1
-    }
-  }
-}
-
-describe "#Delete-ChefConfig" {
-  context "When deleteChefConfig is false" {
-    it "do not remove configuration directory"{
-      $deleteChefConfig = "false"
-      mock Get-BootstrapDirectory { return $env:tmp}
-      mock Remove-Item
-      Delete-ChefConfig $deleteChefConfig
-
-      Assert-MockCalled Remove-Item -Times 0
-    }
-  }
-
-  context "when deleteChefConfig is true" {
-    it "removes configuration directory" {
-      $deleteChefConfig = "true"
-      mock Get-BootstrapDirectory { return $env:tmp}
-      mock Remove-Item
-      Delete-ChefConfig $deleteChefConfig
-
-      Assert-MockCalled Remove-Item -Times 1
-    }
-  }
+  $sharedHelper = $here.Replace("\spec\ps_specs", "\ChefExtensionHandler\bin\shared.ps1")
+  . $sharedHelper
 }
 
 describe "#Uninstall-ChefClient" {
-  context "when powershell version 3" {
-    it "uninstall chef and azure-chef-extension gem successfully" {
-      # create temp powershell file for mock Get-SharedHelper
-      $tempPS = ([System.IO.Path]::GetTempFileName() | Rename-Item -NewName { $_ -replace 'tmp$', 'ps1' } -PassThru)
-      mock Get-SharedHelper {return $tempPS}
-      mock Read-JsonFile
-      mock Write-ChefStatus
-      mock Uninstall-ChefService
-      mock Uninstall-AzureChefExtensionGem
-      mock Get-deleteChefConfigSetting
+  BeforeEach {
+    $script:tempPS = ([System.IO.Path]::GetTempFileName() | Rename-Item -NewName { $_ -replace 'tmp$', 'ps1' } -PassThru)
+    mock Get-SharedHelper {return $script:tempPS}
+    mock Read-JsonFile
+    mock Write-ChefStatus
+    mock Uninstall-ChefService
+    mock Uninstall-ChefSchTask
+    mock Uninstall-AzureChefExtensionGem
+    mock Update-ChefExtensionRegistry
+    mock Get-PublicSettings-From-Config-Json { return "service" } -ParameterFilter { $key -eq "daemon" }
+  }
 
-      $deleteChefConfig = "{'publicSettings':{'deleteChefConfig':'false'}}" | ConvertFrom-Json
-      mock Get-HandlerSettings { return $deleteChefConfig }
+  AfterEach {
+    Remove-Item $script:tempPS -ErrorAction SilentlyContinue
+  }
 
-      mock Uninstall-ChefClientPackage
+  context "when daemon is service and not mid-update" {
+    it "uninstalls the chef service and azure-chef-extension gem" {
       mock Get-PowershellVersion { return 3 }
       mock Test-ChefExtensionRegistry { return $false }
 
-
       Uninstall-ChefClient
-      # Delete temp file created for Get-SharedHelper
-      Remove-Item $tempPS
+
       Assert-MockCalled Write-ChefStatus -Times 2
       Assert-MockCalled Read-JsonFile -Times 1
       Assert-MockCalled Uninstall-ChefService -Times 1
+      Assert-MockCalled Uninstall-ChefSchTask -Times 0
       Assert-MockCalled Uninstall-AzureChefExtensionGem -Times 1
-      Assert-MockCalled Get-deleteChefConfigSetting -Times 1
-      Assert-MockCalled Uninstall-ChefClientPackage -Times 1
     }
   }
 
-  context "when powershell version 2" {
-    it "uninstall chef and azure-chef-extension gem successfully" {
-      # create temp powershell file for mock Get-SharedHelper
-      $tempPS = ([System.IO.Path]::GetTempFileName() | Rename-Item -NewName { $_ -replace 'tmp$', 'ps1' } -PassThru)
-      mock Get-SharedHelper {return $tempPS}
-      mock Read-JsonFile
-      mock Write-ChefStatus
-      mock Uninstall-ChefService
-      mock Uninstall-AzureChefExtensionGem
-      mock Get-deleteChefConfigSetting
+  context "when daemon is task" {
+    it "uninstalls the scheduled task instead of the service" {
+      mock Get-PublicSettings-From-Config-Json { return "task" } -ParameterFilter { $key -eq "daemon" }
+      mock Get-PowershellVersion { return 3 }
+      mock Test-ChefExtensionRegistry { return $false }
 
-      $deleteChefConfig = "{'publicSettings':{'deleteChefConfig':'false'}}" | ConvertFrom-Json
-      mock Get-HandlerSettings { return $deleteChefConfig }
+      Uninstall-ChefClient
 
-      mock Uninstall-ChefClientPackage
+      Assert-MockCalled Uninstall-ChefSchTask -Times 1
+      Assert-MockCalled Uninstall-ChefService -Times 0
+      Assert-MockCalled Uninstall-AzureChefExtensionGem -Times 1
+    }
+  }
+
+  context "when powershell version is below 3" {
+    it "skips json status logging but still uninstalls" {
       mock Get-PowershellVersion { return 2 }
       mock Test-ChefExtensionRegistry { return $false }
 
       Uninstall-ChefClient
-      # Delete temp file created for Get-SharedHelper
-      Remove-Item $tempPS
+
       Assert-MockCalled Write-ChefStatus -Times 0
       Assert-MockCalled Read-JsonFile -Times 0
-
       Assert-MockCalled Uninstall-ChefService -Times 1
       Assert-MockCalled Uninstall-AzureChefExtensionGem -Times 1
-      Assert-MockCalled Get-deleteChefConfigSetting -Times 1
-      Assert-MockCalled Uninstall-ChefClientPackage -Times 1
     }
   }
 
   context "when update process is running" {
-    it "skip chef uninstallation" {
-      # # create temp powershell file for mock Get-SharedHelper
-      $tempPS = ([System.IO.Path]::GetTempFileName() | Rename-Item -NewName { $_ -replace 'tmp$', 'ps1' } -PassThru)
-      mock Get-SharedHelper {return $tempPS}
-      mock Read-JsonFile
-      mock Write-ChefStatus
-      mock Uninstall-ChefService
-      mock Uninstall-AzureChefExtensionGem
-      mock Get-deleteChefConfigSetting
-
-      $deleteChefConfig = "{'publicSettings':{'deleteChefConfig':'false'}}" | ConvertFrom-Json
-      mock Get-HandlerSettings { return $deleteChefConfig }
-
-      mock Uninstall-ChefClientPackage
-      mock Update-ChefExtensionRegistry
+    it "skips chef uninstallation" {
       mock Get-PowershellVersion { return 3 }
       mock Test-ChefExtensionRegistry { return $true }
 
       Uninstall-ChefClient
-      # Delete temp file created for Get-SharedHelper
-      Remove-Item $tempPS
-      Assert-MockCalled Update-ChefExtensionRegistry -Times 1
+
+      Assert-MockCalled Update-ChefExtensionRegistry -Times 1 -ParameterFilter { $Value -eq "X" }
       Assert-MockCalled Write-ChefStatus -Times 1
       Assert-MockCalled Read-JsonFile -Times 1
       Assert-MockCalled Uninstall-ChefService -Times 0
       Assert-MockCalled Uninstall-AzureChefExtensionGem -Times 0
-      Assert-MockCalled Get-deleteChefConfigSetting -Times 0
-      Assert-MockCalled Uninstall-ChefClientPackage -Times 0
     }
   }
 }

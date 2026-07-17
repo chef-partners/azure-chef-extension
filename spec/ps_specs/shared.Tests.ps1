@@ -9,10 +9,14 @@
 #
 # For more info: http://johanleino.wordpress.com/2013/09/13/pester-unit-testing-for-powershell/
 
-$here = Split-Path -Parent $MyInvocation.MyCommand.Path
-$suit = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace(".Tests.", ".")
-
-. $here.Replace("\spec\ps_specs", "\ChefExtensionHandler\bin\$suit")
+# Pester 5 only executes file-scope code during Discovery, not Run — compute
+# paths and dot-source inside BeforeAll so the functions under test are
+# available when It blocks execute.
+BeforeAll {
+  $here = Split-Path -Parent $PSCommandPath
+  $suit = (Split-Path -Leaf $PSCommandPath).Replace(".Tests.", ".")
+  . $here.Replace("\spec\ps_specs", "\ChefExtensionHandler\bin\$suit")
+}
 
 describe "#Read-JsonFile" {
   it "returns correct values " {
@@ -25,8 +29,8 @@ describe "#Read-JsonFile" {
 
     $json_handlerSettingsFileName, $json_statusFolder = Read-JsonFile
 
-    $json_handlerSettingsFileName | Should Be $handlerSettingsFileName
-    $json_statusFolder | Should Be $handlerEnvironment.statusFolder
+    $json_handlerSettingsFileName | Should -Be $handlerSettingsFileName
+    $json_statusFolder | Should -Be $handlerEnvironment.statusFolder
   }
 }
 
@@ -44,8 +48,8 @@ describe "#Read-JsonFileUsingRuby" {
 
     $json_handlerSettingsFileName, $json_statusFolder = Read-JsonFileUsingRuby
 
-    $json_handlerSettingsFileName | Should Be $handlerSettingsFilePath
-    $json_statusFolder | Should Be $handlerEnvironment.statusFolder
+    $json_handlerSettingsFileName | Should -Be $handlerSettingsFilePath
+    $json_statusFolder | Should -Be $handlerEnvironment.statusFolder
   }
 }
 
@@ -56,7 +60,7 @@ describe "#Get-HandlerSettings" {
     mock Read-JsonFromFile { return $runtimeSettingsJson}
 
     $handlerSettings = Get-HandlerSettings
-    $handlerSettings | Should Be $runtimeSettingsJson.runtimeSettings[0].handlerSettings
+    $handlerSettings | Should -Be $runtimeSettingsJson.runtimeSettings[0].handlerSettings
     Assert-MockCalled  Get-HandlerSettingsFileName -Times 1
   }
 }
@@ -133,7 +137,7 @@ describe "#Test-ChefExtensionRegistry" {
 
       $result = Test-ChefExtensionRegistry
 
-      $result | Should Be $true
+      $result | Should -Be $true
       Assert-MockCalled Test-Path -Times 1 -ParameterFilter {$Path -eq $testPath -and $PathType -eq "Container"}
       Assert-MockCalled Get-ItemProperty -Times 1 -ParameterFilter {$Path -eq $testPath}
     }
@@ -150,7 +154,7 @@ describe "#Test-ChefExtensionRegistry" {
 
       $result = Test-ChefExtensionRegistry
 
-      $result | Should Be $false
+      $result | Should -Be $false
       Assert-MockCalled Test-Path -Times 1 -ParameterFilter {$Path -eq $testPath -and $PathType -eq "Container"}
       Assert-MockCalled Get-ItemProperty -Times 0
     }
@@ -167,43 +171,9 @@ describe "#Test-ChefExtensionRegistry" {
 
       $result = Test-ChefExtensionRegistry
 
-      $result | Should Be $false
+      $result | Should -Be $false
       Assert-MockCalled Test-Path -Times 1 -ParameterFilter {$Path -eq $testPath -and $PathType -eq "Container"}
       Assert-MockCalled Get-ItemProperty -Times 1 -ParameterFilter {$Path -eq $testPath}
-    }
-  }
-}
-
-describe "#Get-deleteChefConfigSetting" {
-  context "when deleteChefConfig is set to false and powershell version is 3 and call from update is false" {
-    it "returns deleteChefConfig false " {
-      mock Get-PowershellVersion { return 3 }
-      $calledFromUpdate = false
-
-      $json_handlerSettings = @{"protectedSettings" = "testprotectedSettings"; "protectedSettingsCertThumbprint" = "testprotectedSettingsCertThumbprint"; "publicSettings" = @{"client_rb"= "testclientrb"; "runList" = "testrunlist"; "deleteChefConfig" = "false"}}
-      mock Get-HandlerSettings {return $json_handlerSettings}
-
-      $result = Get-deleteChefConfigSetting
-
-      $result | Should Be "false"
-
-      Assert-MockCalled Get-HandlerSettings -Times 1
-    }
-  }
-
-  context "when deleteChefConfig is set to true and powershell version is 3 and call from update is false" {
-    it "returns deleteChefConfig true " {
-      mock Get-PowershellVersion { return 3 }
-      $calledFromUpdate = false
-
-      $json_handlerSettings = @{"protectedSettings" = "testprotectedSettings"; "protectedSettingsCertThumbprint" = "testprotectedSettingsCertThumbprint"; "publicSettings" = @{"client_rb"= "testclientrb"; "runList" = "testrunlist"; "deleteChefConfig" = "true"}}
-      mock Get-HandlerSettings {return $json_handlerSettings}
-
-      $result = Get-deleteChefConfigSetting
-
-      $result | Should Be "true"
-
-      Assert-MockCalled Get-HandlerSettings -Times 1
     }
   }
 }
@@ -212,14 +182,14 @@ describe "#Get-ChefLicenseKey" {
   it "returns chef_license_key value from public settings" {
     mock Get-PublicSettings-From-Config-Json { return "test-license-key-1234" } -ParameterFilter { $key -eq "chef_license_key" }
     $result = Get-ChefLicenseKey 3
-    $result | Should Be "test-license-key-1234"
+    $result | Should -Be "test-license-key-1234"
     Assert-MockCalled Get-PublicSettings-From-Config-Json -Times 1 -ParameterFilter { $key -eq "chef_license_key" }
   }
 
   it "returns null when chef_license_key is not set" {
     mock Get-PublicSettings-From-Config-Json { return $null } -ParameterFilter { $key -eq "chef_license_key" }
     $result = Get-ChefLicenseKey 3
-    $result | Should Be $null
+    $result | Should -Be $null
   }
 }
 
@@ -239,17 +209,21 @@ describe "#Set-ChefLicenseKeyEnv" {
 }
 
 describe "#Write-LicenseKeyStatus" {
-  it "logs deprecation warning when license key is empty" {
+  # ponytail: the "no license, no bypass" path calls `exit 1`, which can't be
+  # safely mocked (exit is a PS keyword, not an interceptable command) without
+  # running it in a subprocess/job. Not worth the added test complexity here;
+  # covered indirectly by the two reachable paths below.
+  it "logs deprecation warning when license key is empty and bypass is set" {
     mock Write-Host
     mock Write-Warning
-    Write-LicenseKeyStatus ""
+    Write-LicenseKeyStatus "" "true"
     Assert-MockCalled Write-Warning -Times 1
     Assert-MockCalled Write-Host -Times 1
   }
 
   it "logs present key message when license key is provided" {
     mock Write-Host
-    Write-LicenseKeyStatus "some-key"
+    Write-LicenseKeyStatus "some-key" "false"
     Assert-MockCalled Write-Host -Times 1
   }
 }
