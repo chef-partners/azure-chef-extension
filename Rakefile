@@ -140,7 +140,7 @@ task :list_versions do
 end
 
 desc "Publishes the azure chef extension package using publish.json Ex: publish[deploy_type, platform, extension_version], default is build[preview,windows]."
-task :publish, [:deploy_type, :target_type, :extension_version, :chef_deploy_namespace, :operation, :internal_or_public, :confirmation_required, :extension_name_override, :resource_group] => [:build] do |t, args|
+task :publish, [:deploy_type, :target_type, :extension_version, :chef_deploy_namespace, :operation, :internal_or_public, :confirmation_required, :extension_name_override, :resource_group, :storage_account, :storage_container] => [:build] do |t, args|
 
   args.with_defaults(
     :deploy_type => PREVIEW,
@@ -151,11 +151,13 @@ task :publish, [:deploy_type, :target_type, :extension_version, :chef_deploy_nam
     :internal_or_public => CONFIRM_INTERNAL,
     :confirmation_required => "true",
     :extension_name_override => "",
-    :resource_group => ""
+    :resource_group => "",
+    :storage_account => "azurechefextensions",
+    :storage_container => "published-packages"
     )
 
-  storageAccount="azurechefextensions"
-  storageContainer="published-packages"
+  storageAccount=args.storage_account
+  storageContainer=args.storage_container
 
   puts "**Publish called with args:\n#{args}\n\n"
   puts "Continuing with publish request..."
@@ -246,6 +248,28 @@ def prompt(label, default: nil)
   answer.empty? ? default.to_s : answer
 end
 
+# Adhoc/test-only helper: the production storage account is not reachable from
+# personal Azure subscriptions, so create a scratch account/container for the
+# adhoc publish task if one doesn't already exist in the target resource group.
+def ensure_storage_account!(account, container, resource_group)
+  puts "\nChecking storage account '#{account}' in resource group '#{resource_group}'..."
+  exists = system("az storage account show --name #{account} --resource-group #{resource_group} -o none 2>/dev/null")
+  unless exists
+    puts "Storage account '#{account}' not found, creating it..."
+    location = %x{az group show --name #{resource_group} --query location -o tsv}.strip
+    location = "eastus" if location.empty?
+    system("az storage account create --name #{account} --resource-group #{resource_group} --location #{location} --sku Standard_LRS") or
+      abort("Unable to create storage account '#{account}'")
+  end
+
+  container_exists = system("az storage container show --account-name #{account} --name #{container} -o none 2>/dev/null")
+  unless container_exists
+    puts "Container '#{container}' not found, creating it..."
+    system("az storage container create --account-name #{account} --name #{container}") or
+      abort("Unable to create container '#{container}'")
+  end
+end
+
 namespace :testing do
   desc "Adhoc test publish: logs in with .env creds and publishes under an alternate name. Prompts for all fields interactively."
   task :publish_adhoc do
@@ -286,6 +310,15 @@ BANNER
     default_override = "#{ENV["USER"] || "adhoc"}-adhoc-test-#{Date.today.strftime("%Y%m%d")}"
     extension_name_override = prompt("Alternate extension name (typeName override, required)", default: default_override)
     resource_group = prompt("Resource group to deploy the extension version into", default: dotenv["RESOURCE_GROUP"] || default_resource_group(platform))
+    location = dotenv["LOCATION"] || "eastus"
+    puts "\nEnsuring resource group '#{resource_group}' exists in '#{location}' (mirrors testing/test-azure-extension.sh)..."
+    system("az group create --name #{resource_group} --location #{location} --output none") or
+      abort("Unable to create/verify resource group '#{resource_group}'")
+
+    default_storage_account = (dotenv["STORAGE_ACCOUNT"] || "#{ENV["USER"] || "adhoc"}adhocteststorage").downcase.gsub(/[^a-z0-9]/, "")[0, 24]
+    storage_account = prompt("Storage account for the uploaded package (created if missing)", default: default_storage_account)
+    storage_container = prompt("Storage container for the uploaded package (created if missing)", default: dotenv["STORAGE_CONTAINER"] || "published-packages")
+    ensure_storage_account!(storage_account, storage_container, resource_group)
 
     Rake::Task[:publish].invoke(
       deploy_type,
@@ -296,13 +329,15 @@ BANNER
       CONFIRM_INTERNAL,
       "true",
       extension_name_override,
-      resource_group
+      resource_group,
+      storage_account,
+      storage_container
     )
   end
 end
 
 desc "Publishes the azure chef extension package using publish.json Ex: publish[deploy_type, platform, extension_version], default is build[preview,windows]."
-task :promote_regions, [:deploy_type, :target_type, :extension_version, :chef_deploy_namespace, :operation, :internal_or_public, :confirmation_required, :region1, :region2, :extension_name_override, :resource_group] => [:build] do |t, args|
+task :promote_regions, [:deploy_type, :target_type, :extension_version, :chef_deploy_namespace, :operation, :internal_or_public, :confirmation_required, :region1, :region2, :extension_name_override, :resource_group, :storage_account, :storage_container] => [:build] do |t, args|
 
   args.with_defaults(
     :deploy_type => PREVIEW,
@@ -314,11 +349,13 @@ task :promote_regions, [:deploy_type, :target_type, :extension_version, :chef_de
     :confirmation_required => "true",
     :region1 => "East US",
     :extension_name_override => "",
-    :resource_group => ""
+    :resource_group => "",
+    :storage_account => "azurechefextensions",
+    :storage_container => "published-packages"
     )
 
-  storageAccount="azurechefextensions"
-  storageContainer="published-packages"
+  storageAccount=args.storage_account
+  storageContainer=args.storage_container
 
   puts "**Publish called with args:\n#{args}\n\n"
   puts "Continuing with publish request..."
@@ -406,11 +443,15 @@ end
 
 def upload_to_storage(package,storageAccount,storageContainer)
   begin
-    cli_cmd = Mixlib::ShellOut.new("az storage blob upload --account-name #{storageAccount} --container-name #{storageContainer} --name #{package} --file #{package}")
+    cli_cmd = Mixlib::ShellOut.new("az storage blob upload --account-name #{storageAccount} --container-name #{storageContainer} --name #{package} --file #{package} --overwrite")
     result = cli_cmd.run_command
     result.error!
     puts "The #{package} has been succesfully uploaded to storage account #{storageAccount} in #{storageContainer} container."
   rescue Mixlib::ShellOut::ShellCommandFailed => e
-    puts "The upload has failed for #{package} to storage account #{storageAccount} in #{storageContainer} container"
+    puts "The upload has failed for #{package} to storage account #{storageAccount} in #{storageContainer} container:"
+    puts e.message
+    puts result.stdout unless result.nil? || result.stdout.to_s.empty?
+    puts result.stderr unless result.nil? || result.stderr.to_s.empty?
+    raise
   end
 end
