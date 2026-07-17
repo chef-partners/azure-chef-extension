@@ -140,7 +140,7 @@ task :list_versions do
 end
 
 desc "Publishes the azure chef extension package using publish.json Ex: publish[deploy_type, platform, extension_version], default is build[preview,windows]."
-task :publish, [:deploy_type, :target_type, :extension_version, :chef_deploy_namespace, :operation, :internal_or_public, :confirmation_required, :extension_name_override] => [:build] do |t, args|
+task :publish, [:deploy_type, :target_type, :extension_version, :chef_deploy_namespace, :operation, :internal_or_public, :confirmation_required, :extension_name_override, :resource_group] => [:build] do |t, args|
 
   args.with_defaults(
     :deploy_type => PREVIEW,
@@ -150,7 +150,8 @@ task :publish, [:deploy_type, :target_type, :extension_version, :chef_deploy_nam
     :operation => "new",
     :internal_or_public => CONFIRM_INTERNAL,
     :confirmation_required => "true",
-    :extension_name_override => ""
+    :extension_name_override => "",
+    :resource_group => ""
     )
 
   storageAccount="azurechefextensions"
@@ -284,6 +285,7 @@ BANNER
     chef_deploy_namespace = prompt("Chef deploy namespace", default: "Chef.Bootstrap.WindowsAzure")
     default_override = "#{ENV["USER"] || "adhoc"}-adhoc-test-#{Date.today.strftime("%Y%m%d")}"
     extension_name_override = prompt("Alternate extension name (typeName override, required)", default: default_override)
+    resource_group = prompt("Resource group to deploy the extension version into", default: dotenv["RESOURCE_GROUP"] || default_resource_group(platform))
 
     Rake::Task[:publish].invoke(
       deploy_type,
@@ -293,13 +295,14 @@ BANNER
       "update",
       CONFIRM_INTERNAL,
       "true",
-      extension_name_override
+      extension_name_override,
+      resource_group
     )
   end
 end
 
 desc "Publishes the azure chef extension package using publish.json Ex: publish[deploy_type, platform, extension_version], default is build[preview,windows]."
-task :promote_regions, [:deploy_type, :target_type, :extension_version, :chef_deploy_namespace, :operation, :internal_or_public, :confirmation_required, :region1, :region2, :extension_name_override] => [:build] do |t, args|
+task :promote_regions, [:deploy_type, :target_type, :extension_version, :chef_deploy_namespace, :operation, :internal_or_public, :confirmation_required, :region1, :region2, :extension_name_override, :resource_group] => [:build] do |t, args|
 
   args.with_defaults(
     :deploy_type => PREVIEW,
@@ -310,7 +313,8 @@ task :promote_regions, [:deploy_type, :target_type, :extension_version, :chef_de
     :internal_or_public => CONFIRM_INTERNAL,
     :confirmation_required => "true",
     :region1 => "East US",
-    :extension_name_override => ""
+    :extension_name_override => "",
+    :resource_group => ""
     )
 
   storageAccount="azurechefextensions"
@@ -380,27 +384,24 @@ end
 def deploy_template(args)
   template=__dir__+"/publish-template.json"
   group_name = "ExtensionPublishing"
-  if args.target_type == "windows"
-    resgrp = "azure-chef-extension-window"
-    begin
-      cli_cmd = Mixlib::ShellOut.new("az deployment group create --name #{group_name} --resource-group #{resgrp} --template-file #{template}")
-      result = cli_cmd.run_command
-      result.error!
-      puts "The windows extension has been successfully published."
-    rescue Mixlib::ShellOut::ShellCommandFailed => e
-      puts "The winddows extension publishing is failing while deploying #{template}"
-    end
-  else
-    resgrp = "azure-chef-extension-linux"
-    begin
-      cli_cmd = Mixlib::ShellOut.new("az deployment group create --name #{group_name} --resource-group #{resgrp} --template-file #{template}")
-      result = cli_cmd.run_command
-      result.error!
-      puts "The linux extension has been successfully published."
-    rescue Mixlib::ShellOut::ShellCommandFailed => e
-      puts "The linux extension publishing is failing while deploying #{template}"
-    end
+  resgrp = args.resource_group.to_s.empty? ? default_resource_group(args.target_type) : args.resource_group
+  os_label = args.target_type == "windows" ? "windows" : "linux"
+  begin
+    cli_cmd = Mixlib::ShellOut.new("az deployment group create --name #{group_name} --resource-group #{resgrp} --template-file #{template}")
+    result = cli_cmd.run_command
+    result.error!
+    puts "The #{os_label} extension has been successfully published."
+  rescue Mixlib::ShellOut::ShellCommandFailed => e
+    puts "The #{os_label} extension publishing failed while deploying #{template} to resource group '#{resgrp}':"
+    puts e.message
+    puts result.stdout unless result.nil? || result.stdout.to_s.empty?
+    puts result.stderr unless result.nil? || result.stderr.to_s.empty?
+    raise
   end
+end
+
+def default_resource_group(target_type)
+  target_type == "windows" ? "azure-chef-extension-window" : "azure-chef-extension-linux"
 end
 
 def upload_to_storage(package,storageAccount,storageContainer)
