@@ -105,7 +105,7 @@ describe "#Get-SharedHelper" {
     mock Chef-GetExtensionRoot {return $extensionRoot} -Verifiable
     $result = Get-SharedHelper
 
-    $result | Should -Be "$extensionRoot\bin\shared.ps1"
+    $result | Should -Be "$extensionRoot\\bin\\shared.ps1"
     Should -InvokeVerifiable
   }
 }
