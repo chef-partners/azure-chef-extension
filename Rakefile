@@ -214,6 +214,90 @@ CONFIRMATION
   deploy_template(args)
 end
 
+# ponytail: minimal .env parser (KEY="VALUE" per line, # comments) so the
+# adhoc publish task doesn't need a dotenv gem for a handful of variables.
+def load_dotenv(path)
+  return {} unless File.exist?(path)
+
+  File.readlines(path).each_with_object({}) do |line, vars|
+    line = line.strip
+    next if line.empty? || line.start_with?("#")
+
+    key, value = line.split("=", 2)
+    next unless key && value
+
+    value = value.strip
+    # Quoted values may have a trailing "# comment" after the closing quote;
+    # unquoted values are terminated by the first unescaped "#".
+    if value =~ /\A"([^"]*)"/ || value =~ /\A'([^']*)'/
+      value = $1
+    else
+      value = value.split("#", 2).first.to_s.strip
+    end
+    vars[key.strip] = value
+  end
+end
+
+def prompt(label, default: nil)
+  suffix = default && !default.to_s.empty? ? " [#{default}]" : ""
+  print "#{label}#{suffix}: "
+  answer = STDIN.gets.to_s.strip
+  answer.empty? ? default.to_s : answer
+end
+
+namespace :testing do
+  desc "Adhoc test publish: logs in with .env creds and publishes under an alternate name. Prompts for all fields interactively."
+  task :publish_adhoc do
+    dotenv = load_dotenv(File.join(__dir__, ".env"))
+
+    puts <<-BANNER
+
+*****************************************
+Adhoc test publish (modeled on `make publish.internally`)
+Uses .env for Azure login instead of vault, and always publishes
+under an alternate extension name so it can't collide with the real
+published extension.
+*****************************************
+BANNER
+
+    cloud = prompt("Azure cloud (public/government)", default: "public")
+    deploy_type = cloud.strip.downcase.start_with?("gov") ? GOV : PRODUCTION
+
+    tenant = dotenv["AZURE_TENANT"]
+    subscription = dotenv["AZURE_SUBSCRIPTION"]
+    use_device_code = dotenv["AZURE_USE_DEVICE_CODE"].to_s.downcase == "true"
+
+    puts "\nLogging in to Azure (from .env: tenant=#{tenant || "(none)"}, subscription=#{subscription || "(none)"})..."
+    system("az cloud set --name #{deploy_type == GOV ? "AzureUSGovernment" : "AzureCloud"}")
+    login_cmd = ["az", "login"]
+    login_cmd += ["--tenant", tenant] if tenant
+    login_cmd << "--use-device-code" if use_device_code
+    system(*login_cmd) or abort("az login failed")
+    if subscription
+      system("az", "account", "set", "--subscription", subscription) or
+        abort("Unable to select Azure subscription '#{subscription}'")
+    end
+    system("az account show")
+
+    platform = prompt("Platform (windows/linux)", default: "windows")
+    extension_version = prompt("Extension version", default: File.exist?("VERSION") ? File.read("VERSION").strip : EXTENSION_VERSION)
+    chef_deploy_namespace = prompt("Chef deploy namespace", default: "Chef.Bootstrap.WindowsAzure")
+    default_override = "#{ENV["USER"] || "adhoc"}-adhoc-test-#{Date.today.strftime("%Y%m%d")}"
+    extension_name_override = prompt("Alternate extension name (typeName override, required)", default: default_override)
+
+    Rake::Task[:publish].invoke(
+      deploy_type,
+      platform,
+      extension_version,
+      chef_deploy_namespace,
+      "update",
+      CONFIRM_INTERNAL,
+      "true",
+      extension_name_override
+    )
+  end
+end
+
 desc "Publishes the azure chef extension package using publish.json Ex: publish[deploy_type, platform, extension_version], default is build[preview,windows]."
 task :promote_regions, [:deploy_type, :target_type, :extension_version, :chef_deploy_namespace, :operation, :internal_or_public, :confirmation_required, :region1, :region2, :extension_name_override] => [:build] do |t, args|
 
