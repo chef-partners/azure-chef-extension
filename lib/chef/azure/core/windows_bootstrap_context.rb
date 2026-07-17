@@ -146,8 +146,14 @@ CONFIG
 
         def first_boot
           attributes = (@config[:first_boot_attributes] || {})
-          first_boot_attributes_and_run_list = @run_list.empty? ? attributes : attributes.merge(:target_runlist => @run_list)
-          escape_and_echo(first_boot_attributes_and_run_list.to_json)
+          first_boot_hash = if policyfile_mode?
+            attributes.merge(:policy_name => @config[:policy_name], :policy_group => @config[:policy_group])
+          elsif @run_list.empty?
+            attributes
+          else
+            attributes.merge(:target_runlist => @run_list)
+          end
+          escape_and_echo(first_boot_hash.to_json)
         end
 
         # escape WIN BATCH special chars
@@ -162,6 +168,11 @@ CONFIG
         end
 
         private
+
+        def policyfile_mode?
+          @config[:policy_name] && !@config[:policy_name].to_s.empty? &&
+          @config[:policy_group] && !@config[:policy_group].to_s.empty?
+        end
       end
     end
   end

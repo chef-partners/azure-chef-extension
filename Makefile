@@ -6,11 +6,11 @@ export EXTENSION_NAMESPACE := Chef.Bootstrap.WindowsAzure
 ifeq ($(AZURE_CLOUD), government)
 DEPLOY_TYPE := gov
 export USERNAME := $(shell vault kv get -field username secret/azure-chef-extension/gov-publishing-credentials)
-export PASSWORD := $(shell vault kv get -field password secret/azure-chef-extension/gov-publishing-credentials)
+export AZURE_PASSWORD := $(shell vault kv get -field password secret/azure-chef-extension/gov-publishing-credentials)
 else ifeq ($(AZURE_CLOUD), public)
 DEPLOY_TYPE := production
 export USERNAME := $(shell vault kv get -field username secret/azure-chef-extension/public-publishing-credentials)
-export PASSWORD := $(shell vault kv get -field password secret/azure-chef-extension/public-publishing-credentials)
+export AZURE_PASSWORD := $(shell vault kv get -field password secret/azure-chef-extension/public-publishing-credentials)
 export TENANT := $(shell vault kv get -field tenant secret/azure-chef-extension/public-publishing-credentials)
 else
 $(error AZURE_CLOUD must be set to "government" or "public")
@@ -19,6 +19,7 @@ endif
 DATE_OF_PUBLISHING ?= $(shell date +%Y%m%d)
 PLATFORM ?= windows
 VERSION ?= $(shell cat VERSION)
+EXTENSION_NAME_OVERRIDE ?=
 
 ifeq ($(AZURE_CLOUD), government)
 	export MANAGEMENT_URL := https://management.core.usgovcloudapi.net
@@ -56,15 +57,14 @@ clean: bundle.install
 
 login: bundle.install
 ifeq ($(AZURE_CLOUD), government)
-	az cloud set --name AzureUSGovernment
-	az login -u '$(USERNAME)' -p '$(PASSWORD)'
-	az account set --subscription "Azure Government - Chef VM Extension Publishing Subscription"
+	@az cloud set --name AzureUSGovernment
+	@az login -u '$(USERNAME)' -p '$(AZURE_PASSWORD)' > /dev/null
+	@az account set --subscription "Azure Government - Chef VM Extension Publishing Subscription"
 else
-	az cloud set --name AzureCloud
-	az login --service-principal --username '$(USERNAME)' --password '$(PASSWORD)' --tenant '$(TENANT)'
+	@az cloud set --name AzureCloud
+	@az login --service-principal --username '$(USERNAME)' --password '$(AZURE_PASSWORD)' --tenant '$(TENANT)' > /dev/null
 endif
-	@echo "$(USERNAME) password - $(PASSWORD)"
-	az account show
+	@az account show
 
 #list.versions:	@ Lists the internally and externally published extension
 list.versions: login
@@ -72,7 +72,7 @@ list.versions: login
 
 #publish.internally:	@ Publish extension internally to public or government Azure cloud
 publish.internally: login
-	bundle exec rake publish[deploy_to_$(DEPLOY_TYPE),$(PLATFORM),$(VERSION),$(EXTENSION_NAMESPACE),update,confirm_internal_deployment,$(CONFIRM_REQUIRED)]
+	bundle exec rake publish[deploy_to_$(DEPLOY_TYPE),$(PLATFORM),$(VERSION),$(EXTENSION_NAMESPACE),update,confirm_internal_deployment,$(CONFIRM_REQUIRED),$(EXTENSION_NAME_OVERRIDE)]
 
 #publish.all-regions:	@ Publish extension to all regions in public or government Azure cloud
 publish.all-regions: login

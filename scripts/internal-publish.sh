@@ -9,6 +9,7 @@ AZURE_CLOUD=$(buildkite-agent meta-data get azure-cloud)
 CONFIRMATION=$(buildkite-agent meta-data get azure-confirmation)
 REGION1=$(buildkite-agent meta-data get deploy-region1 --default "fail")
 REGION2=$(buildkite-agent meta-data get deploy-region2 --default "fail")
+EXTENSION_NAME_OVERRIDE=$(buildkite-agent meta-data get extension-name-override --default "")
 
 echo "Parameters passed are AZURE_CLOUD=${AZURE_CLOUD}, PLATFORM=${RELEASE_PLATFORM}, VERSION=${RELEASE_VERSION}"  
 
@@ -21,6 +22,6 @@ elif [[ ${REGION1} != "fail" ]] ; then
   make promote.single-region AZURE_CLOUD=${AZURE_CLOUD} PLATFORM=${RELEASE_PLATFORM} VERSION=${RELEASE_VERSION} INTERNAL_OR_PUBLIC=${CONFIRM_DEPLOYMENT_TYPE} CONFIRMATION=${CONFIRMATION} REGION1="${REGION1}"
   else
     echo "Publishing internally..."
-    make publish.internally AZURE_CLOUD=${AZURE_CLOUD} PLATFORM=${RELEASE_PLATFORM} VERSION=${RELEASE_VERSION} CONFIRMATION=${CONFIRMATION}
+    make publish.internally AZURE_CLOUD=${AZURE_CLOUD} PLATFORM=${RELEASE_PLATFORM} VERSION=${RELEASE_VERSION} CONFIRMATION=${CONFIRMATION} EXTENSION_NAME_OVERRIDE="${EXTENSION_NAME_OVERRIDE}"
 fi
 

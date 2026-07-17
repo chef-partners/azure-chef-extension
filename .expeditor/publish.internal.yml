@@ -40,6 +40,10 @@ steps:
       key: "deploy-region2"
       hint: "Which second region should we deploy this to? Please enter region without any quotations, eg., East US"
       required: false
+    - text: "Extension Name Override"
+      key: "extension-name-override"
+      hint: "Override the extension type name for a limited-availability test publish (leave blank to use the default ChefClient/LinuxChefClient name)"
+      required: false
     - select: "Confirm deployment type"
       key: "deployment-type"
       default: "confirm_internal_deployment"

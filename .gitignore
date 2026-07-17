@@ -20,3 +20,11 @@ Gemfile.lock
 .yardoc
 _yardoc
 doc/
+
+# Local test environment files (contain secrets)
+testing/.env
+.env
+
+*.pem
+
+testing/artifacts/

@@ -13,6 +13,9 @@ commands_script_path=$(get_script_dir)
 chef_extension_root=$commands_script_path/../
 
 read_environment_variables $chef_extension_root
+read_chef_license_key $chef_extension_root
+read_chef_license_bypass $chef_extension_root
+log_license_key_status
 
 # install azure chef extension gem
 install_chef_extension_gem(){
@@ -43,6 +46,36 @@ curl_check(){
   fi
 }
 
+# Downloads install.sh from chefdownload-commercial.chef.io and installs the given product.
+# Usage: run_install_script <product> [flags passed to install.sh]
+# Always pass -P explicitly — install.sh defaults to chef today but will default to
+# chef-ice in a future release; explicit -P keeps this extension's behaviour stable.
+run_install_script(){
+  _product="$1"; shift
+  curl_check "$platform"
+  curl -L -o /tmp/install.sh https://chefdownload-commercial.chef.io/install.sh
+  echo "install.sh downloaded"
+  if [ -n "$CHEF_LICENSE_KEY" ]; then
+    _pv=$(. /etc/os-release 2>/dev/null && echo "$VERSION_ID")
+    [ -z "$_pv" ] && _pv=$(lsb_release -rs 2>/dev/null || uname -r)
+    _arch=$(uname -m)
+    _ch="${chef_channel:-stable}"
+    _meta_url="https://chefdownload-commercial.chef.io/${_ch}/${_product}/metadata?p=${platform}&pv=${_pv}&m=${_arch}&license_id=${CHEF_LICENSE_KEY}"
+    [ -n "$chef_version" ] && _meta_url="${_meta_url}&v=${chef_version}"
+    _dl=$(curl -fsSL "${_meta_url}" 2>/dev/null | grep '^url' | awk '{print $2}')
+    if [ -n "$_dl" ]; then
+      echo "Downloading ${_product} with license_id from ${_dl}"
+      sh /tmp/install.sh -P "$_product" "$@" -l "${_dl}"
+    else
+      echo "Warning: could not resolve download URL for ${_product}; attempting install without licenseId"
+      sh /tmp/install.sh -P "$_product" "$@"
+    fi
+  else
+    sh /tmp/install.sh -P "$_product" "$@"
+  fi
+  rm -f /tmp/install.sh
+}
+
 chef_install_from_script(){
     echo "Fetching settings file"
     config_file_name=$(get_config_settings_file $chef_extension_root)
@@ -51,41 +84,57 @@ chef_install_from_script(){
       exit 1
     fi
     echo "Reading Chef-Infra-Client version from settings file"
-    chef_version=$(get_value_from_setting_file $config_file_name "bootstrap_version" &)
+    chef_version=$(get_value_from_setting_file $config_file_name "bootstrap_version")
     echo "Reading Chef-Infra-Client release channel from settings file"
-    chef_channel=$(get_value_from_setting_file $config_file_name "bootstrap_channel" &)
+    chef_channel=$(get_value_from_setting_file $config_file_name "bootstrap_channel")
     echo "Reading downloaded Chef-Infra-Client path from settings file"
-    chef_downloaded_package=$(get_value_from_setting_file $config_file_name "chef_package_path" &)
+    chef_downloaded_package=$(get_value_from_setting_file $config_file_name "chef_package_path")
     echo "Reading chef package url from settings file"
-    chef_package_url=$(get_value_from_setting_file $config_file_name "chef_package_url" &)
+    chef_package_url=$(get_value_from_setting_file $config_file_name "chef_package_url")
     echo "Call for Checking linux distributor"
     platform=$(get_linux_distributor)
-    #check if chef-client is already installed
-    if [ "$platform" = "ubuntu" -o "$platform" = "debian" ]; then
+
+    # Determine product. Always pass -P to install.sh explicitly —
+    # install.sh will default to chef-ice in a future release and this
+    # makes the extension's behaviour stable regardless of that change.
+    _major=$(echo "${chef_version}" | cut -d. -f1)
+    if [ -n "$chef_version" ] && [ "$_major" -ge 19 ] 2>/dev/null; then
+      _product="chef-ice"
+    else
+      _product="chef"
+    fi
+
+    # Check if already installed. For chef-ice, check the hab pkg path in
+    # addition to the omnibus /usr/bin stub since hab-packaged chef-ice
+    # doesn't install there.
+    HAB_CHEF_BIN_STUB=/usr/bin/chef-client
+    if [ "$_product" = "chef-ice" ]; then
+      [ -f "$HAB_CHEF_BIN_STUB" ] || ls /hab/pkgs/chef/chef-ice/*/*/bin/chef-client > /dev/null 2>&1
+    elif [ "$platform" = "ubuntu" -o "$platform" = "debian" ]; then
       dpkg-query -s chef > /dev/null 2>&1
     elif [ "$platform" = "centos" -o "$platform" = "rhel" -o "$platform" = "linuxoracle" ]; then
       yum list installed | grep -w "chef"
     fi
     chef_install_status=$?
     if [ $chef_install_status -ne 0 ] && [ -z "$chef_downloaded_package" ] && [ -z "$chef_package_url" ]; then
-      curl_check $platform
-      curl -L -o /tmp/$platform-install.sh https://omnitruck.chef.io/install.sh
-      echo "Install.sh script downloaded at /tmp/$platform-install.sh"
-      if [ -z "$chef_version" ] && [ -z "$chef_channel" ]; then
-        echo "Installing latest Chef Infra Client"
-        sh /tmp/$platform-install.sh
-      elif [ ! -z "$chef_version" ] && [ -z "$chef_channel" ]; then
-        echo "Installing Chef Infra Client version $chef_version"
-        sh /tmp/$platform-install.sh -v $chef_version
-      elif [ -z "$chef_version" ] && [ ! -z "$chef_channel" ]; then
-        echo "Installing latest Chef Infra Client from $chef_channel"
-        sh /tmp/$platform-install.sh -c $chef_channel
-      else
-        echo "Installing Chef Infra Client version $chef_version from $chef_channel channel"
-        sh /tmp/$platform-install.sh -v $chef_version -c $chef_channel
+      if [ "$_product" = "chef-ice" ] && [ -z "$CHEF_LICENSE_KEY" ]; then
+        echo "ERROR: chef-ice (v>=19) requires a license key — set chef_license_key in extension settings"
+        exit 1
       fi
-      echo "Deleting Install.sh script present at /tmp/$platform-install.sh"
-      rm /tmp/$platform-install.sh -f
+      warn_if_legacy_version_needs_license "$chef_version"
+      if [ -z "$chef_version" ] && [ -z "$chef_channel" ]; then
+        echo "Installing latest ${_product}"
+        run_install_script "$_product"
+      elif [ ! -z "$chef_version" ] && [ -z "$chef_channel" ]; then
+        echo "Installing ${_product} version $chef_version"
+        run_install_script "$_product" -v "$chef_version"
+      elif [ -z "$chef_version" ] && [ ! -z "$chef_channel" ]; then
+        echo "Installing latest ${_product} from $chef_channel"
+        run_install_script "$_product" -c "$chef_channel"
+      else
+        echo "Installing ${_product} version $chef_version from $chef_channel channel"
+        run_install_script "$_product" -v "$chef_version" -c "$chef_channel"
+      fi
     elif [ $chef_install_status -ne 0 ] && [ ! -z "$chef_downloaded_package" ]; then
       echo "Installing downloaded Chef Infra Client from $chef_downloaded_package path"
       filename=`echo $chef_downloaded_package | sed -e 's/^.*\///'`
@@ -119,7 +168,25 @@ chef_install_from_script(){
 
 chef_install_from_script
 
-export PATH=/opt/chef/bin/:/opt/chef/embedded/bin:$PATH
+# Find chef-client in expected locations and update PATH accordingly
+_chef_bin=""
+for _path in /usr/bin/chef-client /hab/pkgs/chef/chef-infra-client/*/*/bin/chef-client /hab/pkgs/chef/chef-ice/*/*/bin/chef-client /opt/chef/bin/chef-client; do
+  if test -x "$_path" 2>/dev/null; then
+    echo "Chef installation detected at $_path"
+    _chef_bin="$_path"
+    break
+  fi
+done
+if [ -z "$_chef_bin" ]; then
+  echo "chef-client executable not found in any expected location" >&2
+  exit 1
+fi
+_chef_bindir=$(dirname "$_chef_bin")
+case "$_chef_bindir" in
+  /usr/bin) ;; # already in PATH
+  /opt/chef/bin) export PATH="/opt/chef/bin:/opt/chef/embedded/bin:$PATH" ;;
+  *) export PATH="$_chef_bindir:$PATH" ;;
+esac
 
 # check if azure-chef-extension is installed
 azure_chef_extn_gem=`gem list azure-chef-extension | grep azure-chef-extension | awk '{print $1}'`

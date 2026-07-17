@@ -22,7 +22,6 @@ LINUX_PACKAGE_LIST = [
   {"ChefExtensionHandler/bin/*.py" => "#{CHEF_BUILD_DIR}/bin"},
   {"ChefExtensionHandler/bin/*.rb" => "#{CHEF_BUILD_DIR}/bin"},
   {"ChefExtensionHandler/bin/chef-client" => "#{CHEF_BUILD_DIR}/bin"},
-  {"*.gem" => "#{CHEF_BUILD_DIR}/gems"},
   {"ChefExtensionHandler/HandlerManifest.json.nix" => "#{CHEF_BUILD_DIR}/HandlerManifest.json"}
 ]
 
@@ -33,7 +32,6 @@ WINDOWS_PACKAGE_LIST = [
   {"ChefExtensionHandler/bin/*.psm1" => "#{CHEF_BUILD_DIR}/bin"},
   {"ChefExtensionHandler/bin/*.rb" => "#{CHEF_BUILD_DIR}/bin"},
   {"ChefExtensionHandler/bin/chef-client" => "#{CHEF_BUILD_DIR}/bin"},
-  {"*.gem" => "#{CHEF_BUILD_DIR}/gems"},
   {"ChefExtensionHandler/HandlerManifest.json" => "#{CHEF_BUILD_DIR}/HandlerManifest.json"}
 ]
 
@@ -71,18 +69,18 @@ task :build, [:target_type, :extension_version, :confirmation_required] => [:gem
   :extension_version => "1216.16.6.1",
   :confirmation_required => "false")
   puts "Build called with args(#{args.target_type}, #{args.extension_version})"
- 
+
   # Get user confirmation if we are downloading correct version.
   if args.confirmation_required == "true"
     confirm!("build")
   end
-  
+
   puts "Building #{args.target_type} package..."
   # setup the sandbox
   FileUtils.mkdir_p CHEF_BUILD_DIR
   FileUtils.mkdir_p "#{CHEF_BUILD_DIR}/bin"
   FileUtils.mkdir_p "#{CHEF_BUILD_DIR}/gems"
-  
+
   # Copy platform specific files to package dir
   puts "Copying #{args.target_type} scripts to package directory..."
   package_list = if args.target_type == "windows"
@@ -90,7 +88,7 @@ task :build, [:target_type, :extension_version, :confirmation_required] => [:gem
   else
     LINUX_PACKAGE_LIST
   end
-  
+
   package_list.each do |rule|
     src = rule.keys.first
     dest = rule[src]
@@ -101,16 +99,16 @@ task :build, [:target_type, :extension_version, :confirmation_required] => [:gem
       FileUtils.cp Dir.glob(src).first, dest
     end
   end
-  
+
   date_tag = Date.today.strftime("%Y%m%d")
-  
+
   # Write a release tag file to zip. This will help during testing
   # to check if package was synced in PIR.
   FileUtils.touch "#{CHEF_BUILD_DIR}/version_#{args.extension_version}_#{date_tag}_#{args.target_type}"
-  
+
   puts "\nCreating a zip package..."
   puts "#{PACKAGE_NAME}_#{args.extension_version}_#{date_tag}_#{args.target_type}.zip\n\n"
-  
+
   Zip::File.open("#{PACKAGE_NAME}_#{args.extension_version}_#{date_tag}_#{args.target_type}.zip", Zip::File::CREATE) do |zipfile|
     Dir[File.join("#{CHEF_BUILD_DIR}/", '**', '**')].each do |file|
       zipfile.add(file.sub("#{CHEF_BUILD_DIR}/", ''), file)
@@ -142,8 +140,8 @@ task :list_versions do
 end
 
 desc "Publishes the azure chef extension package using publish.json Ex: publish[deploy_type, platform, extension_version], default is build[preview,windows]."
-task :publish, [:deploy_type, :target_type, :extension_version, :chef_deploy_namespace, :operation, :internal_or_public, :confirmation_required] => [:build] do |t, args|
-  
+task :publish, [:deploy_type, :target_type, :extension_version, :chef_deploy_namespace, :operation, :internal_or_public, :confirmation_required, :extension_name_override] => [:build] do |t, args|
+
   args.with_defaults(
     :deploy_type => PREVIEW,
     :target_type => "windows",
@@ -151,7 +149,8 @@ task :publish, [:deploy_type, :target_type, :extension_version, :chef_deploy_nam
     :chef_deploy_namespace => "Chef.Bootstrap.WindowsAzure.Test",
     :operation => "new",
     :internal_or_public => CONFIRM_INTERNAL,
-    :confirmation_required => "true"
+    :confirmation_required => "true",
+    :extension_name_override => ""
     )
 
   storageAccount="azurechefextensions"
@@ -172,7 +171,7 @@ This task creates a chef extension package and publishes to Azure #{args.deploy_
     Type:  #{is_internal?(args) ? "Internal build" : "Public release"}
 ****************************************
 CONFIRMATION
- 
+
   if args.confirmation_required == 'true'
     confirm!("publish")
   end
@@ -184,13 +183,9 @@ CONFIRMATION
 
   data=File.read(__dir__+"/publish-template-default.json")
   data_hash=JSON.parse(data)
-  if args.target_type=='windows'
-    data_hash['variables']['typeName']= 'ChefClient'
-    data_hash['variables']['supportedOS']='Windows'
-  else
-    data_hash['variables']['typeName']= 'LinuxChefClient'
-    data_hash['variables']['supportedOS']='Linux'
-  end
+  default_type_name = args.target_type=='windows' ? 'ChefClient' : 'LinuxChefClient'
+  data_hash['variables']['typeName'] = args.extension_name_override.to_s.empty? ? default_type_name : args.extension_name_override
+  data_hash['variables']['supportedOS'] = args.target_type=='windows' ? 'Windows' : 'Linux'
   if args.internal_or_public == CONFIRM_PUBLIC
     data_hash['variables']['isInternalExtension']= 'false'
   else
@@ -209,7 +204,7 @@ CONFIRMATION
   File.write(__dir__+"/publish-template.json", JSON.dump(data_hash))
   puts "Deploying package to storage account"
   upload_to_storage(package,storageAccount,storageContainer)
-  
+
   # CONFIRMATION
   # Get user confirmation, since we are publishing a new build to Azure.
   puts ("Deploying the template please confirm if you would like to continue")
@@ -220,7 +215,7 @@ CONFIRMATION
 end
 
 desc "Publishes the azure chef extension package using publish.json Ex: publish[deploy_type, platform, extension_version], default is build[preview,windows]."
-task :promote_regions, [:deploy_type, :target_type, :extension_version, :chef_deploy_namespace, :operation, :internal_or_public, :confirmation_required, :region1, :region2] => [:build] do |t, args|
+task :promote_regions, [:deploy_type, :target_type, :extension_version, :chef_deploy_namespace, :operation, :internal_or_public, :confirmation_required, :region1, :region2, :extension_name_override] => [:build] do |t, args|
 
   args.with_defaults(
     :deploy_type => PREVIEW,
@@ -230,7 +225,8 @@ task :promote_regions, [:deploy_type, :target_type, :extension_version, :chef_de
     :operation => "new",
     :internal_or_public => CONFIRM_INTERNAL,
     :confirmation_required => "true",
-    :region1 => "East US"
+    :region1 => "East US",
+    :extension_name_override => ""
     )
 
   storageAccount="azurechefextensions"
@@ -263,13 +259,9 @@ CONFIRMATION
 
   data=File.read(__dir__+"/publish-template-default.json")
   data_hash=JSON.parse(data)
-  if args.target_type=='windows'
-    data_hash['variables']['typeName']= 'ChefClient'
-    data_hash['variables']['supportedOS']='Windows'
-  else
-    data_hash['variables']['typeName']= 'LinuxChefClient'
-    data_hash['variables']['supportedOS']='Linux'
-  end
+  default_type_name = args.target_type=='windows' ? 'ChefClient' : 'LinuxChefClient'
+  data_hash['variables']['typeName'] = args.extension_name_override.to_s.empty? ? default_type_name : args.extension_name_override
+  data_hash['variables']['supportedOS'] = args.target_type=='windows' ? 'Windows' : 'Linux'
   if args.internal_or_public == CONFIRM_PUBLIC
     data_hash['variables']['isInternalExtension']= 'false'
   else
@@ -291,7 +283,7 @@ CONFIRMATION
   File.write(__dir__+"/publish-template.json", JSON.dump(data_hash))
   puts "Deploying package to storage account"
   upload_to_storage(package,storageAccount,storageContainer)
-  
+
   # CONFIRMATION
   # Get user confirmation, since we are publishing a new build to Azure.
   puts ("Deploying the template please confirm if you would like to continue")

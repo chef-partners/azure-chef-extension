@@ -207,3 +207,49 @@ describe "#Get-deleteChefConfigSetting" {
     }
   }
 }
+
+describe "#Get-ChefLicenseKey" {
+  it "returns chef_license_key value from public settings" {
+    mock Get-PublicSettings-From-Config-Json { return "test-license-key-1234" } -ParameterFilter { $key -eq "chef_license_key" }
+    $result = Get-ChefLicenseKey 3
+    $result | Should Be "test-license-key-1234"
+    Assert-MockCalled Get-PublicSettings-From-Config-Json -Times 1 -ParameterFilter { $key -eq "chef_license_key" }
+  }
+
+  it "returns null when chef_license_key is not set" {
+    mock Get-PublicSettings-From-Config-Json { return $null } -ParameterFilter { $key -eq "chef_license_key" }
+    $result = Get-ChefLicenseKey 3
+    $result | Should Be $null
+  }
+}
+
+describe "#Set-ChefLicenseKeyEnv" {
+  it "sets CHEF_LICENSE_KEY when license key is provided" {
+    mock Chef-SetCustomEnvVariables
+    mock Get-PowershellVersion { return 3 }
+    Set-ChefLicenseKeyEnv "my-key-abc"
+    Assert-MockCalled Chef-SetCustomEnvVariables -Times 1
+  }
+
+  it "does not set env var when license key is empty" {
+    mock Chef-SetCustomEnvVariables
+    Set-ChefLicenseKeyEnv ""
+    Assert-MockCalled Chef-SetCustomEnvVariables -Times 0
+  }
+}
+
+describe "#Write-LicenseKeyStatus" {
+  it "logs deprecation warning when license key is empty" {
+    mock Write-Host
+    mock Write-Warning
+    Write-LicenseKeyStatus ""
+    Assert-MockCalled Write-Warning -Times 1
+    Assert-MockCalled Write-Host -Times 1
+  }
+
+  it "logs present key message when license key is provided" {
+    mock Write-Host
+    Write-LicenseKeyStatus "some-key"
+    Assert-MockCalled Write-Host -Times 1
+  }
+}

@@ -132,6 +132,57 @@ export_env_vars() {
   eval $commands
 }
 
+# Read chef_license_key from settings and export CHEF_LICENSE_KEY
+read_chef_license_key(){
+  chef_extension_directory_path=$1
+  config_file_name=$(get_config_settings_file $chef_extension_directory_path)
+  chef_license_key_value=$(get_value_from_setting_file $config_file_name "chef_license_key" &)
+  if [ ! -z "$chef_license_key_value" ]; then
+    eval "export CHEF_LICENSE_KEY=$chef_license_key_value;"
+    echo "Set CHEF_LICENSE_KEY environment variable from chef_license_key setting"
+  fi
+}
+
+# Read chef_license_bypass from settings and export CHEF_LICENSE_BYPASS.
+# When "true", allows installation to proceed without a chef_license_key
+# (falling back to the deprecated omnitruck download).
+read_chef_license_bypass(){
+  chef_extension_directory_path=$1
+  config_file_name=$(get_config_settings_file $chef_extension_directory_path)
+  chef_license_bypass_value=$(get_value_from_setting_file $config_file_name "chef_license_bypass" &)
+  if [ "$chef_license_bypass_value" = "true" ]; then
+    export CHEF_LICENSE_BYPASS="true"
+    echo "Set CHEF_LICENSE_BYPASS environment variable from chef_license_bypass setting"
+  fi
+}
+
+# Warn when requesting a Chef Infra Client version older than 18 without a
+# license key — those versions require license_id to download from packages.chef.io.
+warn_if_legacy_version_needs_license(){
+  chef_version=$1
+  [ -z "$chef_version" ] && return
+  major_version=$(echo "$chef_version" | cut -d. -f1)
+  if [ "$major_version" -lt 18 ] 2>/dev/null && [ -z "$CHEF_LICENSE_KEY" ]; then
+    echo "WARNING: chef_version=${chef_version}: Chef Infra Client versions < 18 require a valid license key to download from packages.chef.io."
+    echo "WARNING: Set chef_license_key in extension settings (free trial keys are accepted)."
+  fi
+}
+
+# Require a license key unless the caller explicitly opted into the
+# unlicensed/omnitruck fallback via the chef_license_bypass setting.
+log_license_key_status(){
+  if [ -z "$CHEF_LICENSE_KEY" ]; then
+    if [ "$CHEF_LICENSE_BYPASS" != "true" ]; then
+      echo "[$(date)] ERROR: No chef_license_key provided. Set chef_license_key in extension settings, or set chef_license_bypass to \"true\" to explicitly opt into the deprecated, unlicensed omnitruck download path." >&2
+      exit 1
+    fi
+    echo "[$(date)] WARNING: No chef_license_key provided; chef_license_bypass is set. Omnitruck is being shut down — unlicensed downloads will stop working in the near future." >&2
+    echo "[$(date)] Falling back to omnitruck download (DEPRECATED — will stop working when omnitruck is shut down)"
+  else
+    echo "[$(date)] CHEF_LICENSE_KEY is set from chef_license_key; licensed download will be attempted"
+  fi
+}
+
 # To set environment variable to new shell
 read_environment_variables(){
   chef_extension_directory_path=$1

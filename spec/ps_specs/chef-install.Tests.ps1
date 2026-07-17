@@ -82,6 +82,29 @@ describe "#Install-ChefClient" {
       Assert-VerifiableMocks
     }
   }
+
+  context "when chef_license_key is set in config" {
+    it "sets CHEF_LICENSE_KEY environment variable during install" {
+      $tempPS = ([System.IO.Path]::GetTempFileName() | Rename-Item -NewName { $_ -replace 'tmp$', 'ps1' } -PassThru)
+      mock Get-ChefPackage { return '' }
+      mock Get-SharedHelper { return $tempPS }
+      mock Chef-GetExtensionRoot { return "C:\Packages\Plugin\ChefExtensionHandler" }
+      mock Download-ChefClient
+      mock Get-LocalDestinationMsiPath { return "$env:temp\chef-client-latest.msi" }
+      mock Get-ChefClientMsiLogPath { return $env:tmp }
+      mock Archive-ChefClientLog
+      mock Run-ChefInstaller
+      mock Install-AzureChefExtensionGem
+      mock Get-PublicSettings-From-Config-Json { return "accept" } -ParameterFilter { $key -eq "CHEF_LICENSE" }
+      mock Get-PublicSettings-From-Config-Json { return "test-key-xyz" } -ParameterFilter { $key -eq "chef_license_key" }
+      mock Set-ChefLicenseKeyEnv
+
+      Install-ChefClient
+
+      Assert-MockCalled Set-ChefLicenseKeyEnv -Times 1 -ParameterFilter { $licenseKey -eq "test-key-xyz" }
+      Remove-Item $tempPS
+    }
+  }
 }
 
 describe "#Get-SharedHelper" {
