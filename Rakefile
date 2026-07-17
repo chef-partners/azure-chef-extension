@@ -109,7 +109,7 @@ task :build, [:target_type, :extension_version, :confirmation_required] => [:gem
   puts "\nCreating a zip package..."
   puts "#{PACKAGE_NAME}_#{args.extension_version}_#{date_tag}_#{args.target_type}.zip\n\n"
 
-  Zip::File.open("#{PACKAGE_NAME}_#{args.extension_version}_#{date_tag}_#{args.target_type}.zip", Zip::File::CREATE) do |zipfile|
+  Zip::File.open("#{PACKAGE_NAME}_#{args.extension_version}_#{date_tag}_#{args.target_type}.zip", create: true) do |zipfile|
     Dir[File.join("#{CHEF_BUILD_DIR}/", '**', '**')].each do |file|
       zipfile.add(file.sub("#{CHEF_BUILD_DIR}/", ''), file)
     end
