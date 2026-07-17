@@ -18,7 +18,10 @@ Gem::Specification.new do |s|
   s.executables   = `git ls-files -- bin/*`.split("\n").map{ |f| File.basename(f) }
   s.require_paths = ["lib", "spec"]
 
-  s.add_development_dependency "chef"
+  # Pin to Chef 18.x (supports Ruby >= 3.1) — an unpinned "chef" dependency
+  # resolves to an ancient 11.x on modern bundler/rubygems and fails to build
+  # native extensions (ffi-yajl) on current Ruby.
+  s.add_development_dependency "chef", "~> 18.0"
   s.add_development_dependency 'rubyzip', '>= 1.0.0'
   s.add_development_dependency 'nokogiri'
 
