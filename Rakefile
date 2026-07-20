@@ -334,6 +334,45 @@ BANNER
       storage_container
     )
   end
+
+  desc "Clear adhoc extension versions: lists sharedVMExtensions/versions in the adhoc resource group, pick one/many by number or 'all' to delete."
+  task :clear_adhoc do
+    dotenv = load_dotenv(File.join(__dir__, ".env"))
+    platform = prompt("Platform (windows/linux)", default: "windows")
+    resource_group = prompt("Adhoc resource group to clean up", default: dotenv["RESOURCE_GROUP"] || default_resource_group(platform))
+
+    resource_type = "Microsoft.Compute/sharedVMExtensions/versions"
+    listing = %x{az resource list --resource-group #{resource_group} --resource-type #{resource_type} -o json}
+    resources = JSON.parse(listing.empty? ? "[]" : listing)
+
+    if resources.empty?
+      puts "No adhoc extension versions found in resource group '#{resource_group}'."
+      next
+    end
+
+    puts "\nAdhoc extension versions in '#{resource_group}':"
+    resources.each_with_index { |r, i| puts "  #{i + 1}. #{r["name"]}" }
+
+    choice = prompt("Delete which? (number, comma-separated numbers, or 'all')", default: "none")
+    next if choice.strip.downcase == "none"
+
+    selected = if choice.strip.downcase == "all"
+                 resources
+               else
+                 choice.split(",").map { |n| resources[n.strip.to_i - 1] }.compact
+               end
+
+    if selected.empty?
+      puts "Nothing selected, exiting."
+      next
+    end
+
+    confirm!("delete #{selected.size} adhoc extension version(s)")
+    selected.each do |r|
+      puts "Deleting #{r["name"]}..."
+      system("az resource delete --ids #{r["id"]}") or puts "Failed to delete #{r["name"]}"
+    end
+  end
 end
 
 desc "Publishes the azure chef extension package using publish.json Ex: publish[deploy_type, platform, extension_version], default is build[preview,windows]."
