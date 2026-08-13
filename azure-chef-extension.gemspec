@@ -18,12 +18,15 @@ Gem::Specification.new do |s|
   s.executables   = `git ls-files -- bin/*`.split("\n").map{ |f| File.basename(f) }
   s.require_paths = ["lib", "spec"]
 
-  # Pin to Chef 18.x (supports Ruby >= 3.1) — an unpinned "chef" dependency
-  # resolves to an ancient 11.x on modern bundler/rubygems and fails to build
-  # native extensions (ffi-yajl) on current Ruby.
-  s.add_development_dependency "chef", "~> 18.0"
+  # An unpinned "chef" dependency resolves to an ancient 11.x on modern
+  # bundler/rubygems and fails to build native extensions (ffi-yajl) on
+  # current Ruby. Set a sane floor here and let the Gemfile pin the exact
+  # release per running Ruby version, since CI exercises multiple Rubies
+  # (2.7.x, and the RHEL 9 / RHEL 10 default Rubies) that require different
+  # Chef major versions.
+  s.add_development_dependency "chef", ">= 17.0"
   s.add_development_dependency 'rubyzip', '>= 1.0.0'
   s.add_development_dependency 'nokogiri'
 
-  %w(rspec-core rspec-expectations rspec-mocks rspec_junit_formatter).each { |gem| s.add_development_dependency gem }
+  %w(rspec-core rspec-expectations rspec-mocks rspec_junit_formatter simplecov).each { |gem| s.add_development_dependency gem }
 end
