@@ -284,6 +284,10 @@ class EnableChef
     end
 
     params = "-c #{bootstrap_directory}/client.rb -L #{@azure_plugin_log_location}/chef-client.log --once "
+    # chef-client binary name; the hab-vs-opscode directory is resolved
+    # separately below (chef_bin_dir) for the windows scheduled task, and on
+    # linux this is invoked bare via PATH, matching prior behavior.
+    chef_client_cmd = "chef-client"
 
     # Runs chef-client in background using scheduled task if windows else using process
     if windows?

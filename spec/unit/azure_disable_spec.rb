@@ -30,6 +30,14 @@ describe DisableChef do
     end
 
     context "when daemon is not passed" do
+      # Non-windows is the only platform where an unset/empty daemon defaults
+      # to "service" (see DisableChef#disable_chef); on windows it defaults
+      # to "task" instead, so this context must override the outer windows?
+      # stub to exercise the "service" default path these examples assert.
+      before do
+        allow(instance).to receive(:windows?).and_return(false)
+      end
+
       context "when disable is successful" do
         it "disables chef service and returns the status to azure with success." do
           allow(instance).to receive(:handler_settings_file)
