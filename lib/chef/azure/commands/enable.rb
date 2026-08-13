@@ -486,7 +486,7 @@ class EnableChef
       private_key_path = "#{LINUX_CERT_PATH}/#{thumbprint}.prv"
 
       # read cert & get key from the certificate
-      if File.exists?(cert_path) && File.exists?(private_key_path)
+      if File.exist?(cert_path) && File.exist?(private_key_path)
         certificate = OpenSSL::X509::Certificate.new File.read(cert_path)
         private_key = OpenSSL::PKey::RSA.new File.read(private_key_path)
         # decrypt text
@@ -501,7 +501,7 @@ class EnableChef
   def copy_settings_file
     settings_file = handler_settings_file
     Chef::Log.info "Settigs file ...#{settings_file}"
-    if File.exists?(handler_settings_file)
+    if File.exist?(handler_settings_file)
       Chef::Log.info "Copying setting file to #{bootstrap_directory}"
       FileUtils.cp(settings_file, bootstrap_directory)
     end

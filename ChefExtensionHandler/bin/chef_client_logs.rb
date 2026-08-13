@@ -30,7 +30,7 @@ class ChefClientLogs
   end
 
   def chef_client_run_exit_status
-    if File.exists?(@chef_client_success_file)
+    if File.exist?(@chef_client_success_file)
       'success'    ## successful chef_client_run ##
     else
       'error'      ## unsuccessful chef_client_run ##
@@ -111,10 +111,10 @@ begin
   if ARGV.length == 6
     bootstrap_directory = ARGV[4]
     chef_client_success_file = ARGV[5]
-    if !File.exists?("#{bootstrap_directory}/node-registered")
+    if !File.exist?("#{bootstrap_directory}/node-registered")
       logs = ChefClientLogs.new(ARGV[0].to_i, Time.parse(ARGV[1]), ARGV[2], ARGV[3], chef_client_success_file)
       logs.chef_client_logs
-      File.delete(chef_client_success_file) if File.exists?(chef_client_success_file)
+      File.delete(chef_client_success_file) if File.exist?(chef_client_success_file)
     else
       raise "#{Time.now} The chef-client run logs collection script runs only for the first chef-client run which had already happened on this node. Exiting for now."
     end

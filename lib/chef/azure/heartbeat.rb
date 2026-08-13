@@ -30,7 +30,7 @@ class AzureHeartBeat
     retries = 3
     begin
       # Load existing file
-      heartBeat = JSON.parse(File.read(path)) if File.exists?(path)
+      heartBeat = JSON.parse(File.read(path)) if File.exist?(path)
       heartBeat = [{
           "version" => heartBeat ? heartBeat[0]["version"] : "1.0",
           "heartbeat" => {

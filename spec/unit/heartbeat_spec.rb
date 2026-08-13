@@ -5,9 +5,8 @@ require 'json'
 
 # These specs deliberately exercise AzureHeartBeat.update against a real file
 # on disk (rather than stubbing File) so that they exercise the actual
-# File.exists?/File.exist? call the same way production code does. File.exists?
-# was removed in Ruby 3.2, so these specs will fail with a NoMethodError on
-# Ruby >= 3.2 until the production code is updated to use File.exist?.
+# File.exist? check the same way production code does. This guards against a
+# regression back to File.exists?, which was removed in Ruby 3.2.
 describe AzureHeartBeat do
   around do |example|
     Dir.mktmpdir do |dir|

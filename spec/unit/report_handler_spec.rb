@@ -4,10 +4,9 @@ require 'chef/azure/chefhandlers/report_handler'
 require 'tmpdir'
 
 # These specs exercise ReportHandler#report against a real temp directory
-# (rather than stubbing File) so they hit the actual File.exists? call the
-# same way production code does. File.exists? was removed in Ruby 3.2, so
-# these specs will fail with a NoMethodError on Ruby >= 3.2 until the
-# production code is updated to use File.exist?.
+# (rather than stubbing File) so they hit the actual File.exist? check the
+# same way production code does. This guards against a regression back to
+# File.exists?, which was removed in Ruby 3.2.
 describe AzureExtension::ReportHandler do
   let(:extension_root) { "./" }
   let(:instance) { AzureExtension::ReportHandler.new(extension_root) }

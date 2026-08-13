@@ -5,9 +5,8 @@ require 'fileutils'
 
 # These specs exercise EnableChef#copy_settings_file and #get_decrypted_key
 # against the real filesystem (rather than stubbing File) so they hit the
-# actual File.exists? calls the same way production code does. File.exists?
-# was removed in Ruby 3.2, so these specs will fail with a NoMethodError on
-# Ruby >= 3.2 until the production code is updated to use File.exist?.
+# actual File.exist? checks the same way production code does. This guards
+# against a regression back to File.exists?, which was removed in Ruby 3.2.
 describe EnableChef do
   let(:extension_root) { "./" }
   let(:enable_args) { [] }
