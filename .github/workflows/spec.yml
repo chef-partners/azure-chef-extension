@@ -64,25 +64,18 @@ jobs:
   ruby-specs:
     name: Ruby Specs (${{ matrix.label }})
     runs-on: ubuntu-latest
-    # Ruby 3.x is known to break parts of this codebase (e.g. File.exists?
-    # was removed in Ruby 3.2). Allow those lanes to fail for now without
-    # blocking the pipeline while the Ruby 3 compatibility work is completed.
-    continue-on-error: ${{ matrix.allow_failure }}
     strategy:
       fail-fast: false
       matrix:
         include:
           - ruby: "2.7"
             label: "Ruby 2.7 (RHEL 8 default)"
-            allow_failure: false
             bundler: "default"
           - ruby: "3.0"
             label: "Ruby 3.0 (RHEL 9 default)"
-            allow_failure: true
             bundler: "default"
           - ruby: "3.3"
             label: "Ruby 3.3 (RHEL 10 default)"
-            allow_failure: true
             # Bundler 2.5.x, the default shipped with this Ruby build, fails
             # to resolve chef's train-winrm/winrm-fs dependency graph due to
             # a resolver limitation; Bundler 2.6+ (requires Ruby >= 3.1)
