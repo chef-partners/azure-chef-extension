@@ -75,12 +75,19 @@ jobs:
           - ruby: "2.7"
             label: "Ruby 2.7 (RHEL 8 default)"
             allow_failure: false
+            bundler: "default"
           - ruby: "3.0"
             label: "Ruby 3.0 (RHEL 9 default)"
             allow_failure: true
+            bundler: "default"
           - ruby: "3.3"
             label: "Ruby 3.3 (RHEL 10 default)"
             allow_failure: true
+            # Bundler 2.5.x, the default shipped with this Ruby build, fails
+            # to resolve chef's train-winrm/winrm-fs dependency graph due to
+            # a resolver limitation; Bundler 2.6+ (requires Ruby >= 3.1)
+            # solves it fine, so pin it explicitly only for this lane.
+            bundler: "2.6.9"
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
 
@@ -88,6 +95,7 @@ jobs:
         uses: ruby/setup-ruby@8e41b362d2589a22a44c1cfa214b3c83052c195b # v1.318.0
         with:
           ruby-version: ${{ matrix.ruby }}
+          bundler: ${{ matrix.bundler }}
           bundler-cache: true
 
       - name: Run unit and functional specs
