@@ -669,7 +669,7 @@ describe ChefService do
     context 'example-1' do
       it 'returns the integer value of the interval extracted from the given interval attribute string' do
         response = instance.send(:old_client_rb_interval, "interval 1620\n")
-        expect(response.class).to be == Fixnum
+        expect(response.class).to be == Integer
         expect(response).to be == 1620
       end
     end
@@ -677,7 +677,7 @@ describe ChefService do
     context 'example-2' do
       it 'returns the integer value of the interval extracted from the given interval attribute string' do
         response = instance.send(:old_client_rb_interval, "interval             480  \n")
-        expect(response.class).to be == Fixnum
+        expect(response.class).to be == Integer
         expect(response).to be == 480
       end
     end
