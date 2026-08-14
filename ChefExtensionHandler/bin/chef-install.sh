@@ -60,13 +60,28 @@ chef_install_from_script(){
     chef_package_url=$(get_value_from_setting_file $config_file_name "chef_package_url" &)
     echo "Call for Checking linux distributor"
     platform=$(get_linux_distributor)
+    if [ -z "$platform" ]; then
+      echo "[$(date)] ERROR: Unable to determine the Linux distribution of this VM from /etc/os-release."
+      echo "os-release: $(grep -E '^(ID|ID_LIKE|VERSION_ID)=' /etc/os-release 2>/dev/null | tr '\n' ' ')"
+      echo "Supported distribution families: ubuntu, debian, centos, rhel, linuxoracle. Chef Infra Client was NOT installed."
+      # repeat on stderr so the message also surfaces in the Azure extension
+      # error status (stdout only reaches /var/log/azure/custom.log)
+      echo "ERROR: Unable to determine the Linux distribution of this VM from /etc/os-release. Chef Infra Client was NOT installed." >&2
+      exit 1
+    fi
+    echo "Detected linux distributor: $platform (version: $(grep -E '^VERSION_ID=' /etc/os-release 2>/dev/null | cut -d= -f2 | tr -d '"'), arch: $(uname -m))"
     #check if chef-client is already installed
     if [ "$platform" = "ubuntu" -o "$platform" = "debian" ]; then
       dpkg-query -s chef > /dev/null 2>&1
+      chef_install_status=$?
     elif [ "$platform" = "centos" -o "$platform" = "rhel" -o "$platform" = "linuxoracle" ]; then
       yum list installed | grep -w "chef"
+      chef_install_status=$?
+    else
+      # unknown distributor string: assume not installed so the install paths
+      # below run and fail visibly rather than silently skipping
+      chef_install_status=1
     fi
-    chef_install_status=$?
     if [ $chef_install_status -ne 0 ] && [ -z "$chef_downloaded_package" ] && [ -z "$chef_package_url" ]; then
       curl_check $platform
       curl -L -o /tmp/$platform-install.sh https://omnitruck.chef.io/install.sh

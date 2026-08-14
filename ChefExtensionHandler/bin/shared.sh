@@ -1,32 +1,49 @@
 #!/bin/sh
 
 get_linux_distributor(){
-#### Using python -mplatform command to get distributor name #####
-  if (command -v python3)  > /dev/null; then
-    if ( python3 -mplatform || /usr/libexec/platform-python -mplatform || cat /etc/os-release) | grep centos > /dev/null; then
+#### Determine distributor from /etc/os-release ID/ID_LIKE. Python is only a
+#### fallback for images without os-release: python -mplatform stopped naming
+#### the distro in Python >= 3.8, which made it return nothing on RHEL >= 9.
+  linux_distributor=''
+  os_release_file="${CHEF_OS_RELEASE_FILE:-/etc/os-release}"
+  if [ -r "$os_release_file" ]; then
+    os_release_id=`. "$os_release_file" 2>/dev/null; echo "$ID"`
+    os_release_id_like=`. "$os_release_file" 2>/dev/null; echo "$ID_LIKE"`
+    # ID is authoritative; ID_LIKE words are consulted in order for derivatives
+    # (e.g. rocky/alma report ID_LIKE="rhel centos fedora").
+    for os_release_candidate in "$os_release_id" $os_release_id_like; do
+      case "$os_release_candidate" in
+        ubuntu)
+          linux_distributor='ubuntu'; break;;
+        debian)
+          linux_distributor='debian'; break;;
+        centos)
+          linux_distributor='centos'; break;;
+        rhel)
+          linux_distributor='rhel'; break;;
+        ol|oracle)
+          linux_distributor='linuxoracle'; break;;
+      esac
+    done
+  fi
+  if [ -z "$linux_distributor" ]; then
+    if (command -v python3) > /dev/null; then
+      python_command='python3'
+    else
+      python_command='python'
+    fi
+    if ( $python_command -mplatform || /usr/libexec/platform-python -mplatform ) 2>/dev/null | grep centos > /dev/null; then
       linux_distributor='centos'
-    elif ( cat /etc/os-release || python3 -mplatform ) | grep Ubuntu > /dev/null; then
+    elif ( $python_command -mplatform ) 2>/dev/null | grep Ubuntu > /dev/null; then
       linux_distributor='ubuntu'
-    elif ( cat /etc/os-release || python3 -mplatform ) | grep debian > /dev/null; then
+    elif ( $python_command -mplatform ) 2>/dev/null | grep debian > /dev/null; then
       linux_distributor='debian'
-    elif ( python3 -mplatform || /usr/libexec/platform-python -mplatform || cat /etc/os-release ) | grep redhat > /dev/null; then
+    elif ( $python_command -mplatform || /usr/libexec/platform-python -mplatform ) 2>/dev/null | grep redhat > /dev/null; then
       linux_distributor='rhel'
-    elif ( python3 -mplatform || /usr/libexec/platform-python -mplatform || cat /etc/os-release ) | grep -E -i "linux.*oracle" > /dev/null; then
+    elif ( $python_command -mplatform || /usr/libexec/platform-python -mplatform ) 2>/dev/null | grep -E -i "linux.*oracle" > /dev/null; then
       linux_distributor='linuxoracle'
     fi
-  else
-    if ( python -mplatform || /usr/libexec/platform-python -mplatform || cat /etc/os-release) | grep centos > /dev/null; then
-      linux_distributor='centos'
-    elif ( python -mplatform || cat /etc/os-release ) | grep Ubuntu > /dev/null; then
-      linux_distributor='ubuntu'
-    elif ( python -mplatform || cat /etc/os-release ) | grep debian > /dev/null; then
-      linux_distributor='debian'
-    elif ( python -mplatform || /usr/libexec/platform-python -mplatform || cat /etc/os-release ) | grep redhat > /dev/null; then
-      linux_distributor='rhel'
-    elif ( python -mplatform || /usr/libexec/platform-python -mplatform || cat /etc/os-release ) | grep -E -i "linux.*oracle" > /dev/null; then
-      linux_distributor='linuxoracle'
-    fi
-  fi  
+  fi
   echo "${linux_distributor}"
 }
 
