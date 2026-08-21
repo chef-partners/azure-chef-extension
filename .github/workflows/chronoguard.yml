@@ -1,0 +1,19 @@
+name: Chronoguard
+
+on:
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 9 * * 1'  # weekly Monday reminder
+
+jobs:
+  chronoguard:
+    runs-on: ubuntu-latest
+    permissions:
+      checks: read
+      contents: read
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: jaymzh/chronoguard@cec61bb9941de3794e9c21b666f7c58bd2623c20 # main
+        with:
+          files: ChefExtensionHandler/bin/shared.sh,ChefExtensionHandler/bin/shared.ps1

@@ -1,5 +1,15 @@
 $:.unshift File.expand_path('../../lib', __FILE__)
 
+if ENV['COVERAGE']
+  require 'simplecov'
+  SimpleCov.start do
+    add_filter '/spec/'
+    add_filter '/ChefExtensionHandler/bin/' # exercised only via shell_specs, not rspec
+    command_name ENV['COVERAGE_COMMAND_NAME'] || "RSpec (Ruby #{RUBY_VERSION})"
+    coverage_dir ENV['COVERAGE_DIR'] || 'coverage'
+  end
+end
+
 require 'chef/azure/heartbeat'
 require 'chef/azure/status'
 

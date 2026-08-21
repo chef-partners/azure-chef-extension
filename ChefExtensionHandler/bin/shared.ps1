@@ -202,6 +202,37 @@ function Get-autoUpdateClientSetting{
   Get-JsonValueUsingRuby "$chefExtensionParent\\$extensionPreviousVersion\\RuntimeSettings\\$latestSettingFile" "runtimeSettings" 0 "handlerSettings" "publicSettings" "autoUpdateClient"
 }
 
+function Get-ChefLicenseKey($powershellVersion) {
+  Get-PublicSettings-From-Config-Json "chef_license_key" $powershellVersion
+}
+
+function Get-ChefLicenseBypass($powershellVersion) {
+  Get-PublicSettings-From-Config-Json "chef_license_bypass" $powershellVersion
+}
+
+function Set-ChefLicenseKeyEnv($licenseKey) {
+  if ($licenseKey) {
+    $envObj = New-Object -TypeName System.Management.Automation.PSObject -Property @{CHEF_LICENSE_KEY=$licenseKey}
+    Chef-SetCustomEnvVariables $envObj (Get-PowershellVersion)
+    Write-Host "Set CHEF_LICENSE_KEY environment variable from chef_license_key setting"
+  }
+}
+
+# Require a license key unless the caller explicitly opted into the
+# unlicensed/omnitruck fallback via the chef_license_bypass setting.
+function Write-LicenseKeyStatus($licenseKey, $licenseBypass) {
+  if (-Not $licenseKey) {
+    if ($licenseBypass -ne "true") {
+      Write-Error "[$(Get-Date)] ERROR: No chef_license_key provided. Set chef_license_key in extension settings, or set chef_license_bypass to `"true`" to explicitly opt into the deprecated, unlicensed omnitruck download path."
+      exit 1
+    }
+    Write-Warning "[$(Get-Date)] WARNING: No chef_license_key provided; chef_license_bypass is set. Omnitruck is being shut down - unlicensed downloads will stop working in the near future."
+    Write-Host "[$(Get-Date)] Falling back to omnitruck download (DEPRECATED - will stop working when omnitruck is shut down)"
+  } else {
+    Write-Host "[$(Get-Date)] CHEF_LICENSE_KEY is set from chef_license_key; licensed commercial download will be used"
+  }
+}
+
 function Get-PublicSettings-From-Config-Json($key, $powershellVersion) {
   Try
   {

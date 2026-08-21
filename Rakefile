@@ -22,7 +22,6 @@ LINUX_PACKAGE_LIST = [
   {"ChefExtensionHandler/bin/*.py" => "#{CHEF_BUILD_DIR}/bin"},
   {"ChefExtensionHandler/bin/*.rb" => "#{CHEF_BUILD_DIR}/bin"},
   {"ChefExtensionHandler/bin/chef-client" => "#{CHEF_BUILD_DIR}/bin"},
-  {"*.gem" => "#{CHEF_BUILD_DIR}/gems"},
   {"ChefExtensionHandler/HandlerManifest.json.nix" => "#{CHEF_BUILD_DIR}/HandlerManifest.json"}
 ]
 
@@ -33,7 +32,6 @@ WINDOWS_PACKAGE_LIST = [
   {"ChefExtensionHandler/bin/*.psm1" => "#{CHEF_BUILD_DIR}/bin"},
   {"ChefExtensionHandler/bin/*.rb" => "#{CHEF_BUILD_DIR}/bin"},
   {"ChefExtensionHandler/bin/chef-client" => "#{CHEF_BUILD_DIR}/bin"},
-  {"*.gem" => "#{CHEF_BUILD_DIR}/gems"},
   {"ChefExtensionHandler/HandlerManifest.json" => "#{CHEF_BUILD_DIR}/HandlerManifest.json"}
 ]
 
@@ -71,18 +69,18 @@ task :build, [:target_type, :extension_version, :confirmation_required] => [:gem
   :extension_version => "1216.16.6.1",
   :confirmation_required => "false")
   puts "Build called with args(#{args.target_type}, #{args.extension_version})"
- 
+
   # Get user confirmation if we are downloading correct version.
   if args.confirmation_required == "true"
     confirm!("build")
   end
-  
+
   puts "Building #{args.target_type} package..."
   # setup the sandbox
   FileUtils.mkdir_p CHEF_BUILD_DIR
   FileUtils.mkdir_p "#{CHEF_BUILD_DIR}/bin"
   FileUtils.mkdir_p "#{CHEF_BUILD_DIR}/gems"
-  
+
   # Copy platform specific files to package dir
   puts "Copying #{args.target_type} scripts to package directory..."
   package_list = if args.target_type == "windows"
@@ -90,7 +88,7 @@ task :build, [:target_type, :extension_version, :confirmation_required] => [:gem
   else
     LINUX_PACKAGE_LIST
   end
-  
+
   package_list.each do |rule|
     src = rule.keys.first
     dest = rule[src]
@@ -101,17 +99,25 @@ task :build, [:target_type, :extension_version, :confirmation_required] => [:gem
       FileUtils.cp Dir.glob(src).first, dest
     end
   end
-  
+
+  # Copy the gem built by the :gem prerequisite task into the package so
+  # chef-install.sh's `gem install "#{chef_extension_root}/gems/*.gem"` step
+  # has something to install. Without this, gems/ stays empty and every
+  # published package fails at install time with "Could not find a valid gem".
+  gem_files = Dir.glob("*.gem")
+  raise "No .gem file found to package — did the :gem task run?" if gem_files.empty?
+  FileUtils.cp gem_files, "#{CHEF_BUILD_DIR}/gems"
+
   date_tag = Date.today.strftime("%Y%m%d")
-  
+
   # Write a release tag file to zip. This will help during testing
   # to check if package was synced in PIR.
   FileUtils.touch "#{CHEF_BUILD_DIR}/version_#{args.extension_version}_#{date_tag}_#{args.target_type}"
-  
+
   puts "\nCreating a zip package..."
   puts "#{PACKAGE_NAME}_#{args.extension_version}_#{date_tag}_#{args.target_type}.zip\n\n"
-  
-  Zip::File.open("#{PACKAGE_NAME}_#{args.extension_version}_#{date_tag}_#{args.target_type}.zip", Zip::File::CREATE) do |zipfile|
+
+  Zip::File.open("#{PACKAGE_NAME}_#{args.extension_version}_#{date_tag}_#{args.target_type}.zip", create: true) do |zipfile|
     Dir[File.join("#{CHEF_BUILD_DIR}/", '**', '**')].each do |file|
       zipfile.add(file.sub("#{CHEF_BUILD_DIR}/", ''), file)
     end
@@ -143,7 +149,7 @@ end
 
 desc "Publishes the azure chef extension package using publish.json Ex: publish[deploy_type, platform, extension_version], default is build[preview,windows]."
 task :publish, [:deploy_type, :target_type, :extension_version, :chef_deploy_namespace, :operation, :internal_or_public, :confirmation_required] => [:build] do |t, args|
-  
+
   args.with_defaults(
     :deploy_type => PREVIEW,
     :target_type => "windows",
@@ -172,7 +178,7 @@ This task creates a chef extension package and publishes to Azure #{args.deploy_
     Type:  #{is_internal?(args) ? "Internal build" : "Public release"}
 ****************************************
 CONFIRMATION
- 
+
   if args.confirmation_required == 'true'
     confirm!("publish")
   end
@@ -184,13 +190,8 @@ CONFIRMATION
 
   data=File.read(__dir__+"/publish-template-default.json")
   data_hash=JSON.parse(data)
-  if args.target_type=='windows'
-    data_hash['variables']['typeName']= 'ChefClient'
-    data_hash['variables']['supportedOS']='Windows'
-  else
-    data_hash['variables']['typeName']= 'LinuxChefClient'
-    data_hash['variables']['supportedOS']='Linux'
-  end
+  data_hash['variables']['typeName'] = args.target_type=='windows' ? 'ChefClient' : 'LinuxChefClient'
+  data_hash['variables']['supportedOS'] = args.target_type=='windows' ? 'Windows' : 'Linux'
   if args.internal_or_public == CONFIRM_PUBLIC
     data_hash['variables']['isInternalExtension']= 'false'
   else
@@ -209,7 +210,7 @@ CONFIRMATION
   File.write(__dir__+"/publish-template.json", JSON.dump(data_hash))
   puts "Deploying package to storage account"
   upload_to_storage(package,storageAccount,storageContainer)
-  
+
   # CONFIRMATION
   # Get user confirmation, since we are publishing a new build to Azure.
   puts ("Deploying the template please confirm if you would like to continue")
@@ -263,13 +264,9 @@ CONFIRMATION
 
   data=File.read(__dir__+"/publish-template-default.json")
   data_hash=JSON.parse(data)
-  if args.target_type=='windows'
-    data_hash['variables']['typeName']= 'ChefClient'
-    data_hash['variables']['supportedOS']='Windows'
-  else
-    data_hash['variables']['typeName']= 'LinuxChefClient'
-    data_hash['variables']['supportedOS']='Linux'
-  end
+  default_type_name = args.target_type=='windows' ? 'ChefClient' : 'LinuxChefClient'
+  data_hash['variables']['typeName'] = default_type_name
+  data_hash['variables']['supportedOS'] = args.target_type=='windows' ? 'Windows' : 'Linux'
   if args.internal_or_public == CONFIRM_PUBLIC
     data_hash['variables']['isInternalExtension']= 'false'
   else
@@ -291,7 +288,7 @@ CONFIRMATION
   File.write(__dir__+"/publish-template.json", JSON.dump(data_hash))
   puts "Deploying package to storage account"
   upload_to_storage(package,storageAccount,storageContainer)
-  
+
   # CONFIRMATION
   # Get user confirmation, since we are publishing a new build to Azure.
   puts ("Deploying the template please confirm if you would like to continue")
@@ -307,33 +304,33 @@ def deploy_template(args)
   if args.target_type == "windows"
     resgrp = "azure-chef-extension-window"
     begin
-      cli_cmd = Mixlib::ShellOut.new("az deployment group create --name #{group_name} --resource-group #{resgrp} --template-file #{template}")
+      cli_cmd = Mixlib::ShellOut.new("az deployment group create --name #{group_name} --resource-group #{resgrp} --template-file #{template}", timeout: 1800)
       result = cli_cmd.run_command
       result.error!
       puts "The windows extension has been successfully published."
-    rescue Mixlib::ShellOut::ShellCommandFailed => e
-      puts "The winddows extension publishing is failing while deploying #{template}"
+    rescue Mixlib::ShellOut::ShellCommandFailed, Mixlib::ShellOut::CommandTimeout => e
+      puts "The winddows extension publishing is failing while deploying #{template}: #{e.message}"
     end
   else
     resgrp = "azure-chef-extension-linux"
     begin
-      cli_cmd = Mixlib::ShellOut.new("az deployment group create --name #{group_name} --resource-group #{resgrp} --template-file #{template}")
+      cli_cmd = Mixlib::ShellOut.new("az deployment group create --name #{group_name} --resource-group #{resgrp} --template-file #{template}", timeout: 1800)
       result = cli_cmd.run_command
       result.error!
       puts "The linux extension has been successfully published."
-    rescue Mixlib::ShellOut::ShellCommandFailed => e
-      puts "The linux extension publishing is failing while deploying #{template}"
+    rescue Mixlib::ShellOut::ShellCommandFailed, Mixlib::ShellOut::CommandTimeout => e
+      puts "The linux extension publishing is failing while deploying #{template}: #{e.message}"
     end
   end
 end
 
 def upload_to_storage(package,storageAccount,storageContainer)
   begin
-    cli_cmd = Mixlib::ShellOut.new("az storage blob upload --account-name #{storageAccount} --container-name #{storageContainer} --name #{package} --file #{package}")
+    cli_cmd = Mixlib::ShellOut.new("az storage blob upload --account-name #{storageAccount} --container-name #{storageContainer} --name #{package} --file #{package}", timeout: 1800)
     result = cli_cmd.run_command
     result.error!
     puts "The #{package} has been succesfully uploaded to storage account #{storageAccount} in #{storageContainer} container."
-  rescue Mixlib::ShellOut::ShellCommandFailed => e
-    puts "The upload has failed for #{package} to storage account #{storageAccount} in #{storageContainer} container"
+  rescue Mixlib::ShellOut::ShellCommandFailed, Mixlib::ShellOut::CommandTimeout => e
+    puts "The upload has failed for #{package} to storage account #{storageAccount} in #{storageContainer} container: #{e.message}"
   end
 end

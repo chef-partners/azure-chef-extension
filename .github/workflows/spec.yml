@@ -1,0 +1,115 @@
+name: Specs
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+jobs:
+  ps-specs:
+    name: PowerShell Specs (Windows)
+    runs-on: windows-2025
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+
+      - name: Install Pester
+        shell: pwsh
+        run: |
+          Install-Module -Name Pester -RequiredVersion 5.6.1 -Force -SkipPublisherCheck
+          Import-Module Pester
+
+      - name: Run PowerShell specs
+        shell: pwsh
+        run: |
+          $config = New-PesterConfiguration
+          $config.Run.Path = 'spec/ps_specs'
+          $config.Output.Verbosity = 'Detailed'
+          $config.TestResult.Enabled = $true
+          $config.TestResult.OutputPath = 'test-results-ps.xml'
+          $config.TestResult.OutputFormat = 'NUnitXml'
+          Invoke-Pester -Configuration $config
+
+      - name: Upload PS test results
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: ps-test-results
+          path: test-results-ps.xml
+
+  shell-specs:
+    name: Shell Specs (Linux)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@8e41b362d2589a22a44c1cfa214b3c83052c195b # v1.318.0
+        with:
+          ruby-version: "3.1.7" # matches Chef 18.x's supported Ruby
+          bundler-cache: true
+
+      - name: Run shell specs
+        run: |
+          mkdir -p spec/results
+          bundle exec rspec spec/shell_specs --format documentation --format RspecJunitFormatter --out spec/results/results.xml
+
+      - name: Upload shell test results
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: shell-test-results
+          path: spec/results/
+
+  ruby-specs:
+    name: Ruby Specs (${{ matrix.label }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - ruby: "2.7"
+            label: "Ruby 2.7 (RHEL 8 default)"
+            bundler: "default"
+          - ruby: "3.0"
+            label: "Ruby 3.0 (RHEL 9 default)"
+            bundler: "default"
+          - ruby: "3.3"
+            label: "Ruby 3.3 (RHEL 10 default)"
+            # Bundler 2.5.x, the default shipped with this Ruby build, fails
+            # to resolve chef's train-winrm/winrm-fs dependency graph due to
+            # a resolver limitation; Bundler 2.6+ (requires Ruby >= 3.1)
+            # solves it fine, so pin it explicitly only for this lane.
+            bundler: "2.6.9"
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@8e41b362d2589a22a44c1cfa214b3c83052c195b # v1.318.0
+        with:
+          ruby-version: ${{ matrix.ruby }}
+          bundler: ${{ matrix.bundler }}
+          bundler-cache: true
+
+      - name: Run unit and functional specs
+        env:
+          COVERAGE: "true"
+          COVERAGE_COMMAND_NAME: "RSpec (Ruby ${{ matrix.ruby }})"
+          COVERAGE_DIR: "coverage/ruby-${{ matrix.ruby }}"
+        run: |
+          mkdir -p spec/results
+          bundle exec rspec spec/unit spec/functional --format documentation --format RspecJunitFormatter --out spec/results/results-ruby-${{ matrix.ruby }}.xml
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: ruby-${{ matrix.ruby }}-test-results
+          path: spec/results/
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: ruby-${{ matrix.ruby }}-coverage
+          path: coverage/ruby-${{ matrix.ruby }}/

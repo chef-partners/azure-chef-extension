@@ -74,11 +74,13 @@ It is an ordered list of roles and/or recipes that are run in the exact order de
 
 `bootstrap_options`: Set bootstrap options while adding chef extension to Azure VM. Bootstrap options used by Chef-Client during node converge. It overrides the configuration set in client_rb option. for e.g. node_name option i.e. if you set node_name as "foo" in the client_rb and in bootstrap_option you set chef_node_name as "bar" it will take "bar" as node name instead of "foo".
 
-***Supported options in bootstrap_options json:***  `chef_node_name`, `chef_server_url`, `validation_client_name`, `environment`, `secret`
+***Supported options in bootstrap_options json:***  `chef_node_name`, `chef_server_url`, `validation_client_name`, `environment`, `secret`, `policy_name`, `policy_group`
 
-***Note***: chef_server_url and validation_client_name are mandatory to pass for the node to bootstrap.
+***Note***: `chef_server_url` and `validation_client_name` are mandatory for the standard run-list based bootstrap. When using policyfile mode (`policy_name` + `policy_group`), `validation_key` is optional and `chef_server_url` is required when connecting to a Chef Server.
 
-publicconfig.config example:
+**Policyfile mode** (Chef Server): Set `policy_name` and `policy_group` in `bootstrap_options`. The extension configures `client.rb` with policyfile settings and skips the validation key requirement.
+
+publicconfig.config example (standard run-list mode):
 
 ```javascript
 {
@@ -97,14 +99,26 @@ publicconfig.config example:
   "CHEF_LICENSE" : "accept-no-persist",
   "custom_json_attr": {
     "container_service": { "chef-init-test": { "command": "C:\\opscode\\chef\\bin" } },
-    "policy_group": "azuregrp",
-    "policy_name": "azurepolicy",
     "tags": ["tag1","tag2","tag3"]
   },
   "bootstrap_options": {
     "chef_node_name":"mynode3",
     "chef_server_url":"https://api.opscode.com/organizations/some-org",
     "validation_client_name":"some-org-validator"
+  }
+}
+```
+
+publicconfig.config example (policyfile mode with Chef Server):
+
+```javascript
+{
+  "CHEF_LICENSE": "accept-no-persist",
+  "bootstrap_options": {
+    "chef_node_name": "mynode3",
+    "chef_server_url": "https://api.opscode.com/organizations/some-org",
+    "policy_name": "my-base-policy",
+    "policy_group": "production"
   }
 }
 ```
@@ -177,6 +191,7 @@ Update-AzureVM -VM $vmOb.VM -Name "<vm-name>" -ServiceName "<cloud-service-name>
   - `bootstrap_channel`: Specify the channel for installing chef client version from `stable`, `current` or `unstable` release channel.
   - `chef_package_path`: chef_package_path allows installing chef-client from local path. We provided this option so that user is able to install chef-client from the local path. This feature mainly added where there is restrictions on internet access. But also note azure extensions itself has limitations in respect of network access please refer to this [link](https://docs.microsoft.com/en-us/azure/virtual-machines/extensions/features-linux#network-access) which explains this in details.
   - `CHEF_LICENSE`: Affected product versions which require accepting the CHEF EULA license (requires chef 15 + ). Set `CHEF_LICENSE` with either of these values `accept`, `accept-silent` or `accept-no-persist`. Refer to [CHEF EULA license](https://docs.chef.io/chef_license_accept/#accept-the-chef-eula)
+  - `chef_license_key`: Optional Chef license key for licensed downloads. Set this in the extension's public settings as a raw JSON string value. The handler automatically exports it as `CHEF_LICENSE_KEY` before invoking the installer, enabling authenticated access to licensed Chef Infra Client packages.
   - `hints`: Specifies the Ohai Hints to be set in the Ohai configuration of the target node.
   - `chef_package_url`: Specifies a url to download Chef Infra Client package (.msi .rpm .deb) and subsequently install.
   Example:

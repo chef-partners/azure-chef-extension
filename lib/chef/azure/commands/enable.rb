@@ -265,7 +265,7 @@ class EnableChef
     begin
       current_dir = File.expand_path(File.dirname(File.dirname(__FILE__)))
       first_client_run_recipe_path = windows? ? "#{current_dir}\\first_client_run_recipe.rb" : "#{current_dir}/first_client_run_recipe.rb"
-      if !config[:first_boot_attributes]["policy_name"].nil? and !config[:first_boot_attributes]["policy_group"].nil?
+      if policyfile_mode?(config)
         command = "chef-client -j #{bootstrap_directory}/first-boot.json -c #{bootstrap_directory}/client.rb -L #{@azure_plugin_log_location}/chef-client.log --once"
       else
         command = "chef-client #{first_client_run_recipe_path} -j #{bootstrap_directory}/first-boot.json -c #{bootstrap_directory}/client.rb -L #{@azure_plugin_log_location}/chef-client.log --once"
@@ -274,7 +274,8 @@ class EnableChef
       result = shell_out(command)
       result.error!
     rescue Mixlib::ShellOut::ShellCommandFailed => e
-      Chef::Log.error "First chef-client run failed. (#{e})"
+      Chef::Log.error "First chef-client run failed. (#{e})" 
+  
       @chef_client_error = "First chef-client run failed (#{e})"
       return
     rescue => e
@@ -283,11 +284,17 @@ class EnableChef
     end
 
     params = "-c #{bootstrap_directory}/client.rb -L #{@azure_plugin_log_location}/chef-client.log --once "
+    # chef-client binary name; the hab-vs-opscode directory is resolved
+    # separately below (chef_bin_dir) for the windows scheduled task, and on
+    # linux this is invoked bare via PATH, matching prior behavior.
+    chef_client_cmd = "chef-client"
 
     # Runs chef-client in background using scheduled task if windows else using process
     if windows?
       puts "#{Time.now} Creating scheduled task with runlist #{runlist}.."
-      schtask = "SCHTASKS.EXE /Create /TN \"Chef Client First Run\" /RU \"NT Authority\\System\" /RP /RL \"HIGHEST\" /SC ONCE /TR \"cmd /c 'C:\\opscode\\chef\\bin\\chef-client #{params}'\" /ST \"#{Time.now.strftime('%H:%M')}\" /F"
+      # ponytail: check hab first, fall back to opscode; remove opscode path when chef-ice is universal
+      chef_bin_dir = File.directory?('C:\hab\bin') ? 'C:\hab\bin' : 'C:\opscode\chef\bin'
+      schtask = "SCHTASKS.EXE /Create /TN \"Chef Client First Run\" /RU \"NT Authority\\System\" /RP /RL \"HIGHEST\" /SC ONCE /TR \"cmd /c '#{chef_bin_dir}\\#{chef_client_cmd} #{params}'\" /ST \"#{Time.now.strftime('%H:%M')}\" /F"
 
       begin
         result = @extended_logs == 'true' ? shell_out("#{schtask} && touch #{@chef_client_success_file}") : shell_out(schtask)
@@ -306,7 +313,7 @@ class EnableChef
       end
       puts "#{Time.now} Created and ran scheduled task for first chef-client run with runlist #{runlist}"
     else
-      command = @extended_logs == 'true' ? "chef-client #{params} && touch #{@chef_client_success_file}" : "chef-client #{params}"
+      command = @extended_logs == 'true' ? "#{chef_client_cmd} #{params} && touch #{@chef_client_success_file}" : "#{chef_client_cmd} #{params}"
       @child_pid = Process.spawn command
       @chef_client_run_start_time = Time.now
       Process.detach @child_pid
@@ -330,6 +337,8 @@ class EnableChef
     config[:validation_client_name] =  bootstrap_options['validation_client_name'] if bootstrap_options['validation_client_name']
     config[:node_verify_api_cert] =  bootstrap_options['node_verify_api_cert'] if bootstrap_options['node_verify_api_cert']
     config[:node_ssl_verify_mode] =  bootstrap_options['node_ssl_verify_mode'] if bootstrap_options['node_ssl_verify_mode']
+    config[:policy_name] = bootstrap_options['policy_name'] if bootstrap_options['policy_name']
+    config[:policy_group] = bootstrap_options['policy_group'] if bootstrap_options['policy_group']
 
     config
   end
@@ -377,6 +386,7 @@ class EnableChef
     @extended_logs = value_from_json_file(handler_settings_file, 'runtimeSettings', '0', 'handlerSettings', 'publicSettings', 'extendedLogs')
     @ohai_hints = value_from_json_file(handler_settings_file, 'runtimeSettings', '0', 'handlerSettings', 'publicSettings', 'hints')
     @first_boot_attributes = JSON.parse(value_from_json_file(handler_settings_file, 'runtimeSettings', '0', 'handlerSettings', 'publicSettings', 'custom_json_attr').gsub("=>", ":")) rescue nil || {}
+    @policy_document_relative_path = nil  # local mode removed; kept as nil for load_settings compat
   end
 
   def escape_runlist(run_list)
@@ -476,7 +486,7 @@ class EnableChef
       private_key_path = "#{LINUX_CERT_PATH}/#{thumbprint}.prv"
 
       # read cert & get key from the certificate
-      if File.exists?(cert_path) && File.exists?(private_key_path)
+      if File.exist?(cert_path) && File.exist?(private_key_path)
         certificate = OpenSSL::X509::Certificate.new File.read(cert_path)
         private_key = OpenSSL::PKey::RSA.new File.read(private_key_path)
         # decrypt text
@@ -491,9 +501,19 @@ class EnableChef
   def copy_settings_file
     settings_file = handler_settings_file
     Chef::Log.info "Settigs file ...#{settings_file}"
-    if File.exists?(handler_settings_file)
+    if File.exist?(handler_settings_file)
       Chef::Log.info "Copying setting file to #{bootstrap_directory}"
       FileUtils.cp(settings_file, bootstrap_directory)
     end
+  end
+
+  # Returns true when policy_name + policy_group are set (via bootstrap_options or
+  # custom_json_attr). In these cases the run_list bootstrap recipe is skipped and
+  # client.rb is configured for policyfile mode.
+  def policyfile_mode?(config)
+    (config[:policy_name] && !config[:policy_name].to_s.empty? &&
+     config[:policy_group] && !config[:policy_group].to_s.empty?) ||
+    (!config[:first_boot_attributes]["policy_name"].nil? &&
+     !config[:first_boot_attributes]["policy_group"].nil?)
   end
 end

@@ -1,17 +1,33 @@
 .DEFAULT_GOAL := help
 
+# Load local publishing credentials for testing (git-ignored; not present in CI).
+# Set AZURE_TENANT/AZURE_SUBSCRIPTION/AZURE_SERVICE_PRINCIPAL/AZURE_SERVICE_PRINCIPAL_PASSWORD
+# here to skip vault and use these directly. See .env.example.
+-include .env
+
 export EXTENSION_NAMESPACE := Chef.Bootstrap.WindowsAzure
 
 #Fetches login credentials according to gov or public cloud.
 ifeq ($(AZURE_CLOUD), government)
 DEPLOY_TYPE := gov
+ifdef AZURE_SERVICE_PRINCIPAL
+export USERNAME := $(AZURE_SERVICE_PRINCIPAL)
+export AZURE_PASSWORD := $(AZURE_SERVICE_PRINCIPAL_PASSWORD)
+else
 export USERNAME := $(shell vault kv get -field username secret/azure-chef-extension/gov-publishing-credentials)
-export PASSWORD := $(shell vault kv get -field password secret/azure-chef-extension/gov-publishing-credentials)
+export AZURE_PASSWORD := $(shell vault kv get -field password secret/azure-chef-extension/gov-publishing-credentials)
+endif
 else ifeq ($(AZURE_CLOUD), public)
 DEPLOY_TYPE := production
+ifdef AZURE_SERVICE_PRINCIPAL
+export USERNAME := $(AZURE_SERVICE_PRINCIPAL)
+export AZURE_PASSWORD := $(AZURE_SERVICE_PRINCIPAL_PASSWORD)
+export TENANT := $(AZURE_TENANT)
+else
 export USERNAME := $(shell vault kv get -field username secret/azure-chef-extension/public-publishing-credentials)
-export PASSWORD := $(shell vault kv get -field password secret/azure-chef-extension/public-publishing-credentials)
+export AZURE_PASSWORD := $(shell vault kv get -field password secret/azure-chef-extension/public-publishing-credentials)
 export TENANT := $(shell vault kv get -field tenant secret/azure-chef-extension/public-publishing-credentials)
+endif
 else
 $(error AZURE_CLOUD must be set to "government" or "public")
 endif
@@ -56,15 +72,21 @@ clean: bundle.install
 
 login: bundle.install
 ifeq ($(AZURE_CLOUD), government)
-	az cloud set --name AzureUSGovernment
-	az login -u '$(USERNAME)' -p '$(PASSWORD)'
-	az account set --subscription "Azure Government - Chef VM Extension Publishing Subscription"
+	@az cloud set --name AzureUSGovernment
+	@az login -u '$(USERNAME)' -p '$(AZURE_PASSWORD)' > /dev/null
+ifdef AZURE_SUBSCRIPTION
+	@az account set --subscription '$(AZURE_SUBSCRIPTION)'
 else
-	az cloud set --name AzureCloud
-	az login --service-principal --username '$(USERNAME)' --password '$(PASSWORD)' --tenant '$(TENANT)'
+	@az account set --subscription "Azure Government - Chef VM Extension Publishing Subscription"
 endif
-	@echo "$(USERNAME) password - $(PASSWORD)"
-	az account show
+else
+	@az cloud set --name AzureCloud
+	@az login --service-principal --username '$(USERNAME)' --password '$(AZURE_PASSWORD)' --tenant '$(TENANT)' > /dev/null
+ifdef AZURE_SUBSCRIPTION
+	@az account set --subscription '$(AZURE_SUBSCRIPTION)'
+endif
+endif
+	@az account show
 
 #list.versions:	@ Lists the internally and externally published extension
 list.versions: login

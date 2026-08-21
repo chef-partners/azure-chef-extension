@@ -17,7 +17,7 @@ module AzureExtension
         load_azure_env
         report_heart_beat_to_azure(AzureHeartBeat::READY, 0, "chef-service enabled. Chef client run was successful.")
 
-        if not File.exists?("#{bootstrap_directory}/node-registered")
+        if not File.exist?("#{bootstrap_directory}/node-registered")
           puts "#{Time.now} Node registered successfully"
           File.open("#{bootstrap_directory}/node-registered", "w") do |file|
             file.write("Node registered.")

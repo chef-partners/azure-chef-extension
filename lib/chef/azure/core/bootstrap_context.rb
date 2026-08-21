@@ -35,7 +35,14 @@ class Chef
         end
 
         def first_boot
-          @run_list.empty? ? Hash(@config[:first_boot_attributes]) : Hash(@config[:first_boot_attributes]).merge(:target_runlist => @run_list)
+          attrs = Hash(@config[:first_boot_attributes])
+          if policyfile_mode?
+            attrs.merge(:policy_name => @config[:policy_name], :policy_group => @config[:policy_group])
+          elsif @run_list.empty?
+            attrs
+          else
+            attrs.merge(:target_runlist => @run_list)
+          end
         end
 
         def config_content
@@ -122,6 +129,12 @@ CONFIG
           client_rb
         end
 
+        private
+
+        def policyfile_mode?
+          @config[:policy_name] && !@config[:policy_name].to_s.empty? &&
+          @config[:policy_group] && !@config[:policy_group].to_s.empty?
+        end
       end
     end
   end

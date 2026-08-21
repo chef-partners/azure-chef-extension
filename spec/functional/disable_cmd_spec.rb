@@ -15,7 +15,7 @@ describe "DisableChef" do
 
   after(:all) do
     # Clear the temp directory upon exit
-    FileUtils::remove_dir(@temp_directory) if Dir.exists?(@temp_directory)
+    FileUtils::remove_dir(@temp_directory) if Dir.exist?(@temp_directory)
   end
 
   context "for windows" do
