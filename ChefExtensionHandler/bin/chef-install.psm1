@@ -69,6 +69,13 @@ function Install-ChefClient {
         Chef-SetCustomEnvVariables $chef_licence_env $powershellVersion
         Write-Host "Set CHEF_LICENSE Environment variable as" $env:CHEF_LICENSE
       }
+      ## Get chef_license_key from config file and set CHEF_LICENSE_KEY for licensed downloads.
+      $chef_license_key = Get-ChefLicenseKey $powershellVersion
+      if ( $chef_license_key ) {
+        Set-ChefLicenseKeyEnv $chef_license_key
+      }
+      $chef_license_bypass = Get-ChefLicenseBypass $powershellVersion
+      Write-LicenseKeyStatus $chef_license_key $chef_license_bypass
       ## Get msi url from config file.
       $chef_package_url = Get-PublicSettings-From-Config-Json "chef_package_url" $powershellVersion
       ## Get locally downloaded msi path string from config file.
@@ -92,7 +99,68 @@ function Install-ChefClient {
           $chef_package_channel = "stable"
         }
 
-        iex (new-object net.webclient).downloadstring('https://omnitruck.chef.io/install.ps1');install -daemon $daemon -version $chef_package_version -channel $chef_package_channel
+        # Determine product. Always pass -project explicitly - install.ps1 will default to
+        # chef-ice in a future release and this keeps the extension's behaviour stable.
+        $project = "chef"
+        if ($chef_package_version -ne "latest") {
+          $major = ($chef_package_version -split '\.')[0] -as [int]
+          if ($major -ge 19) {
+            if (-not $chef_license_key) {
+              Write-Error "chef-ice (v>=19) requires a license key - set chef_license_key in extension settings"
+              exit 1
+            }
+            $project = "chef-ice"
+          }
+        }
+
+        # chefdownload-commercial.chef.io requires license_id on the install.ps1 fetch
+        # itself, not just the `install` function call below - without it the endpoint
+        # returns a plain-text error instead of a script.
+        $install_ps1_url = 'https://chefdownload-commercial.chef.io/install.ps1'
+        if ( $chef_license_key ) {
+          # Use ${...} to unambiguously delimit the variable name before the
+          # literal "?" - some PowerShell versions can otherwise misparse
+          # "$var?text" inside a double-quoted string.
+          $install_ps1_url = "${install_ps1_url}?license_id=$chef_license_key"
+        }
+        iex (new-object net.webclient).downloadstring($install_ps1_url)
+        if ( $chef_license_key ) {
+          # install.ps1's `install` function has no -license_id parameter (unlike
+          # install.sh's -l flag) - resolve the licensed download URL ourselves via
+          # the metadata endpoint and pass it through -download_url_override instead.
+          Write-Host "Using chef_license_key for licensed commercial download"
+          $arch = "x86_64"
+          if ([Environment]::Is64BitOperatingSystem -eq $false) { $arch = "i386" }
+          $os_version = (Get-CimInstance Win32_OperatingSystem).Version
+          $meta_url = "https://chefdownload-commercial.chef.io/$chef_package_channel/$project/metadata?p=windows&pv=$os_version&m=$arch&license_id=$chef_license_key"
+          if ( $chef_package_version -ne "latest" ) {
+            $meta_url = "$meta_url&v=$chef_package_version"
+          }
+          $download_url = $null
+          $download_version = $null
+          try {
+            $meta = (Invoke-WebRequest -Uri $meta_url -UseBasicParsing).Content | ConvertFrom-Json
+            $download_url = $meta.url
+            $download_version = $meta.version
+          } catch {
+            Write-Warning "Could not resolve licensed download URL ($($_.Exception.Message)); falling back to unlicensed install"
+          }
+          if ( $download_url ) {
+            Write-Host "Downloading $project with license_id from $download_url"
+            # install.ps1's Install-Project still calls Get-ProjectFileName (which
+            # uses a hardcoded free/demo license_id) to derive -filename unless it
+            # is passed explicitly, so derive it here ourselves - the metadata
+            # endpoint's "url" has no usable filename in its path (it's just
+            # ".../download?...") to avoid that unlicensed lookup interfering.
+            $download_filename = "$project-$download_version-$arch.msi"
+            $download_path = Join-Path $env:temp $download_filename
+            install -project $project -daemon $daemon -version $chef_package_version -channel $chef_package_channel -download_url_override $download_url -filename $download_path
+          } else {
+            install -project $project -daemon $daemon -version $chef_package_version -channel $chef_package_channel
+          }
+        } else {
+          install -project $project -daemon $daemon -version $chef_package_version -channel $chef_package_channel
+        }
       } elseif ( -Not $chef_pkg -and $chef_downloaded_package ) {
         Install-ChefMsi $chef_downloaded_package $daemon
       } elseif ( -Not $chef_pkg -and $chef_package_url ) {
@@ -111,8 +179,10 @@ function Install-ChefClient {
       }
       $completed = $true
     }
-    Catch [System.Net.WebException] {
-      ## this catch is for the WebException raised during a WebClient request while downloading the chef-client package ##
+    Catch {
+      ## Catches WebException (and other errors) raised while downloading/installing
+      ## the chef-client package. Not restricted to [System.Net.WebException] so that
+      ## any unexpected error surfaces its real message instead of looping silently.
       if ($retrycount -ge $retries) {
         echo "Chef Infra Client Downloading failed after 3 retries."
         $ErrorMessage = $_.Exception.Message
@@ -120,13 +190,17 @@ function Install-ChefClient {
         echo "Error running install: $ErrorMessage"
         exit 1
       } else {
-        echo "Chef Infra Client package download failed. Retrying in 20s..."
+        echo "Chef Infra Client package download failed ($($_.Exception.GetType().FullName): $($_.Exception.Message)). Retrying in 20s..."
         sleep 20
         $retrycount++
       }
     }
   }
-  $env:Path = "C:\\opscode\\chef\\bin;C:\\opscode\\chef\\embedded\\bin;" + $env:Path
+  if ($project -eq "chef-ice") {
+    $env:Path = "C:\hab\bin;" + $env:Path
+  } else {
+    $env:Path = "C:\opscode\chef\bin;C:\opscode\chef\embedded\bin;" + $env:Path
+  }
   $chefExtensionRoot = Chef-GetExtensionRoot
   Install-AzureChefExtensionGem $chefExtensionRoot
 }

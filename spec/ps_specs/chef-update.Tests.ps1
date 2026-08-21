@@ -9,128 +9,91 @@
 #
 # For more info: http://johanleino.wordpress.com/2013/09/13/pester-unit-testing-for-powershell/
 
-$here = Split-Path -Parent $MyInvocation.MyCommand.Path
-$suit = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace(".Tests.ps1", ".psm1")
+# Pester 5 only executes file-scope code during Discovery, not Run — compute
+# paths and dot-source/import inside BeforeAll so the functions under test
+# are available when It blocks execute.
+BeforeAll {
+  $here = Split-Path -Parent $PSCommandPath
+  $suit = (Split-Path -Leaf $PSCommandPath).Replace(".Tests.ps1", ".psm1")
 
-$module= $here.Replace("\spec\ps_specs", "\ChefExtensionHandler\bin\$suit")
-$code = Get-Content $module | Out-String
-Invoke-Expression $code
+  $module= $here.Replace("\spec\ps_specs", "\ChefExtensionHandler\bin\$suit")
+  # Load the .psm1 content into this scope (rather than Import-Module) so
+  # Pester's Mock can intercept calls to its functions directly. Dot-source
+  # from a real temp .ps1 file (not Invoke-Expression) so Chef-GetScriptDirectory's
+  # $MyInvocation.MyCommand.Path lookup resolves to a real path instead of $null.
+  $code = Get-Content $module | Out-String
+  $tempModuleScript = [System.IO.Path]::GetTempFileName() -replace '\.tmp$', '.ps1'
+  Set-Content -Path $tempModuleScript -Value $code
+  # Export-ModuleMember only works inside a real module; no-op it since we're
+  # intentionally loading into this scope directly (for Pester mocking) rather
+  # than via Import-Module.
+  function Export-ModuleMember { }
+  . $tempModuleScript
+  Remove-Item $tempModuleScript
 
-$sharedHelper = $here.Replace("\spec\ps_specs", "\ChefExtensionHandler\bin\shared.ps1")
-. $sharedHelper
+  $sharedHelper = $here.Replace("\spec\ps_specs", "\ChefExtensionHandler\bin\shared.ps1")
+  . $sharedHelper
 
-# $chefUninstall = $here.Replace("\spec\ps_specs", "\ChefExtensionHandler\bin\chef-uninstall.psm1")
-$chefInstall = $here.Replace("\spec\ps_specs", "\ChefExtensionHandler\bin\chef-install.psm1")
+  $chefUninstall = $here.Replace("\spec\ps_specs", "\ChefExtensionHandler\bin\chef-uninstall.psm1")
+  $chefInstall = $here.Replace("\spec\ps_specs", "\ChefExtensionHandler\bin\chef-install.psm1")
 
-Import-Module $chefInstall
+  Import-Module $chefInstall
+  Import-Module $chefUninstall
+}
 
 describe "#Update-ChefClient" {
-  context "when powershell version 3" {
-     it "does not update ChefClient" {
-      mock Import-Module
-      $tmp = "$($env:tmp)"
-      $tempPS = ([System.IO.Path]::GetTempFileName() | Rename-Item -NewName { $_ -replace 'tmp$', 'ps1' } -PassThru)
-      mock Get-SharedHelper {return $tempPS}
+  BeforeEach {
+    $script:tempPS = ([System.IO.Path]::GetTempFileName() | Rename-Item -NewName { $_ -replace 'tmp$', 'ps1' } -PassThru)
+    mock Get-SharedHelper {return $script:tempPS}
+    mock Import-Module
+    mock Uninstall-ChefClient
+    mock Install-ChefClient
+    mock Update-ChefExtensionRegistry
+    mock Write-ChefStatus
+  }
 
-      mock Get-PowershellVersion { return 3 }
-      mock Get-PreviousVersionHandlerSettings {return $json_handlerSettings}
-      $json_handlerSettings = @{"protectedSettings" = "testprotectedSettings"; "protectedSettingsCertThumbprint" = "testprotectedSettingsCertThumbprint"; "publicSettings" = @{"client_rb"= "testclientrb"; "runList" = "testrunlist"}}
+  AfterEach {
+    Remove-Item $script:tempPS -ErrorAction SilentlyContinue
+  }
 
-      $autoUpdateClient = "{'publicSettings':{'autoUpdateClient':'false'}}" | ConvertFrom-Json
-      mock Get-HandlerSettings { return $autoUpdateClient}
-
-      mock Install-ChefClient
-      mock Update-ChefExtensionRegistry
-
-      Update-ChefClient
-      # Delete temp file created for Get-SharedHelper
-
-      # Delete temp file created for Get-SharedHelper
-      Remove-Item $tempPS
-
-      Assert-MockCalled Install-ChefClient -Times 0
-      Assert-MockCalled Update-ChefExtensionRegistry -Times 0
-    }
-
-    it "updates ChefClient" {
-      mock Import-Module
-      $tmp = "$($env:tmp)"
-      mock Get-BootstrapDirectory { return "C:/chef"}
-      mock Get-TempBackupDir { return $tmp}
-      # create temp powershell file for mock Get-SharedHelper
-      $tempPS = ([System.IO.Path]::GetTempFileName() | Rename-Item -NewName { $_ -replace 'tmp$', 'ps1' } -PassThru)
-      mock Get-SharedHelper {return $tempPS}
-      mock Get-PowershellVersion { return 3 }
-
-      mock Get-PreviousVersionHandlerSettings {return $json_handlerSettings}
-      $json_handlerSettings = @{"protectedSettings" = "testprotectedSettings"; "protectedSettingsCertThumbprint" = "testprotectedSettingsCertThumbprint"; "publicSettings" = @{"client_rb"= "testclientrb"; "runList" = "testrunlist"; "autoUpdateClient" = "true"}}
-
-      $autoUpdateClient = "{'publicSettings':{'autoUpdateClient':'true'}}" | ConvertFrom-Json
-      mock Get-HandlerSettings { return $autoUpdateClient}
-      mock Read-JsonFile
-      mock Read-JsonFileUsingRuby
-      mock Copy-Item
-      mock Install-ChefClient
-      mock Update-ChefExtensionRegistry
+  context "when there is no stale node-registered file" {
+    it "uninstalls then reinstalls chef and marks the registry updated" {
+      mock Get-BootstrapDirectory { return $env:tmp }
+      mock Test-Path { return $false }
+      mock Remove-Item
 
       Update-ChefClient
-      # Delete temp file created for Get-SharedHelper
-      Remove-Item $tempPS
 
-      Assert-MockCalled Get-BootstrapDirectory -Times 1
-      Assert-MockCalled Get-TempBackupDir -Times 1
-      Assert-MockCalled Copy-Item -Times 2
+      Assert-MockCalled Uninstall-ChefClient -Times 1 -ParameterFilter { $calledFromUpdate -eq $true }
       Assert-MockCalled Install-ChefClient -Times 1
-      Assert-MockCalled Update-ChefExtensionRegistry -Times 1
+      Assert-MockCalled Update-ChefExtensionRegistry -Times 1 -ParameterFilter { $Value -eq "updated" }
+      Assert-MockCalled Remove-Item -Times 0
     }
   }
 
-  context "when powershell version 2" {
-    it "does not update ChefClient" {
-      mock Import-Module
-      $tmp = "$($env:tmp)"
-      $tempPS = ([System.IO.Path]::GetTempFileName() | Rename-Item -NewName { $_ -replace 'tmp$', 'ps1' } -PassThru)
-      mock Get-SharedHelper {return $tempPS}
-
-      mock Get-PowershellVersion { return 2}
-      mock Get-autoUpdateClientSetting { return 'false' }
-      mock Install-ChefClient
-      mock Update-ChefExtensionRegistry
+  context "when a stale node-registered file exists" {
+    it "removes it before running the update" {
+      mock Get-BootstrapDirectory { return $env:tmp }
+      mock Test-Path { return $true }
+      mock Remove-Item
 
       Update-ChefClient
-      # Delete temp file created for Get-SharedHelper
-      Remove-Item $tempPS
 
-      Assert-MockCalled Install-ChefClient -Times 0
-      Assert-MockCalled Update-ChefExtensionRegistry -Times 0
-    }
-
-    it "updates ChefClient" {
-      mock Import-Module
-      $tmp = "$($env:tmp)"
-      mock Get-BootstrapDirectory { return "C:/chef"}
-      mock Get-TempBackupDir { return $tmp}
-      # create temp powershell file for mock Get-SharedHelper
-      $tempPS = ([System.IO.Path]::GetTempFileName() | Rename-Item -NewName { $_ -replace 'tmp$', 'ps1' } -PassThru)
-      mock Get-SharedHelper {return $tempPS}
-      mock Get-PowershellVersion { return 2 }
-      mock Get-autoUpdateClientSetting { return 'true' }
-      mock Read-JsonFile
-      mock Read-JsonFileUsingRuby
-      mock Copy-Item
-
-      mock Install-ChefClient
-      mock Update-ChefExtensionRegistry
-
-      Update-ChefClient
-      # Delete temp file created for Get-SharedHelper
-      Remove-Item $tempPS
-
-      Assert-MockCalled Get-BootstrapDirectory -Times 1
-      Assert-MockCalled Get-TempBackupDir -Times 1
-      Assert-MockCalled Copy-Item -Times 2
+      Assert-MockCalled Remove-Item -Times 1
       Assert-MockCalled Install-ChefClient -Times 1
-      Assert-MockCalled Update-ChefExtensionRegistry -Times 1
+    }
+  }
+
+  context "when the install step fails" {
+    it "reports the error via Write-ChefStatus instead of throwing" {
+      mock Get-BootstrapDirectory { return $env:tmp }
+      mock Test-Path { return $false }
+      mock Install-ChefClient { throw "boom" }
+
+      { Update-ChefClient } | Should -Not -Throw
+
+      Assert-MockCalled Write-ChefStatus -Times 1 -ParameterFilter { $statusType -eq "error" }
+      Assert-MockCalled Update-ChefExtensionRegistry -Times 0
     }
   }
 }

@@ -931,4 +931,90 @@ describe EnableChef do
       instance.send(:get_chef_server_ssl_cert,"dummy_key")
     end
   end
+
+  describe "#configure_settings policyfile options" do
+    it "extracts policy_name and policy_group from bootstrap_options" do
+      opts = { 'policy_name' => 'my-policy', 'policy_group' => 'production' }
+      instance.instance_variable_set(:@first_boot_attributes, {})
+      instance.instance_variable_set(:@azure_plugin_log_location, '/tmp')
+      instance.instance_variable_set(:@client_rb, '')
+      instance.instance_variable_set(:@secret, nil)
+      config = instance.send(:configure_settings, opts)
+      expect(config[:policy_name]).to eq('my-policy')
+      expect(config[:policy_group]).to eq('production')
+    end
+  end
+
+  describe "#policyfile_mode?" do
+    it "returns true when policy_name and policy_group are in config" do
+      config = { policy_name: 'my-policy', policy_group: 'production', first_boot_attributes: {} }
+      expect(instance.send(:policyfile_mode?, config)).to be true
+    end
+
+    it "returns true when policy_name/policy_group in first_boot_attributes (backwards compat)" do
+      config = { first_boot_attributes: { 'policy_name' => 'pol', 'policy_group' => 'grp' } }
+      expect(instance.send(:policyfile_mode?, config)).to be true
+    end
+
+    it "returns false when policy keys are not set" do
+      config = { first_boot_attributes: {}, chef_server_url: 'https://chef.example.com' }
+      expect(instance.send(:policyfile_mode?, config)).to be_falsey
+    end
+  end
+
+  describe "#configure_chef_only_once policyfile mode", :unless => (RUBY_PLATFORM =~ /mswin|mingw|windows/) do
+    before do
+      allow(File).to receive(:exists?).and_return(false)
+      allow(File).to receive(:exist?).and_return(false)
+      allow(instance).to receive(:puts)
+      allow(File).to receive(:open)
+      @bootstrap_directory = Dir.home
+      allow(instance).to receive(:bootstrap_directory).and_return(@bootstrap_directory)
+      allow(instance).to receive(:handler_settings_file).and_return(
+        mock_data("handler_settings.settings"))
+      allow(instance).to receive(:get_validation_key).and_return("")
+      allow(instance).to receive(:get_client_key).and_return("")
+      allow(instance).to receive(:get_chef_server_ssl_cert).and_return("")
+      allow(IO).to receive_message_chain(:read, :chomp).and_return("template")
+      allow(Process).to receive(:detach)
+      allow(instance).to receive(:windows?).and_return(false)
+      allow(instance).to receive(:secret_key)
+      allow(instance).to receive(:load_cloud_attributes_in_hints)
+    end
+
+    context "Chef Server policyfile mode (policy_name + policy_group in bootstrap_options)" do
+      before do
+        allow(instance).to receive(:handler_settings_file).and_return(
+          mock_data("handler_settings.settings"))
+        allow(instance).to receive(:value_from_json_file) do |_file, *keys|
+          case keys.last
+          when 'bootstrap_options' then "{'policy_name'=>'my-policy','policy_group'=>'production','chef_server_url'=>'https://chef.example.com','chef_node_name'=>'mynode3','validation_client_name'=>'clochefacc-validator'}"
+          when 'runlist' then ""
+          when 'extendedLogs' then "false"
+          when 'hints' then ""
+          when 'custom_json_attr' then "{}"
+          when 'policy_document_relative_path' then ""
+          else ""
+          end
+        end
+        allow(instance).to receive(:get_decrypted_key).and_return("{}")
+        allow(instance).to receive(:copy_settings_file)
+      end
+
+      it "runs chef-client without first_client_run_recipe on linux" do
+        expect(Chef::Knife::Core::BootstrapContext).to receive(:new).and_return(
+          double('ctx', config_content: '', first_boot: {}, validation_key: '', client_key: '',
+                 encrypted_data_bag_secret: nil))
+        allow(Erubis::Eruby).to receive(:new).and_return(double('tmpl', evaluate: "bash -c 'true'"))
+        expect(instance).to receive(:shell_out).with(
+          /chef-client -j .+\/first-boot\.json -c .+\/client\.rb .+ --once$/
+        ).and_return(OpenStruct.new(exitstatus: 0, stdout: ""))
+        expect(instance).to receive(:shell_out).once.and_return(
+          OpenStruct.new(exitstatus: 0, stdout: ""))
+        expect(Process).to receive(:spawn).with(
+          /^chef-client -c .+ --once/).and_return(789)
+        instance.send(:configure_chef_only_once)
+      end
+    end
+  end
 end

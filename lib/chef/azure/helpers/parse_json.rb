@@ -50,7 +50,7 @@ class JSONFileReader
 
   def deserialize_json(file)
     # User may give file path or file content as input.
-    if File.exists?(file)
+    if File.exist?(file)
       normalized_content = File.read(file)
     else
       normalized_content = file

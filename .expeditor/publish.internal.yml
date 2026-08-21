@@ -1,5 +1,8 @@
 expeditor:
   secrets: true
+  defaults:
+    buildkite:
+      timeout_in_minutes: 30
 
 steps:
 - block: "Internal Publish"

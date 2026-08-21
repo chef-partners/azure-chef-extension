@@ -180,6 +180,10 @@ describe ChefService do
 
       context 'disable command in process' do
         it 'prints message saying chef-service is already stopped' do
+          # Freeze time so the expected message's timestamp can't drift from
+          # the one generated inside disable (flaky across a second
+          # boundary otherwise; unrelated to Ruby 2/3).
+          allow(Time).to receive(:now).and_return(Time.now)
           expect(instance).to receive(:puts).with(
             "#{Time.now} chef-client service is already stopped...").exactly(1).times
           response = instance.send(:disable, '')
@@ -189,6 +193,10 @@ describe ChefService do
 
       context 'enable command in process' do
         it 'prints message saying not enabling chef-service as per user\'s choice' do
+          # Freeze time so the expected message's timestamp can't drift from
+          # the one generated inside disable (flaky across a second
+          # boundary otherwise; unrelated to Ruby 2/3).
+          allow(Time).to receive(:now).and_return(Time.now)
           expect(instance).to receive(:puts).with(
             "#{Time.now} Not enabling the chef-client service as per the user's choice..."
           ).exactly(1).times
@@ -661,7 +669,7 @@ describe ChefService do
     context 'example-1' do
       it 'returns the integer value of the interval extracted from the given interval attribute string' do
         response = instance.send(:old_client_rb_interval, "interval 1620\n")
-        expect(response.class).to be == Fixnum
+        expect(response.class).to be == Integer
         expect(response).to be == 1620
       end
     end
@@ -669,7 +677,7 @@ describe ChefService do
     context 'example-2' do
       it 'returns the integer value of the interval extracted from the given interval attribute string' do
         response = instance.send(:old_client_rb_interval, "interval             480  \n")
-        expect(response.class).to be == Fixnum
+        expect(response.class).to be == Integer
         expect(response).to be == 480
       end
     end
