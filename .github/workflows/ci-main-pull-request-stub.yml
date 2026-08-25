@@ -73,19 +73,30 @@ jobs:
 
   # ponytail: temporary fallback until export-github-sbom above is confirmed
   # producing a downloadable artifact; remove once verified. Runs unconditionally
-  # (PRs and pushes, secrets or not) since Gemfile.lock is gitignored and must
-  # be generated fresh rather than checked out.
+  # (PRs and pushes, secrets or not). Lists only what the built gem actually
+  # vendors as runtime dependencies -- everything in the gemspec is currently
+  # add_development_dependency (chef/rspec/nokogiri/etc., build & test only),
+  # so Gemfile.lock (which includes those) overstates what ships in the package.
   manual-dependency-list:
     runs-on: ubuntu-latest
     permissions:
       contents: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - uses: ruby/setup-ruby@95ef2b042f9d7a56d8268cba8559e2842e2ad01b # v1.321.0
-        with:
-          ruby-version: "3.1.7"
-      - run: bundle lock
+      - name: Build gem and list its vendored runtime dependencies
+        run: |
+          gem build azure-chef-extension.gemspec
+          ruby <<'RUBY' > dependency-list.txt
+          require "rubygems/package"
+          spec = Gem::Package.new(Dir["*.gem"].first).spec
+          deps = spec.runtime_dependencies
+          if deps.empty?
+            puts "# no runtime dependencies vendored in the built gem"
+          else
+            deps.each { |d| puts d }
+          end
+          RUBY
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: dependency-list
-          path: Gemfile.lock
+          path: dependency-list.txt
