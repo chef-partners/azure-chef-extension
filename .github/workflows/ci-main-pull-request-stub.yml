@@ -1,0 +1,108 @@
+# stub to call common GitHub Action (GA) as part of Continuous Integration (CI) Pull Request process checks for main Branch
+# inputs are described in chef/common-github-actions/.github/workflows/ci-main-pull-request.yml
+#
+# secrets are inherited from the calling workflow. BlackDuck scans require org-level
+# POLARIS_ACCESS_TOKEN, POLARIS_SERVER_URL, and BLACKDUCK_SCA_TOKEN secrets (see CHEF-29449).
+
+name: CI Pull Request
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  STUB_VERSION: "1.0.0"
+
+jobs:
+  call-ci-main-pr-check-pipeline:
+    uses: chef/common-github-actions/.github/workflows/ci-main-pull-request.yml@main
+    secrets: inherit
+    permissions:
+      id-token: write
+      contents: read
+
+    with:
+      visibility: ${{ github.event.repository.visibility }}   # private, public, or internal
+      version: '1210.14' # informational only; detect-version-source-type below is authoritative
+      detect-version-source-type: 'file'
+      detect-version-source-parameter: 'VERSION'
+      language: 'ruby'
+
+      # complexity-checks
+      perform-complexity-checks: true
+      perform-language-linting: false
+
+      # trufflehog secret scanning
+      perform-trufflehog-scan: true
+
+      # grype vulnerability scan on source code (runs on push/merge to main, not on PRs)
+      perform-grype-scan: ${{ github.event_name == 'push' }}
+
+      # BlackDuck SAST (Polaris) and SCA scans (requires POLARIS_SERVER_URL, POLARIS_ACCESS_TOKEN, BLACKDUCK_SCA_TOKEN org secrets)
+      perform-blackduck-polaris: ${{ github.event_name == 'push' }}
+      polaris-application-name: "Chef-Agents"
+      polaris-project-name: 'azure-chef-extension'
+
+      # build/unit tests already handled by spec.yml, not duplicated here
+      build: false
+      unit-tests: false
+
+      perform-sonarqube-scan: false
+      report-to-atlassian-dashboard: false
+
+      package-binaries: false
+      habitat-build: false
+      publish-packages: false
+
+      # generate and export Software Bill of Materials (SBOM)
+      generate-sbom: true
+      export-github-sbom: true
+      perform-blackduck-sca-scan: ${{ github.event_name == 'push' }}
+      blackduck-project-group-name: 'Chef-Agents'
+      blackduck-project-name: 'azure-chef-extension'
+
+      generate-msft-sbom: false
+      license_scout: false
+
+  # ponytail: secrets can't be read in a job `if:`, so a detector step exposes
+  # an output the fallback job below can key on.
+  check-secrets:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    outputs:
+      missing: ${{ steps.check.outputs.missing }}
+    steps:
+      - id: check
+        env:
+          POLARIS_ACCESS_TOKEN: ${{ secrets.POLARIS_ACCESS_TOKEN }}
+          POLARIS_SERVER_URL: ${{ secrets.POLARIS_SERVER_URL }}
+          BLACKDUCK_SCA_TOKEN: ${{ secrets.BLACKDUCK_SCA_TOKEN }}
+        run: |
+          if [ -z "$POLARIS_ACCESS_TOKEN" ] || [ -z "$POLARIS_SERVER_URL" ] || [ -z "$BLACKDUCK_SCA_TOKEN" ]; then
+            echo "missing=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "missing=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  # ponytail: temporary fallback for when the BlackDuck/Polaris secrets above
+  # aren't configured (so generate-sbom/export-github-sbom can't run); remove
+  # once every environment has those secrets set.
+  manual-dependency-list:
+    needs: check-secrets
+    if: github.event_name == 'push' && needs.check-secrets.outputs.missing == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: dependency-list
+          path: Gemfile.lock
