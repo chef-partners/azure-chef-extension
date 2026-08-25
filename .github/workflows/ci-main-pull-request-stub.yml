@@ -71,10 +71,32 @@ jobs:
       generate-msft-sbom: false
       license_scout: false
 
-  # ponytail: temporary fallback until export-github-sbom above is confirmed
-  # producing a downloadable artifact; remove once verified.
-  manual-dependency-list:
+  # ponytail: secrets can't be read in a job `if:`, so a detector step exposes
+  # an output the fallback job below can key on.
+  check-secrets:
     if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    outputs:
+      missing: ${{ steps.check.outputs.missing }}
+    steps:
+      - id: check
+        env:
+          POLARIS_ACCESS_TOKEN: ${{ secrets.POLARIS_ACCESS_TOKEN }}
+          POLARIS_SERVER_URL: ${{ secrets.POLARIS_SERVER_URL }}
+          BLACKDUCK_SCA_TOKEN: ${{ secrets.BLACKDUCK_SCA_TOKEN }}
+        run: |
+          if [ -z "$POLARIS_ACCESS_TOKEN" ] || [ -z "$POLARIS_SERVER_URL" ] || [ -z "$BLACKDUCK_SCA_TOKEN" ]; then
+            echo "missing=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "missing=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  # ponytail: temporary fallback for when the BlackDuck/Polaris secrets above
+  # aren't configured (so generate-sbom/export-github-sbom can't run); remove
+  # once every environment has those secrets set.
+  manual-dependency-list:
+    needs: check-secrets
+    if: github.event_name == 'push' && needs.check-secrets.outputs.missing == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
