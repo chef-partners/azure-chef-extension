@@ -66,10 +66,9 @@ jobs:
       perform-grype-scan: ${{ github.event_name == 'push' }}
 
       # BlackDuck SAST (Polaris) and SCA scans (requires POLARIS_SERVER_URL, POLARIS_ACCESS_TOKEN, BLACKDUCK_SCA_TOKEN org secrets)
-      # ponytail: temporarily forced true (incl. on pull_request) to validate secrets/config in this PR;
-      # revert to `${{ github.event_name == 'push' && needs.check-secrets.outputs.missing != 'true' }}`
-      # once confirmed working, so PRs don't run this by default.
-      perform-blackduck-polaris: true
+      # ponytail: chef/common-github-actions' reusable workflow itself hardcodes `github.event_name == 'push'`
+      # on these jobs, so forcing true here can't make them run on pull_request anyway; keep the safe gate.
+      perform-blackduck-polaris: ${{ github.event_name == 'push' && needs.check-secrets.outputs.missing != 'true' }}
       polaris-application-name: "Chef-Agents"
       polaris-project-name: 'azure-chef-extension'
 
@@ -87,7 +86,7 @@ jobs:
       # generate and export Software Bill of Materials (SBOM)
       generate-sbom: true
       export-github-sbom: true
-      perform-blackduck-sca-scan: true # ponytail: temporarily forced true, see perform-blackduck-polaris above
+      perform-blackduck-sca-scan: ${{ github.event_name == 'push' && needs.check-secrets.outputs.missing != 'true' }}
       blackduck-project-group-name: 'Chef-Agents'
       blackduck-project-name: 'azure-chef-extension'
 
