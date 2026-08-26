@@ -66,9 +66,10 @@ jobs:
       perform-grype-scan: ${{ github.event_name == 'push' }}
 
       # BlackDuck SAST (Polaris) and SCA scans (requires POLARIS_SERVER_URL, POLARIS_ACCESS_TOKEN, BLACKDUCK_SCA_TOKEN org secrets)
-      # ponytail: temporarily disabled on push while CHEF-29449 org secrets are sorted out; re-enable by
-      # restoring `${{ github.event_name == 'push' && needs.check-secrets.outputs.missing != 'true' }}`
-      perform-blackduck-polaris: false
+      # ponytail: temporarily forced true (incl. on pull_request) to validate secrets/config in this PR;
+      # revert to `${{ github.event_name == 'push' && needs.check-secrets.outputs.missing != 'true' }}`
+      # once confirmed working, so PRs don't run this by default.
+      perform-blackduck-polaris: true
       polaris-application-name: "Chef-Agents"
       polaris-project-name: 'azure-chef-extension'
 
@@ -86,7 +87,7 @@ jobs:
       # generate and export Software Bill of Materials (SBOM)
       generate-sbom: true
       export-github-sbom: true
-      perform-blackduck-sca-scan: false # ponytail: temporarily disabled, see perform-blackduck-polaris above
+      perform-blackduck-sca-scan: true # ponytail: temporarily forced true, see perform-blackduck-polaris above
       blackduck-project-group-name: 'Chef-Agents'
       blackduck-project-name: 'azure-chef-extension'
 
