@@ -21,7 +21,27 @@ env:
   STUB_VERSION: "1.0.0"
 
 jobs:
+  # ponytail: secrets can't be read in a job `if:`, so this detector step
+  # exposes an output the pipeline call and fallback job below can key on.
+  check-secrets:
+    runs-on: ubuntu-latest
+    outputs:
+      missing: ${{ steps.check.outputs.missing }}
+    steps:
+      - id: check
+        env:
+          POLARIS_ACCESS_TOKEN: ${{ secrets.POLARIS_ACCESS_TOKEN }}
+          POLARIS_SERVER_URL: ${{ secrets.POLARIS_SERVER_URL }}
+          BLACKDUCK_SCA_TOKEN: ${{ secrets.BLACKDUCK_SCA_TOKEN }}
+        run: |
+          if [ -z "$POLARIS_ACCESS_TOKEN" ] || [ -z "$POLARIS_SERVER_URL" ] || [ -z "$BLACKDUCK_SCA_TOKEN" ]; then
+            echo "missing=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "missing=false" >> "$GITHUB_OUTPUT"
+          fi
+
   call-ci-main-pr-check-pipeline:
+    needs: check-secrets
     uses: chef/common-github-actions/.github/workflows/ci-main-pull-request.yml@main
     secrets: inherit
     permissions:
@@ -46,7 +66,7 @@ jobs:
       perform-grype-scan: ${{ github.event_name == 'push' }}
 
       # BlackDuck SAST (Polaris) and SCA scans (requires POLARIS_SERVER_URL, POLARIS_ACCESS_TOKEN, BLACKDUCK_SCA_TOKEN org secrets)
-      perform-blackduck-polaris: ${{ github.event_name == 'push' }}
+      perform-blackduck-polaris: ${{ github.event_name == 'push' && needs.check-secrets.outputs.missing != 'true' }}
       polaris-application-name: "Chef-Agents"
       polaris-project-name: 'azure-chef-extension'
 
@@ -64,32 +84,12 @@ jobs:
       # generate and export Software Bill of Materials (SBOM)
       generate-sbom: true
       export-github-sbom: true
-      perform-blackduck-sca-scan: ${{ github.event_name == 'push' }}
+      perform-blackduck-sca-scan: ${{ github.event_name == 'push' && needs.check-secrets.outputs.missing != 'true' }}
       blackduck-project-group-name: 'Chef-Agents'
       blackduck-project-name: 'azure-chef-extension'
 
       generate-msft-sbom: false
       license_scout: false
-
-  # ponytail: secrets can't be read in a job `if:`, so a detector step exposes
-  # an output the fallback job below can key on.
-  check-secrets:
-    if: github.event_name == 'push'
-    runs-on: ubuntu-latest
-    outputs:
-      missing: ${{ steps.check.outputs.missing }}
-    steps:
-      - id: check
-        env:
-          POLARIS_ACCESS_TOKEN: ${{ secrets.POLARIS_ACCESS_TOKEN }}
-          POLARIS_SERVER_URL: ${{ secrets.POLARIS_SERVER_URL }}
-          BLACKDUCK_SCA_TOKEN: ${{ secrets.BLACKDUCK_SCA_TOKEN }}
-        run: |
-          if [ -z "$POLARIS_ACCESS_TOKEN" ] || [ -z "$POLARIS_SERVER_URL" ] || [ -z "$BLACKDUCK_SCA_TOKEN" ]; then
-            echo "missing=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "missing=false" >> "$GITHUB_OUTPUT"
-          fi
 
   # ponytail: temporary fallback for when the BlackDuck/Polaris secrets above
   # aren't configured (so generate-sbom/export-github-sbom can't run); remove
