@@ -1,5 +1,10 @@
 .DEFAULT_GOAL := help
 
+# The root Gemfile ships no runtime gems (BlackDuck SCA scans it, so it stays
+# empty); rake/nokogiri/rubyzip/etc. used by these packaging tasks live in
+# gemfiles/test.gemfile instead.
+export BUNDLE_GEMFILE := $(CURDIR)/gemfiles/test.gemfile
+
 # Load local publishing credentials for testing (git-ignored; not present in CI).
 # Set AZURE_TENANT/AZURE_SUBSCRIPTION/AZURE_SERVICE_PRINCIPAL/AZURE_SERVICE_PRINCIPAL_PASSWORD
 # here to skip vault and use these directly. See .env.example.

@@ -48,8 +48,12 @@ jobs:
         with:
           ruby-version: "3.1.7" # matches Chef 18.x's supported Ruby
           bundler-cache: true
+        env:
+          BUNDLE_GEMFILE: ${{ github.workspace }}/gemfiles/test.gemfile
 
       - name: Run shell specs
+        env:
+          BUNDLE_GEMFILE: ${{ github.workspace }}/gemfiles/test.gemfile
         run: |
           mkdir -p spec/results
           bundle exec rspec spec/shell_specs --format documentation --format RspecJunitFormatter --out spec/results/results.xml
@@ -90,12 +94,15 @@ jobs:
           ruby-version: ${{ matrix.ruby }}
           bundler: ${{ matrix.bundler }}
           bundler-cache: true
+        env:
+          BUNDLE_GEMFILE: ${{ github.workspace }}/gemfiles/test.gemfile
 
       - name: Run unit and functional specs
         env:
           COVERAGE: "true"
           COVERAGE_COMMAND_NAME: "RSpec (Ruby ${{ matrix.ruby }})"
           COVERAGE_DIR: "coverage/ruby-${{ matrix.ruby }}"
+          BUNDLE_GEMFILE: ${{ github.workspace }}/gemfiles/test.gemfile
         run: |
           mkdir -p spec/results
           bundle exec rspec spec/unit spec/functional --format documentation --format RspecJunitFormatter --out spec/results/results-ruby-${{ matrix.ruby }}.xml

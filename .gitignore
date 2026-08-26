@@ -27,3 +27,7 @@ testing/.env
 *.pem
 
 testing/artifacts/
+
+# Dev/test bundle lockfile is regenerated per-Ruby-version in CI (bundler-cache);
+# only the root, runtime-only Gemfile.lock is committed for BlackDuck SCA scanning.
+gemfiles/test.gemfile.lock
