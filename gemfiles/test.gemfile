@@ -1,0 +1,32 @@
+source "https://rubygems.org"
+
+# Dev/test/lint bundle -- everything needed to run the spec suite, rake
+# tasks, and cookstyle/rubocop locally. Kept out of the root Gemfile so the
+# production Gemfile.lock (scanned by BlackDuck SCA) only reflects what
+# actually ships in the extension. Run with:
+#   BUNDLE_GEMFILE=gemfiles/test.gemfile bundle install
+#   BUNDLE_GEMFILE=gemfiles/test.gemfile bundle exec rspec ...
+gemspec path: ".."
+
+# Chef is only a dev/test dependency (used by the spec suite to stub
+# Chef::Handler/Chef::Log/etc.). Chef >= 18 requires Ruby >= 3.1, so pick the
+# newest Chef series that supports whichever Ruby is currently running. This
+# lets CI exercise Ruby 2.7.x and the RHEL 9 / RHEL 10 default Rubies
+# (3.0.x / 3.3.x) with a single Gemfile.
+gem "chef", (RUBY_VERSION >= "3.1" ? "~> 18.0" : "~> 17.0")
+
+# public_suffix and faraday-http-cache (pulled in transitively, likely via
+# chef's HTTP/vendor gems) release newer major versions that drop support
+# for older Rubies (e.g. public_suffix 7.x and faraday-http-cache 2.7+
+# require Ruby >= 3.2); pin both to versions that still work across our
+# whole Ruby test matrix (2.7 - 3.3).
+gem "public_suffix", "~> 5.1"
+gem "faraday-http-cache", "~> 2.5.1"
+gem "multi_json", "~> 1.15.0"
+
+group :development do
+  gem "pry"
+  gem "rb-readline"
+  gem "rake"
+  gem "rack", "~> 2.1.4"
+end

@@ -21,7 +21,22 @@ env:
   STUB_VERSION: "1.0.0"
 
 jobs:
+  # ponytail: reads VERSION once so it's the single source of truth -- the
+  # 'version' input below used to be a hand-copied literal that drifted from
+  # the VERSION file (1210.14 vs. 1210.14.1.2); this keeps them identical.
+  read-version:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.read.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - id: read
+        run: echo "version=$(cat VERSION)" >> "$GITHUB_OUTPUT"
+
   call-ci-main-pr-check-pipeline:
+    needs: read-version
     uses: chef/common-github-actions/.github/workflows/ci-main-pull-request.yml@main
     secrets: inherit
     permissions:
@@ -30,7 +45,7 @@ jobs:
 
     with:
       visibility: ${{ github.event.repository.visibility }}   # private, public, or internal
-      version: '1210.14' # informational only; detect-version-source-type below is authoritative
+      version: ${{ needs.read-version.outputs.version }} # informational only; detect-version-source-type below is authoritative
       detect-version-source-type: 'file'
       detect-version-source-parameter: 'VERSION'
       language: 'ruby'
