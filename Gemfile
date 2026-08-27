@@ -30,5 +30,10 @@ group :development do
   gem "pry"
   gem "rb-readline"
   gem "rake"
-  gem "rack", "~> 2.1.4"
+  # ponytail: was pinned to the exact patch "~> 2.1.4", which has no further
+  # 2.1.x releases -- Dependabot's forced security update can't find any
+  # version to move to within that constraint and crashes. "~> 2.2" still
+  # satisfies chef-zero's "rack (~> 2.0, >= 2.0.6)" and Ruby 2.7+, but lets
+  # Dependabot bump patch releases going forward.
+  gem "rack", "~> 2.2"
 end

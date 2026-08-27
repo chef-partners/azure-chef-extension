@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    azure-chef-extension (1210.15.0.0)
+    azure-chef-extension (1210.15.1.0)
 
 GEM
   remote: https://rubygems.org/
@@ -296,7 +296,7 @@ GEM
     pstore (0.1.4)
     public_suffix (5.1.1)
     racc (1.8.1)
-    rack (2.1.4.4)
+    rack (2.2.24)
     rainbow (3.1.1)
     rake (13.4.2)
     rb-readline (0.5.5)
@@ -430,7 +430,7 @@ DEPENDENCIES
   nokogiri
   pry
   public_suffix (~> 5.1)
-  rack (~> 2.1.4)
+  rack (~> 2.2)
   rake
   rb-readline
   rspec-core
@@ -450,7 +450,7 @@ CHECKSUMS
   aws-sdk-s3 (1.229.0) sha256=7dd11a111875b3505d2ec0a0a383a6aab6c1badb3d4e94e7fbb958a24451f596
   aws-sdk-secretsmanager (1.134.0) sha256=4a76555706775a87fb70176cc93b1c351500bcdf8c058cc2082a76fdbb6c40b5
   aws-sigv4 (1.12.1) sha256=6973ff95cb0fd0dc58ba26e90e9510a2219525d07620c8babeb70ef831826c00
-  azure-chef-extension (1210.15.0.0)
+  azure-chef-extension (1210.15.1.0)
   base64 (0.3.0) sha256=27337aeabad6ffae05c265c450490628ef3ebd4b67be58257393227588f5a97b
   benchmark (0.5.0) sha256=465df122341aedcb81a2a24b4d3bd19b6c67c1530713fd533f3ff034e419236c
   bigdecimal (4.1.2) sha256=53d217666027eab4280346fba98e7d5b66baaae1b9c3c1c0ffe89d48188a3fbd
@@ -552,7 +552,7 @@ CHECKSUMS
   pstore (0.1.4) sha256=a276fb7f5ac4fe07f5e529bbe0e5b24039479e6539b8010d5d073b717462bb86
   public_suffix (5.1.1) sha256=250ec74630d735194c797491c85e3c6a141d7b5d9bd0b66a3fa6268cf67066ed
   racc (1.8.1) sha256=4a7f6929691dbec8b5209a0b373bc2614882b55fc5d2e447a21aaa691303d62f
-  rack (2.1.4.4) sha256=77c29caf2168e250f5ecc8fb843638a332ce2c167b1f9694cc0047efa575986f
+  rack (2.2.24) sha256=ef16526a0d871c43753452338c754040a664c8b41bf0dd7450b85f7772adca5f
   rainbow (3.1.1) sha256=039491aa3a89f42efa1d6dec2fc4e62ede96eb6acd95e52f1ad581182b79bc6a
   rake (13.4.2) sha256=cb825b2bd5f1f8e91ca37bddb4b9aaf345551b4731da62949be002fa89283701
   rb-readline (0.5.5) sha256=9e9bd7e198bdef0822c46902f6c592b882c1f9777894a4c3dcf5b320824a8793
