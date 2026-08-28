@@ -28,5 +28,7 @@ group :development do
   gem "pry"
   gem "rb-readline"
   gem "rake"
-  gem "rack", "~> 2.1.4"
+  # ponytail: see matching comment in the root Gemfile -- pinning to a single
+  # patch version blocks Dependabot from ever bumping rack.
+  gem "rack", "~> 2.2"
 end
