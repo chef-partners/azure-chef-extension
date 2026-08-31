@@ -14,6 +14,6 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
-      - uses: jaymzh/chronoguard@d9efeadd78b45bc27c4a6f1615e52753ddbfe0ee # main
+      - uses: jaymzh/chronoguard@dc362c4a213230fcc9f3394168eca6f2365aaf5b # main
         with:
           files: ChefExtensionHandler/bin/shared.sh,ChefExtensionHandler/bin/shared.ps1
