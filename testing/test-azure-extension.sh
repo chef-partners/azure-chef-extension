@@ -409,7 +409,7 @@ provision_chef_server() {
     -g "${RESOURCE_GROUP}" \
     --name "${CHEF_SERVER_VM}" \
     --command-id RunShellScript \
-    --scripts "set -euo pipefail" \
+    --scripts "set -eu" \
               "cd /tmp" \
               "sudo apt-get update -y" \
               "sudo apt-get install -y ruby-full curl" \
