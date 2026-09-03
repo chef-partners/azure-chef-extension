@@ -453,18 +453,23 @@ provision_chef_server() {
   VALIDATION_PEM="${TMPDIR_CONFIGS}/${CHEF_SERVER_ORG}-validator.pem"
   NODE_SSL_VERIFY_MODE="verify_none"
 
-  local validator_pem_b64
-  validator_pem_b64="$(az vm run-command invoke \
+  local fetch_pem_raw validator_pem_b64 validator_pem_stderr
+  fetch_pem_raw="$(az vm run-command invoke \
     -g "${RESOURCE_GROUP}" \
     --name "${CHEF_SERVER_VM}" \
     --command-id RunShellScript \
     --scripts "sudo base64 -w 0 /tmp/${CHEF_SERVER_ORG}-validator.pem" \
-    --query "value[0].message" -o tsv | sed -n '/^\[stdout\]$/,/^\[stderr\]$/p' | sed '1d;$d' | tr -d '\r\n')"
+    --query "value[0].message" -o tsv)"
+  validator_pem_b64="$(printf '%s\n' "${fetch_pem_raw}" | sed -n '/^\[stdout\]$/,/^\[stderr\]$/p' | sed '1d;$d' | tr -d '\r\n')"
+  validator_pem_stderr="$(printf '%s\n' "${fetch_pem_raw}" | sed -n '/^\[stderr\]$/,$p' | sed '1d')"
 
   python3 -c "import base64,sys; open(sys.argv[1], 'wb').write(base64.b64decode(sys.argv[2]))" \
     "${VALIDATION_PEM}" "${validator_pem_b64}"
 
-  [[ ! -s "${VALIDATION_PEM}" ]] && fail "Failed to retrieve validator PEM from Chef Server VM"
+  if [[ ! -s "${VALIDATION_PEM}" ]]; then
+    [[ -n "${validator_pem_stderr}" ]] && warn "Remote error fetching validator PEM: ${validator_pem_stderr}"
+    fail "Failed to retrieve validator PEM from Chef Server VM (org-create may have failed on the VM)"
+  fi
   success "Chef Server ready at ${CHEF_SERVER_URL}"
 }
 
