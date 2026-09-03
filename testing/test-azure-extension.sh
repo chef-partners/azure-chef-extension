@@ -459,7 +459,7 @@ provision_chef_server() {
     --name "${CHEF_SERVER_VM}" \
     --command-id RunShellScript \
     --scripts "sudo base64 -w 0 /tmp/${CHEF_SERVER_ORG}-validator.pem" \
-    --query "value[0].message" -o tsv | tr -d '\r\n')"
+    --query "value[0].message" -o tsv | sed -n '/^\[stdout\]$/,/^\[stderr\]$/p' | sed '1d;$d' | tr -d '\r\n')"
 
   python3 -c "import base64,sys; open(sys.argv[1], 'wb').write(base64.b64decode(sys.argv[2]))" \
     "${VALIDATION_PEM}" "${validator_pem_b64}"
