@@ -417,12 +417,12 @@ provision_chef_server() {
     --scripts "${install_set_opts}" \
               "cd /tmp" \
               "sudo apt-get update -y" \
-              "sudo apt-get install -y ruby-full curl" \
+              "sudo DEBIAN_FRONTEND=noninteractive apt-get install -y ruby-full curl" \
               "sudo gem install --no-document mixlib-install" \
               "sudo mixlib-install download chef-server -c stable -a x86_64 -p ubuntu -l 22.04 -v ${CHEF_SERVER_VERSION}" \
               "PKG=\$(ls -1t /tmp/chef-server-core_*.deb | head -1)" \
               "sudo dpkg -i \"\${PKG}\" || sudo apt-get install -f -y" \
-              "sudo chef-server-ctl reconfigure" \
+              "sudo chef-server-ctl reconfigure --chef-license accept" \
               "sudo chef-server-ctl user-create '${CHEF_SERVER_USER}' 'Test' 'Admin' '${CHEF_SERVER_USER_EMAIL}' '${CHEF_SERVER_USER_PASSWORD}' --filename '/tmp/${CHEF_SERVER_USER}.pem'" \
               "sudo chef-server-ctl org-create '${CHEF_SERVER_ORG}' '${CHEF_SERVER_ORG_FULL_NAME}' --association_user '${CHEF_SERVER_USER}' --filename '/tmp/${CHEF_SERVER_ORG}-validator.pem'" \
               "echo CHEF_SERVER_INSTALL_DONE" \
