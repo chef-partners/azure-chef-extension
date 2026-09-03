@@ -52,6 +52,7 @@ bash testing/test-azure-extension.sh \
 | `--extension-version` | `1210.14` | Extension version to install (pinned exactly via `--no-auto-upgrade-minor-version` — required for internal test publishes since patch bumps like `1.5.1`→`1.5.2` share the same major.minor and Azure would otherwise auto-resolve to whatever it considers latest) |
 | `--platform` | `linux` | `linux` (Ubuntu 22.04), `rhel8`, `rhel10`, `windows`, or `both` (Ubuntu + Windows) |
 | `--skip-cleanup` | *(false)* | Leave Azure resources intact after the test |
+| `--debug` | *(false)* | Enable shell tracing (`set -x`) on remote install scripts and print full, untruncated command output on failure |
 | `--ssh-public-key-path` | `~/.ssh/id_rsa.pub` | Public key uploaded to Linux VMs so you can SSH in later |
 
 ### Examples

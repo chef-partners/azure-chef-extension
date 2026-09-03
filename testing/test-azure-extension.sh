@@ -43,6 +43,8 @@
 #                              local code changes without a full extension publish cycle
 #   --platform <linux|rhel8|rhel10|windows|both>  Which platform to test (default: linux)
 #   --skip-cleanup             Do not delete Azure resources after the test
+#   --debug                    Enable shell tracing (set -x) on remote install scripts
+#                              and print full (untruncated) command output on failure
 #   --ssh-public-key-path <path>  Public key to upload for Linux VM SSH access
 #   --help                     Show this help message
 
@@ -89,13 +91,14 @@ CHEF_INFRA_CHANNEL="${CHEF_INFRA_CHANNEL:-}"
 LOCAL_EXT="${LOCAL_EXT:-false}"
 PLATFORM="${PLATFORM:-linux}"
 SKIP_CLEANUP="${SKIP_CLEANUP:-false}"
+DEBUG="${DEBUG:-false}"
 SSH_PUBLIC_KEY_PATH="${SSH_PUBLIC_KEY_PATH:-$HOME/.ssh/id_rsa.pub}"
 CHEF_SERVER_URL="${CHEF_SERVER_URL:-}"
 VALIDATION_CLIENT_NAME="${VALIDATION_CLIENT_NAME:-}"
 VALIDATION_PEM="${VALIDATION_PEM:-}"
 BUILD_CHEF_SERVER="${BUILD_CHEF_SERVER:-false}"
 CHEF_SERVER_VM="${CHEF_SERVER_VM:-chef-test-server}"
-CHEF_SERVER_VERSION="${CHEF_SERVER_VERSION:-15.10.84-20251114181706}"
+CHEF_SERVER_VERSION="${CHEF_SERVER_VERSION:-latest}"
 CHEF_SERVER_ORG="${CHEF_SERVER_ORG:-testorg}"
 CHEF_SERVER_ORG_FULL_NAME="${CHEF_SERVER_ORG_FULL_NAME:-Test Org}"
 CHEF_SERVER_USER="${CHEF_SERVER_USER:-testadmin}"
@@ -271,6 +274,7 @@ while [[ $# -gt 0 ]]; do
     --local-ext)               LOCAL_EXT=true;                shift ;;
     --platform)                PLATFORM="$2";                 shift 2 ;;
     --skip-cleanup)            SKIP_CLEANUP=true;             shift ;;
+    --debug)                   DEBUG=true;                    shift ;;
     --ssh-public-key-path)     SSH_PUBLIC_KEY_PATH="$2";      shift 2 ;;
     --help|-h)                 usage ;;
     *) fail "Unknown option: $1" ;;
@@ -404,12 +408,13 @@ provision_chef_server() {
   az vm open-port -g "${RESOURCE_GROUP}" -n "${CHEF_SERVER_VM}" --port 443 --priority 1010 --output none
 
   info "Installing Chef Server ${CHEF_SERVER_VERSION} (this can take several minutes)..."
-  local install_output
+  local install_output install_set_opts="set -eu"
+  [[ "${DEBUG}" == "true" ]] && install_set_opts="set -eux"
   install_output="$(az vm run-command invoke \
     -g "${RESOURCE_GROUP}" \
     --name "${CHEF_SERVER_VM}" \
     --command-id RunShellScript \
-    --scripts "set -eu" \
+    --scripts "${install_set_opts}" \
               "cd /tmp" \
               "sudo apt-get update -y" \
               "sudo apt-get install -y ruby-full curl" \
@@ -426,8 +431,13 @@ provision_chef_server() {
   # az run-command doesn't propagate the script's exit code (only success/failure of
   # the run-command mechanism itself), so detect real failure via our sentinel line.
   if ! grep -q "CHEF_SERVER_INSTALL_DONE" <<<"${install_output}"; then
-    warn "Chef Server install script did not complete; last output:"
-    printf '%s\n' "${install_output}" | tail -n 40 >&2
+    warn "Chef Server install script did not complete; output:"
+    if [[ "${DEBUG}" == "true" ]]; then
+      printf '%s\n' "${install_output}" >&2
+    else
+      printf '%s\n' "${install_output}" | tail -n 40 >&2
+      warn "(showing last 40 lines; re-run with --debug for full output and shell tracing)"
+    fi
     fail "Chef Server installation failed on '${CHEF_SERVER_VM}'"
   fi
 
