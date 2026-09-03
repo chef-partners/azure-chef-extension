@@ -416,8 +416,7 @@ provision_chef_server() {
     --command-id RunShellScript \
     --scripts "${install_set_opts}" \
               "cd /tmp" \
-              "sudo apt-get update -y" \
-              "sudo DEBIAN_FRONTEND=noninteractive apt-get install -y ruby-full curl" \
+              "for i in 1 2 3; do sudo apt-get update -y && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y ruby-full curl && break || { echo \"apt attempt \$i failed, retrying...\"; sleep 5; }; [ \"\$i\" = 3 ] && exit 1; done" \
               "sudo gem install --no-document mixlib-install" \
               "sudo mixlib-install download chef-server -c stable -a x86_64 -p ubuntu -l 22.04 -v ${CHEF_SERVER_VERSION}" \
               "PKG=\$(ls -1t /tmp/chef-server-core_*.deb | head -1)" \
