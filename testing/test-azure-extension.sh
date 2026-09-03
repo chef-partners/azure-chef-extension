@@ -427,7 +427,8 @@ provision_chef_server() {
   az vm open-port -g "${RESOURCE_GROUP}" -n "${CHEF_SERVER_VM}" --port 443 --priority 1010 --output none
 
   info "Installing Chef Server ${CHEF_SERVER_VERSION} (this can take several minutes)..."
-  az vm run-command invoke \
+  local install_output
+  install_output="$(az vm run-command invoke \
     -g "${RESOURCE_GROUP}" \
     --name "${CHEF_SERVER_VM}" \
     --command-id RunShellScript \
@@ -442,7 +443,16 @@ provision_chef_server() {
               "sudo chef-server-ctl reconfigure" \
               "sudo chef-server-ctl user-create '${CHEF_SERVER_USER}' 'Test' 'Admin' '${CHEF_SERVER_USER_EMAIL}' '${CHEF_SERVER_USER_PASSWORD}' --filename '/tmp/${CHEF_SERVER_USER}.pem'" \
               "sudo chef-server-ctl org-create '${CHEF_SERVER_ORG}' '${CHEF_SERVER_ORG_FULL_NAME}' --association_user '${CHEF_SERVER_USER}' --filename '/tmp/${CHEF_SERVER_ORG}-validator.pem'" \
-    --output none
+              "echo CHEF_SERVER_INSTALL_DONE" \
+    --query "value[0].message" -o tsv)"
+
+  # az run-command doesn't propagate the script's exit code (only success/failure of
+  # the run-command mechanism itself), so detect real failure via our sentinel line.
+  if ! grep -q "CHEF_SERVER_INSTALL_DONE" <<<"${install_output}"; then
+    warn "Chef Server install script did not complete; last output:"
+    printf '%s\n' "${install_output}" | tail -n 40 >&2
+    fail "Chef Server installation failed on '${CHEF_SERVER_VM}'"
+  fi
 
   local chef_server_ip
   chef_server_ip="$(az vm show -d -g "${RESOURCE_GROUP}" -n "${CHEF_SERVER_VM}" --query "publicIps" -o tsv)"
