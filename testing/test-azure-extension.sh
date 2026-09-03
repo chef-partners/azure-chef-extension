@@ -422,8 +422,8 @@ provision_chef_server() {
               "PKG=\$(ls -1t /tmp/chef-server-core_*.deb | head -1)" \
               "sudo dpkg -i \"\${PKG}\" || sudo apt-get install -f -y" \
               "sudo chef-server-ctl reconfigure --chef-license accept" \
-              "sudo chef-server-ctl user-create '${CHEF_SERVER_USER}' 'Test' 'Admin' '${CHEF_SERVER_USER_EMAIL}' '${CHEF_SERVER_USER_PASSWORD}' --filename '/tmp/${CHEF_SERVER_USER}.pem'" \
-              "sudo chef-server-ctl org-create '${CHEF_SERVER_ORG}' '${CHEF_SERVER_ORG_FULL_NAME}' --association_user '${CHEF_SERVER_USER}' --filename '/tmp/${CHEF_SERVER_ORG}-validator.pem'" \
+              "for i in 1 2 3; do sudo chef-server-ctl user-create '${CHEF_SERVER_USER}' 'Test' 'Admin' '${CHEF_SERVER_USER_EMAIL}' '${CHEF_SERVER_USER_PASSWORD}' --filename '/tmp/${CHEF_SERVER_USER}.pem' && break || { echo \"user-create attempt \$i failed (server may still be starting up), retrying...\"; sleep 10; }; [ \"\$i\" = 3 ] && exit 1; done" \
+              "for i in 1 2 3; do sudo chef-server-ctl org-create '${CHEF_SERVER_ORG}' '${CHEF_SERVER_ORG_FULL_NAME}' --association_user '${CHEF_SERVER_USER}' --filename '/tmp/${CHEF_SERVER_ORG}-validator.pem' && break || { echo \"org-create attempt \$i failed, retrying...\"; sleep 10; }; [ \"\$i\" = 3 ] && exit 1; done" \
               "echo CHEF_SERVER_INSTALL_DONE" \
     --query "value[0].message" -o tsv)"
 
