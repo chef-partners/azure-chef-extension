@@ -44,8 +44,6 @@ bash testing/test-azure-extension.sh \
 | `--azure-tenant` | *(none)* | Azure tenant ID to log into/use |
 | `--azure-subscription` | *(none)* | Azure subscription ID or name to select before provisioning |
 | `--azure-use-device-code` | *(false)* | Use `az login --use-device-code` (useful when MFA blocks browser login) |
-| `--azure-service-principal` | *(none)* | Log in as this service principal (app ID) instead of interactive/device-code SSO — use when the target tenant isn't reachable via your SSO account. Requires `--azure-tenant` |
-| `--azure-service-principal-password` | *(none)* | Password/secret for `--azure-service-principal` |
 | `--resource-group` | `chef-ext-test-rg` | Azure resource group |
 | `--location` | `eastus` | Azure region |
 | `--node-name` | `az-ext-test-node` | Chef node name registered on bootstrap |
@@ -102,17 +100,6 @@ bash testing/test-azure-extension.sh \
   --azure-tenant "a2b2d6bc-afe1-4696-9c37-f97a7ac416d7" \
   --azure-use-device-code \
   --azure-subscription "<subscription-id-or-name>"
-```
-
-**Service principal login (tenant not reachable via SSO):**
-```bash
-bash testing/test-azure-extension.sh \
-  --chef-server-url "https://api.chef.io/organizations/myorg" \
-  --validation-client-name "myorg-validator" \
-  --validation-pem ~/.chef/myorg-validator.pem \
-  --azure-tenant "<tenant-id>" \
-  --azure-service-principal "<app-id>" \
-  --azure-service-principal-password "<password>"
 ```
 
 **Test local extension code directly (no publish needed), RHEL 10:**

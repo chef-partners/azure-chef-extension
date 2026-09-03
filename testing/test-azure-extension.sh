@@ -28,10 +28,6 @@
 #   --azure-tenant <tenant-id>  Azure tenant to log into/use
 #   --azure-subscription <id|name>  Azure subscription to select
 #   --azure-use-device-code     Use device code auth for az login
-#   --azure-service-principal <app-id>       Log in with a service principal instead of
-#                                             interactive/device-code SSO (required if the
-#                                             tenant isn't reachable via your SSO account)
-#   --azure-service-principal-password <pw>  Password/secret for --azure-service-principal
 #   --resource-group <name>    Azure resource group name (default: chef-ext-test-rg)
 #   --location <region>        Azure region (default: eastus)
 #   --node-name <name>         Chef node name (default: az-ext-test-node)
@@ -109,8 +105,6 @@ NODE_SSL_VERIFY_MODE="${NODE_SSL_VERIFY_MODE:-}"
 AZURE_TENANT="${AZURE_TENANT:-}"
 AZURE_SUBSCRIPTION="${AZURE_SUBSCRIPTION:-}"
 AZURE_USE_DEVICE_CODE="${AZURE_USE_DEVICE_CODE:-false}"
-AZURE_SERVICE_PRINCIPAL="${AZURE_SERVICE_PRINCIPAL:-}"
-AZURE_SERVICE_PRINCIPAL_PASSWORD="${AZURE_SERVICE_PRINCIPAL_PASSWORD:-}"
 
 LINUX_VM="${LINUX_VM:-chef-test-linux}"
 WINDOWS_VM="${WINDOWS_VM:-chef-test-windows}"
@@ -265,8 +259,6 @@ while [[ $# -gt 0 ]]; do
     --azure-tenant)            AZURE_TENANT="$2";             shift 2 ;;
     --azure-subscription)      AZURE_SUBSCRIPTION="$2";       shift 2 ;;
     --azure-use-device-code)   AZURE_USE_DEVICE_CODE=true;    shift ;;
-    --azure-service-principal)          AZURE_SERVICE_PRINCIPAL="$2";          shift 2 ;;
-    --azure-service-principal-password) AZURE_SERVICE_PRINCIPAL_PASSWORD="$2"; shift 2 ;;
     --resource-group)          RESOURCE_GROUP="$2";           shift 2 ;;
     --location)                LOCATION="$2";                 shift 2 ;;
     --node-name)               NODE_NAME="$2";                shift 2 ;;
@@ -293,15 +285,6 @@ command -v jq  &>/dev/null || fail "jq not found — install with: brew install 
 [[ -f "${SSH_PUBLIC_KEY_PATH}" ]] || fail "SSH public key not found: ${SSH_PUBLIC_KEY_PATH}"
 
 azure_login() {
-  if [[ -n "${AZURE_SERVICE_PRINCIPAL}" ]]; then
-    [[ -n "${AZURE_TENANT}" ]] || fail "AZURE_TENANT is required when AZURE_SERVICE_PRINCIPAL is set."
-    az login --service-principal \
-      --username "${AZURE_SERVICE_PRINCIPAL}" \
-      --password "${AZURE_SERVICE_PRINCIPAL_PASSWORD}" \
-      --tenant "${AZURE_TENANT}" \
-      --output none || fail "Azure service-principal login failed. Check AZURE_SERVICE_PRINCIPAL/AZURE_SERVICE_PRINCIPAL_PASSWORD/AZURE_TENANT."
-    return
-  fi
   local -a login_cmd=(az login --output none)
   [[ -n "${AZURE_TENANT}" ]] && login_cmd+=(--tenant "${AZURE_TENANT}")
   [[ "${AZURE_USE_DEVICE_CODE}" == "true" ]] && login_cmd+=(--use-device-code)
@@ -311,12 +294,6 @@ azure_login() {
 if ! az account show &>/dev/null; then
   info "Not logged in to Azure. Launching 'az login'..."
   azure_login
-elif [[ -n "${AZURE_SERVICE_PRINCIPAL}" ]]; then
-  CURRENT_ACCOUNT="$(az account show --query user.name -o tsv 2>/dev/null || true)"
-  if [[ "${CURRENT_ACCOUNT}" != "${AZURE_SERVICE_PRINCIPAL}" ]]; then
-    info "Logging in as service principal ${AZURE_SERVICE_PRINCIPAL}..."
-    azure_login
-  fi
 elif [[ -n "${AZURE_TENANT}" ]]; then
   CURRENT_TENANT="$(az account show --query tenantId -o tsv 2>/dev/null || true)"
   if [[ "${CURRENT_TENANT}" != "${AZURE_TENANT}" ]]; then
