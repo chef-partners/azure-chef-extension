@@ -28,10 +28,6 @@
 #   --azure-tenant <tenant-id>  Azure tenant to log into/use
 #   --azure-subscription <id|name>  Azure subscription to select
 #   --azure-use-device-code     Use device code auth for az login
-#   --azure-service-principal <app-id>       Log in with a service principal instead of
-#                                             interactive/device-code SSO (required if the
-#                                             tenant isn't reachable via your SSO account)
-#   --azure-service-principal-password <pw>  Password/secret for --azure-service-principal
 #   --resource-group <name>    Azure resource group name (default: chef-ext-test-rg)
 #   --location <region>        Azure region (default: eastus)
 #   --node-name <name>         Chef node name (default: az-ext-test-node)
@@ -47,6 +43,8 @@
 #                              local code changes without a full extension publish cycle
 #   --platform <linux|rhel8|rhel10|windows|both>  Which platform to test (default: linux)
 #   --skip-cleanup             Do not delete Azure resources after the test
+#   --debug                    Enable shell tracing (set -x) on remote install scripts
+#                              and print full (untruncated) command output on failure
 #   --ssh-public-key-path <path>  Public key to upload for Linux VM SSH access
 #   --help                     Show this help message
 
@@ -93,13 +91,14 @@ CHEF_INFRA_CHANNEL="${CHEF_INFRA_CHANNEL:-}"
 LOCAL_EXT="${LOCAL_EXT:-false}"
 PLATFORM="${PLATFORM:-linux}"
 SKIP_CLEANUP="${SKIP_CLEANUP:-false}"
+DEBUG="${DEBUG:-false}"
 SSH_PUBLIC_KEY_PATH="${SSH_PUBLIC_KEY_PATH:-$HOME/.ssh/id_rsa.pub}"
 CHEF_SERVER_URL="${CHEF_SERVER_URL:-}"
 VALIDATION_CLIENT_NAME="${VALIDATION_CLIENT_NAME:-}"
 VALIDATION_PEM="${VALIDATION_PEM:-}"
 BUILD_CHEF_SERVER="${BUILD_CHEF_SERVER:-false}"
 CHEF_SERVER_VM="${CHEF_SERVER_VM:-chef-test-server}"
-CHEF_SERVER_VERSION="${CHEF_SERVER_VERSION:-15.10.84-20251114181706}"
+CHEF_SERVER_VERSION="${CHEF_SERVER_VERSION:-latest}"
 CHEF_SERVER_ORG="${CHEF_SERVER_ORG:-testorg}"
 CHEF_SERVER_ORG_FULL_NAME="${CHEF_SERVER_ORG_FULL_NAME:-Test Org}"
 CHEF_SERVER_USER="${CHEF_SERVER_USER:-testadmin}"
@@ -109,8 +108,6 @@ NODE_SSL_VERIFY_MODE="${NODE_SSL_VERIFY_MODE:-}"
 AZURE_TENANT="${AZURE_TENANT:-}"
 AZURE_SUBSCRIPTION="${AZURE_SUBSCRIPTION:-}"
 AZURE_USE_DEVICE_CODE="${AZURE_USE_DEVICE_CODE:-false}"
-AZURE_SERVICE_PRINCIPAL="${AZURE_SERVICE_PRINCIPAL:-}"
-AZURE_SERVICE_PRINCIPAL_PASSWORD="${AZURE_SERVICE_PRINCIPAL_PASSWORD:-}"
 
 LINUX_VM="${LINUX_VM:-chef-test-linux}"
 WINDOWS_VM="${WINDOWS_VM:-chef-test-windows}"
@@ -265,8 +262,6 @@ while [[ $# -gt 0 ]]; do
     --azure-tenant)            AZURE_TENANT="$2";             shift 2 ;;
     --azure-subscription)      AZURE_SUBSCRIPTION="$2";       shift 2 ;;
     --azure-use-device-code)   AZURE_USE_DEVICE_CODE=true;    shift ;;
-    --azure-service-principal)          AZURE_SERVICE_PRINCIPAL="$2";          shift 2 ;;
-    --azure-service-principal-password) AZURE_SERVICE_PRINCIPAL_PASSWORD="$2"; shift 2 ;;
     --resource-group)          RESOURCE_GROUP="$2";           shift 2 ;;
     --location)                LOCATION="$2";                 shift 2 ;;
     --node-name)               NODE_NAME="$2";                shift 2 ;;
@@ -279,6 +274,7 @@ while [[ $# -gt 0 ]]; do
     --local-ext)               LOCAL_EXT=true;                shift ;;
     --platform)                PLATFORM="$2";                 shift 2 ;;
     --skip-cleanup)            SKIP_CLEANUP=true;             shift ;;
+    --debug)                   DEBUG=true;                    shift ;;
     --ssh-public-key-path)     SSH_PUBLIC_KEY_PATH="$2";      shift 2 ;;
     --help|-h)                 usage ;;
     *) fail "Unknown option: $1" ;;
@@ -293,15 +289,6 @@ command -v jq  &>/dev/null || fail "jq not found — install with: brew install 
 [[ -f "${SSH_PUBLIC_KEY_PATH}" ]] || fail "SSH public key not found: ${SSH_PUBLIC_KEY_PATH}"
 
 azure_login() {
-  if [[ -n "${AZURE_SERVICE_PRINCIPAL}" ]]; then
-    [[ -n "${AZURE_TENANT}" ]] || fail "AZURE_TENANT is required when AZURE_SERVICE_PRINCIPAL is set."
-    az login --service-principal \
-      --username "${AZURE_SERVICE_PRINCIPAL}" \
-      --password "${AZURE_SERVICE_PRINCIPAL_PASSWORD}" \
-      --tenant "${AZURE_TENANT}" \
-      --output none || fail "Azure service-principal login failed. Check AZURE_SERVICE_PRINCIPAL/AZURE_SERVICE_PRINCIPAL_PASSWORD/AZURE_TENANT."
-    return
-  fi
   local -a login_cmd=(az login --output none)
   [[ -n "${AZURE_TENANT}" ]] && login_cmd+=(--tenant "${AZURE_TENANT}")
   [[ "${AZURE_USE_DEVICE_CODE}" == "true" ]] && login_cmd+=(--use-device-code)
@@ -311,12 +298,6 @@ azure_login() {
 if ! az account show &>/dev/null; then
   info "Not logged in to Azure. Launching 'az login'..."
   azure_login
-elif [[ -n "${AZURE_SERVICE_PRINCIPAL}" ]]; then
-  CURRENT_ACCOUNT="$(az account show --query user.name -o tsv 2>/dev/null || true)"
-  if [[ "${CURRENT_ACCOUNT}" != "${AZURE_SERVICE_PRINCIPAL}" ]]; then
-    info "Logging in as service principal ${AZURE_SERVICE_PRINCIPAL}..."
-    azure_login
-  fi
 elif [[ -n "${AZURE_TENANT}" ]]; then
   CURRENT_TENANT="$(az account show --query tenantId -o tsv 2>/dev/null || true)"
   if [[ "${CURRENT_TENANT}" != "${AZURE_TENANT}" ]]; then
@@ -427,22 +408,37 @@ provision_chef_server() {
   az vm open-port -g "${RESOURCE_GROUP}" -n "${CHEF_SERVER_VM}" --port 443 --priority 1010 --output none
 
   info "Installing Chef Server ${CHEF_SERVER_VERSION} (this can take several minutes)..."
-  az vm run-command invoke \
+  local install_output install_set_opts="set -eu"
+  [[ "${DEBUG}" == "true" ]] && install_set_opts="set -eux"
+  install_output="$(az vm run-command invoke \
     -g "${RESOURCE_GROUP}" \
     --name "${CHEF_SERVER_VM}" \
     --command-id RunShellScript \
-    --scripts "set -euo pipefail" \
+    --scripts "${install_set_opts}" \
               "cd /tmp" \
-              "sudo apt-get update -y" \
-              "sudo apt-get install -y ruby-full curl" \
+              "for i in 1 2 3; do sudo apt-get update -y && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y ruby-full curl && break || { echo \"apt attempt \$i failed, retrying...\"; sleep 5; }; [ \"\$i\" = 3 ] && exit 1; done" \
               "sudo gem install --no-document mixlib-install" \
               "sudo mixlib-install download chef-server -c stable -a x86_64 -p ubuntu -l 22.04 -v ${CHEF_SERVER_VERSION}" \
               "PKG=\$(ls -1t /tmp/chef-server-core_*.deb | head -1)" \
               "sudo dpkg -i \"\${PKG}\" || sudo apt-get install -f -y" \
-              "sudo chef-server-ctl reconfigure" \
-              "sudo chef-server-ctl user-create '${CHEF_SERVER_USER}' 'Test' 'Admin' '${CHEF_SERVER_USER_EMAIL}' '${CHEF_SERVER_USER_PASSWORD}' --filename '/tmp/${CHEF_SERVER_USER}.pem'" \
-              "sudo chef-server-ctl org-create '${CHEF_SERVER_ORG}' '${CHEF_SERVER_ORG_FULL_NAME}' --association_user '${CHEF_SERVER_USER}' --filename '/tmp/${CHEF_SERVER_ORG}-validator.pem'" \
-    --output none
+              "sudo chef-server-ctl reconfigure --chef-license accept" \
+              "for i in 1 2 3; do sudo chef-server-ctl user-create '${CHEF_SERVER_USER}' 'Test' 'Admin' '${CHEF_SERVER_USER_EMAIL}' '${CHEF_SERVER_USER_PASSWORD}' --filename '/tmp/${CHEF_SERVER_USER}.pem' && break || { echo \"user-create attempt \$i failed (server may still be starting up), retrying...\"; sleep 10; }; [ \"\$i\" = 3 ] && exit 1; done" \
+              "for i in 1 2 3; do sudo chef-server-ctl org-create '${CHEF_SERVER_ORG}' '${CHEF_SERVER_ORG_FULL_NAME}' --association_user '${CHEF_SERVER_USER}' --filename '/tmp/${CHEF_SERVER_ORG}-validator.pem' && break || { echo \"org-create attempt \$i failed, retrying...\"; sleep 10; }; [ \"\$i\" = 3 ] && exit 1; done" \
+              "echo CHEF_SERVER_INSTALL_DONE" \
+    --query "value[0].message" -o tsv)"
+
+  # az run-command doesn't propagate the script's exit code (only success/failure of
+  # the run-command mechanism itself), so detect real failure via our sentinel line.
+  if ! grep -q "CHEF_SERVER_INSTALL_DONE" <<<"${install_output}"; then
+    warn "Chef Server install script did not complete; output:"
+    if [[ "${DEBUG}" == "true" ]]; then
+      printf '%s\n' "${install_output}" >&2
+    else
+      printf '%s\n' "${install_output}" | tail -n 40 >&2
+      warn "(showing last 40 lines; re-run with --debug for full output and shell tracing)"
+    fi
+    fail "Chef Server installation failed on '${CHEF_SERVER_VM}'"
+  fi
 
   local chef_server_ip
   chef_server_ip="$(az vm show -d -g "${RESOURCE_GROUP}" -n "${CHEF_SERVER_VM}" --query "publicIps" -o tsv)"
@@ -453,18 +449,23 @@ provision_chef_server() {
   VALIDATION_PEM="${TMPDIR_CONFIGS}/${CHEF_SERVER_ORG}-validator.pem"
   NODE_SSL_VERIFY_MODE="verify_none"
 
-  local validator_pem_b64
-  validator_pem_b64="$(az vm run-command invoke \
+  local fetch_pem_raw validator_pem_b64 validator_pem_stderr
+  fetch_pem_raw="$(az vm run-command invoke \
     -g "${RESOURCE_GROUP}" \
     --name "${CHEF_SERVER_VM}" \
     --command-id RunShellScript \
     --scripts "sudo base64 -w 0 /tmp/${CHEF_SERVER_ORG}-validator.pem" \
-    --query "value[0].message" -o tsv | tr -d '\r\n')"
+    --query "value[0].message" -o tsv)"
+  validator_pem_b64="$(printf '%s\n' "${fetch_pem_raw}" | sed -n '/^\[stdout\]$/,/^\[stderr\]$/p' | sed '1d;$d' | tr -d '\r\n')"
+  validator_pem_stderr="$(printf '%s\n' "${fetch_pem_raw}" | sed -n '/^\[stderr\]$/,$p' | sed '1d')"
 
   python3 -c "import base64,sys; open(sys.argv[1], 'wb').write(base64.b64decode(sys.argv[2]))" \
     "${VALIDATION_PEM}" "${validator_pem_b64}"
 
-  [[ ! -s "${VALIDATION_PEM}" ]] && fail "Failed to retrieve validator PEM from Chef Server VM"
+  if [[ ! -s "${VALIDATION_PEM}" ]]; then
+    [[ -n "${validator_pem_stderr}" ]] && warn "Remote error fetching validator PEM: ${validator_pem_stderr}"
+    fail "Failed to retrieve validator PEM from Chef Server VM (org-create may have failed on the VM)"
+  fi
   success "Chef Server ready at ${CHEF_SERVER_URL}"
 }
 

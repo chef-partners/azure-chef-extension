@@ -44,8 +44,6 @@ bash testing/test-azure-extension.sh \
 | `--azure-tenant` | *(none)* | Azure tenant ID to log into/use |
 | `--azure-subscription` | *(none)* | Azure subscription ID or name to select before provisioning |
 | `--azure-use-device-code` | *(false)* | Use `az login --use-device-code` (useful when MFA blocks browser login) |
-| `--azure-service-principal` | *(none)* | Log in as this service principal (app ID) instead of interactive/device-code SSO — use when the target tenant isn't reachable via your SSO account. Requires `--azure-tenant` |
-| `--azure-service-principal-password` | *(none)* | Password/secret for `--azure-service-principal` |
 | `--resource-group` | `chef-ext-test-rg` | Azure resource group |
 | `--location` | `eastus` | Azure region |
 | `--node-name` | `az-ext-test-node` | Chef node name registered on bootstrap |
@@ -54,6 +52,7 @@ bash testing/test-azure-extension.sh \
 | `--extension-version` | `1210.14` | Extension version to install (pinned exactly via `--no-auto-upgrade-minor-version` — required for internal test publishes since patch bumps like `1.5.1`→`1.5.2` share the same major.minor and Azure would otherwise auto-resolve to whatever it considers latest) |
 | `--platform` | `linux` | `linux` (Ubuntu 22.04), `rhel8`, `rhel10`, `windows`, or `both` (Ubuntu + Windows) |
 | `--skip-cleanup` | *(false)* | Leave Azure resources intact after the test |
+| `--debug` | *(false)* | Enable shell tracing (`set -x`) on remote install scripts and print full, untruncated command output on failure |
 | `--ssh-public-key-path` | `~/.ssh/id_rsa.pub` | Public key uploaded to Linux VMs so you can SSH in later |
 
 ### Examples
@@ -102,17 +101,6 @@ bash testing/test-azure-extension.sh \
   --azure-tenant "a2b2d6bc-afe1-4696-9c37-f97a7ac416d7" \
   --azure-use-device-code \
   --azure-subscription "<subscription-id-or-name>"
-```
-
-**Service principal login (tenant not reachable via SSO):**
-```bash
-bash testing/test-azure-extension.sh \
-  --chef-server-url "https://api.chef.io/organizations/myorg" \
-  --validation-client-name "myorg-validator" \
-  --validation-pem ~/.chef/myorg-validator.pem \
-  --azure-tenant "<tenant-id>" \
-  --azure-service-principal "<app-id>" \
-  --azure-service-principal-password "<password>"
 ```
 
 **Test local extension code directly (no publish needed), RHEL 10:**
