@@ -211,7 +211,21 @@ function Install-ChefClient {
     }
   }
   if ($project -eq "chef-ice") {
-    $env:Path = "C:\hab\bin;" + $env:Path
+    # Habitat packages don't binlink dependency executables - C:\hab\bin only
+    # has hab.exe itself. ruby/gem for chef-ice live in the separate
+    # core/ruby* runtime-dependency package, so find and add its bin dir too
+    # (mirrors the equivalent Linux /hab/pkgs/core/ruby* fix).
+    # ponytail: naive newest-version pick via sort; switch to `hab pkg path core/ruby3_4` if hab's guaranteed on PATH.
+    $ruby_bin = Get-ChildItem -Path "C:\hab\pkgs\core" -Filter "ruby*" -Directory -ErrorAction SilentlyContinue |
+      Sort-Object Name |
+      ForEach-Object { Get-ChildItem -Path $_.FullName -Recurse -Filter "ruby.exe" -ErrorAction SilentlyContinue } |
+      Select-Object -Last 1 |
+      ForEach-Object { $_.DirectoryName }
+    if ($ruby_bin) {
+      $env:Path = "$ruby_bin;C:\hab\bin;" + $env:Path
+    } else {
+      $env:Path = "C:\hab\bin;" + $env:Path
+    }
   } else {
     $env:Path = "C:\opscode\chef\bin;C:\opscode\chef\embedded\bin;" + $env:Path
   }
