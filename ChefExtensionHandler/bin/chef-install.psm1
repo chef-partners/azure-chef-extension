@@ -59,8 +59,27 @@ function Install-ChefClient {
   while (-not $completed) {
     echo "Checking Chef Infra Client ..."
     Try {
-      ## Get chef_pkg by matching "chef client" string with $_.Name
-      $chef_pkg = Get-ChefPackage
+      ## Resolve requested version/product *before* checking what's already
+      ## installed, so an older Chef Client already on the box (e.g. baked
+      ## into the image) doesn't cause a newer requested bootstrap_version
+      ## to be silently ignored.
+      $chef_package_version = Get-PublicSettings-From-Config-Json "bootstrap_version" $powershellVersion
+      if (-Not $chef_package_version) {
+        $chef_package_version = "latest"
+      }
+      $requested_major = $null
+      if ($chef_package_version -ne "latest") {
+        $requested_major = ($chef_package_version -split '\.')[0] -as [int]
+      }
+      ## Get chef_pkg by matching "chef client" string with $_.Name, and
+      ## matching the requested major version (if one was requested) so a
+      ## stale install of a different major version doesn't short-circuit
+      ## the download below.
+      $chef_pkg = Get-ChefPackage | Where-Object {
+        if ($null -eq $requested_major) { return $true }
+        $installed_major = ($_.DisplayVersion -split '\.')[0] -as [int]
+        $installed_major -eq $requested_major
+      }
       ## Get chef_licence value from config file.
       $chef_licence_value = Get-PublicSettings-From-Config-Json "CHEF_LICENSE" $powershellVersion
       if ( $chef_licence_value )
@@ -89,12 +108,7 @@ function Install-ChefClient {
       }
       if (-Not $chef_pkg -and -Not $chef_downloaded_package -and -Not $chef_package_url) {
         echo "Downloading Chef Infra Client ..."
-        $chef_package_version = Get-PublicSettings-From-Config-Json "bootstrap_version" $powershellVersion
         $chef_package_channel = Get-PublicSettings-From-Config-Json "bootstrap_channel" $powershellVersion
-
-        if (-Not $chef_package_version) {
-          $chef_package_version = "latest" 
-        }
         if (-Not $chef_package_channel) {
           $chef_package_channel = "stable"
         }
@@ -103,7 +117,7 @@ function Install-ChefClient {
         # chef-ice in a future release and this keeps the extension's behaviour stable.
         $project = "chef"
         if ($chef_package_version -ne "latest") {
-          $major = ($chef_package_version -split '\.')[0] -as [int]
+          $major = $requested_major
           if ($major -ge 19) {
             if (-not $chef_license_key) {
               Write-Error "chef-ice (v>=19) requires a license key - set chef_license_key in extension settings"
