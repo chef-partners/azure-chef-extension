@@ -17,6 +17,12 @@ $scriptDir = Chef-GetScriptDirectory
 function Install-AzureChefExtensionGem($chefExtensionRoot) {
   # Install the custom gem
   Write-Host("[$(Get-Date)] Installing Azure-Chef-Extension gem")
+  # chef-ice (Habitat) fallback: gem lives under C:\hab\pkgs\..., not the
+  # omnibus location this script normally relies on being on PATH already.
+  if (-not (Get-Command gem -ErrorAction SilentlyContinue)) {
+    $habRubyBin = Get-ChildItem -Path "C:\hab\pkgs\core\ruby*\*\*\bin\gem.cmd" -ErrorAction SilentlyContinue | Sort-Object FullName | Select-Object -Last 1 | ForEach-Object { Split-Path $_.FullName }
+    if ($habRubyBin) { $env:Path = "$habRubyBin;$env:Path" }
+  }
   gem install "$chefExtensionRoot\\gems\\*.gem" --local --no-document
   Write-Host("[$(Get-Date)] Installed Azure-Chef-Extension gem successfully")
 }
@@ -27,7 +33,12 @@ function Chef-GetExtensionRoot {
 }
 
 function Get-ChefPackage {
-  Get-ItemProperty HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\* | Where -Property DisplayName -CLike "Chef *Client*"
+  # chef-ice registers as "Chef Infra (air-gapped) - chef-ice" (no "Client" in the
+  # name), so it never matched the omnibus-only pattern below. Without this,
+  # chef-ice is never detected as already installed and every re-run of
+  # Install-ChefClient attempts a fresh MSI install over the existing one,
+  # colliding with the already-created product/account (MSI Error 1316).
+  Get-ItemProperty HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\* | Where-Object { $_.DisplayName -CLike "Chef *Client*" -or $_.DisplayName -CLike "Chef Infra*chef-ice*" }
 }
 
 function Read-Environment-Variables {
