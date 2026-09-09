@@ -110,10 +110,11 @@ function Install-ChefClient {
       $chef_package_url = Get-PublicSettings-From-Config-Json "chef_package_url" $powershellVersion
       ## Get locally downloaded msi path string from config file.
       $chef_downloaded_package = Get-PublicSettings-From-Config-Json "chef_package_path" $powershellVersion
-      $daemon = Get-PublicSettings-From-Config-Json "daemon"  $powershellVersion
-      if ( $daemon -eq "none" ) {
-        $daemon = "auto"
+      $daemon_setting = Get-PublicSettings-From-Config-Json "daemon"  $powershellVersion
+      if ( $daemon_setting -eq "none" ) {
+        $daemon_setting = "auto"
       }
+      $daemon = $daemon_setting
       if (-Not $daemon) {
         $daemon = "task"
       }
@@ -136,6 +137,15 @@ function Install-ChefClient {
             }
             $project = "chef-ice"
           }
+        }
+        # install.ps1's "task"/"service" daemon modes pass ADDLOCAL="ChefClientFeature,..."
+        # to msiexec - legacy omnibus MSI feature names that chef-ice's Habitat-packaged
+        # MSI doesn't define, so msiexec fails with error 2711 (exit 1603) before
+        # chef-ice is ever installed. Default chef-ice to "auto" (no ADDLOCAL) unless
+        # a daemon setting was explicitly requested.
+        # ponytail: revisit once chef-ice's MSI exposes equivalent scheduled-task feature ids.
+        if ($project -eq "chef-ice" -and -Not $daemon_setting) {
+          $daemon = "auto"
         }
 
         # chefdownload-commercial.chef.io requires license_id on the install.ps1 fetch
