@@ -244,10 +244,15 @@ function Get-PublicSettings-From-Config-Json($key, $powershellVersion) {
     }
     if ( $powershellVersion -ge 3 ) {
       $value = ($normalized_json | ConvertFrom-Json | Select -expand runtimeSettings | Select -expand handlerSettings | Select -expand publicSettings).$key
+      # Fall back to the legacy bootstrap_options nested location for settings
+      # (e.g. bootstrap_version) that older/Linux-parity configs nest there
+      # instead of at the top level of publicSettings.
+      if (-not $value) { $value = ($normalized_json | ConvertFrom-Json | Select -expand runtimeSettings | Select -expand handlerSettings | Select -expand publicSettings).bootstrap_options.$key }
     }
     else {
       $ser = New-Object System.Web.Script.Serialization.JavaScriptSerializer
       $value = $ser.DeserializeObject($normalized_json).runtimeSettings[0].handlerSettings.publicSettings.$key
+      if (-not $value) { $value = $ser.DeserializeObject($normalized_json).runtimeSettings[0].handlerSettings.publicSettings.bootstrap_options.$key }
     }
     $value
   }

@@ -231,6 +231,16 @@ _chef_bindir=$(dirname "$_chef_bin_real")
 case "$_chef_bindir" in
   /opt/chef/bin) export PATH="/opt/chef/bin:/opt/chef/embedded/bin:$PATH" ;;
   /usr/bin) ;; # genuinely installed straight into /usr/bin; already in PATH
+  /hab/pkgs/*)
+    # Habitat packages (chef-infra-client and chef-ice) don't binlink their
+    # runtime deps, so `gem` lives in the separate core/ruby* package, not
+    # alongside chef-client. Find it and add it too.
+    # ponytail: naive `ls | sort -V | tail -1` picks the newest installed
+    # ruby package; switch to `hab pkg path core/ruby3_4` if hab's guaranteed on PATH.
+    _ruby_bin=$(ls /hab/pkgs/core/ruby*/*/*/bin/gem 2>/dev/null | sort -V | tail -1)
+    [ -n "$_ruby_bin" ] && export PATH="$(dirname "$_ruby_bin"):$PATH"
+    export PATH="$_chef_bindir:$PATH"
+    ;;
   *) export PATH="$_chef_bindir:$PATH" ;;
 esac
 

@@ -17,6 +17,12 @@ $scriptDir = Chef-GetScriptDirectory
 function Install-AzureChefExtensionGem($chefExtensionRoot) {
   # Install the custom gem
   Write-Host("[$(Get-Date)] Installing Azure-Chef-Extension gem")
+  # chef-ice (Habitat) fallback: gem lives under C:\hab\pkgs\..., not the
+  # omnibus location this script normally relies on being on PATH already.
+  if (-not (Get-Command gem -ErrorAction SilentlyContinue)) {
+    $habRubyBin = Get-ChildItem -Path "C:\hab\pkgs\core\ruby*\*\*\bin\gem.cmd" -ErrorAction SilentlyContinue | Sort-Object FullName | Select-Object -Last 1 | ForEach-Object { Split-Path $_.FullName }
+    if ($habRubyBin) { $env:Path = "$habRubyBin;$env:Path" }
+  }
   gem install "$chefExtensionRoot\\gems\\*.gem" --local --no-document
   Write-Host("[$(Get-Date)] Installed Azure-Chef-Extension gem successfully")
 }
@@ -27,7 +33,12 @@ function Chef-GetExtensionRoot {
 }
 
 function Get-ChefPackage {
-  Get-ItemProperty HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\* | Where -Property DisplayName -CLike "Chef *Client*"
+  # chef-ice registers as "Chef Infra (air-gapped) - chef-ice" (no "Client" in the
+  # name), so it never matched the omnibus-only pattern below. Without this,
+  # chef-ice is never detected as already installed and every re-run of
+  # Install-ChefClient attempts a fresh MSI install over the existing one,
+  # colliding with the already-created product/account (MSI Error 1316).
+  Get-ItemProperty HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\* | Where-Object { $_.DisplayName -CLike "Chef *Client*" -or $_.DisplayName -CLike "Chef Infra*chef-ice*" }
 }
 
 function Read-Environment-Variables {
@@ -59,8 +70,27 @@ function Install-ChefClient {
   while (-not $completed) {
     echo "Checking Chef Infra Client ..."
     Try {
-      ## Get chef_pkg by matching "chef client" string with $_.Name
-      $chef_pkg = Get-ChefPackage
+      ## Resolve requested version/product *before* checking what's already
+      ## installed, so an older Chef Client already on the box (e.g. baked
+      ## into the image) doesn't cause a newer requested bootstrap_version
+      ## to be silently ignored.
+      $chef_package_version = Get-PublicSettings-From-Config-Json "bootstrap_version" $powershellVersion
+      if (-Not $chef_package_version) {
+        $chef_package_version = "latest"
+      }
+      $requested_major = $null
+      if ($chef_package_version -ne "latest") {
+        $requested_major = ($chef_package_version -split '\.')[0] -as [int]
+      }
+      ## Get chef_pkg by matching "chef client" string with $_.Name, and
+      ## matching the requested major version (if one was requested) so a
+      ## stale install of a different major version doesn't short-circuit
+      ## the download below.
+      $chef_pkg = Get-ChefPackage | Where-Object {
+        if ($null -eq $requested_major) { return $true }
+        $installed_major = ($_.DisplayVersion -split '\.')[0] -as [int]
+        $installed_major -eq $requested_major
+      }
       ## Get chef_licence value from config file.
       $chef_licence_value = Get-PublicSettings-From-Config-Json "CHEF_LICENSE" $powershellVersion
       if ( $chef_licence_value )
@@ -89,12 +119,7 @@ function Install-ChefClient {
       }
       if (-Not $chef_pkg -and -Not $chef_downloaded_package -and -Not $chef_package_url) {
         echo "Downloading Chef Infra Client ..."
-        $chef_package_version = Get-PublicSettings-From-Config-Json "bootstrap_version" $powershellVersion
         $chef_package_channel = Get-PublicSettings-From-Config-Json "bootstrap_channel" $powershellVersion
-
-        if (-Not $chef_package_version) {
-          $chef_package_version = "latest" 
-        }
         if (-Not $chef_package_channel) {
           $chef_package_channel = "stable"
         }
@@ -103,7 +128,7 @@ function Install-ChefClient {
         # chef-ice in a future release and this keeps the extension's behaviour stable.
         $project = "chef"
         if ($chef_package_version -ne "latest") {
-          $major = ($chef_package_version -split '\.')[0] -as [int]
+          $major = $requested_major
           if ($major -ge 19) {
             if (-not $chef_license_key) {
               Write-Error "chef-ice (v>=19) requires a license key - set chef_license_key in extension settings"
@@ -197,7 +222,21 @@ function Install-ChefClient {
     }
   }
   if ($project -eq "chef-ice") {
-    $env:Path = "C:\hab\bin;" + $env:Path
+    # Habitat packages don't binlink dependency executables - C:\hab\bin only
+    # has hab.exe itself. ruby/gem for chef-ice live in the separate
+    # core/ruby* runtime-dependency package, so find and add its bin dir too
+    # (mirrors the equivalent Linux /hab/pkgs/core/ruby* fix).
+    # ponytail: naive newest-version pick via sort; switch to `hab pkg path core/ruby3_4` if hab's guaranteed on PATH.
+    $ruby_bin = Get-ChildItem -Path "C:\hab\pkgs\core" -Filter "ruby*" -Directory -ErrorAction SilentlyContinue |
+      Sort-Object Name |
+      ForEach-Object { Get-ChildItem -Path $_.FullName -Recurse -Filter "ruby.exe" -ErrorAction SilentlyContinue } |
+      Select-Object -Last 1 |
+      ForEach-Object { $_.DirectoryName }
+    if ($ruby_bin) {
+      $env:Path = "$ruby_bin;C:\hab\bin;" + $env:Path
+    } else {
+      $env:Path = "C:\hab\bin;" + $env:Path
+    }
   } else {
     $env:Path = "C:\opscode\chef\bin;C:\opscode\chef\embedded\bin;" + $env:Path
   }
