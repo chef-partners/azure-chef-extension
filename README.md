@@ -164,7 +164,7 @@ $vmObj1 = Add-AzureProvisioningConfig -VM $vmObj1 -Password $password -AdminUser
 
 # use the shared config files
 # ExtensionName = ChefClient(for windows), LinuxChefClient (for ubuntu and centos)
-$vObj1 = Set-AzureVMExtension -VM $vmObj1 -ExtensionName ‘ChefClient’ -Publisher ‘Chef.Bootstrap.WindowsAzure’ -Version 1210.12 -PublicConfigPath '<your path to publiconfig.config>' -PrivateConfigPath '<your path to privateconfig.config>'
+$vObj1 = Set-AzureVMExtension -VM $vmObj1 -ExtensionName ‘ChefClient’ -Publisher ‘Chef.Bootstrap.WindowsAzure’ -Version 1210.15.10 -PublicConfigPath '<your path to publiconfig.config>' -PrivateConfigPath '<your path to privateconfig.config>'
 
 New-AzureVM -Location 'West US' -ServiceName $svc -VM $vObj1
 
@@ -173,11 +173,11 @@ New-AzureVM -Location 'West US' -ServiceName $svc -VM $vObj1
 
 #### Updating Extension manually
 
-1. Suppose you have a VM with extension version 1205.12
+1. Suppose you have a VM with extension version 1210.14.1.2
 2. `$vmm = Get-AzureVM -Name "<vm-name>" -ServiceName "<cloud-service-name>"`
-3. Update to latest version- Ex- 1206.12
+3. Update to latest version- Ex- 1210.15.10
 ```
-$vmOb = Set-AzureVMExtension -VM $vmm -ExtensionName 'ChefClient' -Publisher ‘Chef.Bootstrap.WindowsAzure’ -Version '1206.12' -PublicConfigPath 'path\\to\\publicconfig.config' -PrivateConfigPath 'path\\to\\privateconfig.config'
+$vmOb = Set-AzureVMExtension -VM $vmm -ExtensionName 'ChefClient' -Publisher ‘Chef.Bootstrap.WindowsAzure’ -Version '1210.15.10' -PublicConfigPath 'path\\to\\publicconfig.config' -PrivateConfigPath 'path\\to\\privateconfig.config'
 
 Update-AzureVM -VM $vmOb.VM -Name "<vm-name>" -ServiceName "<cloud-service-name>
 ```
@@ -191,7 +191,7 @@ Update-AzureVM -VM $vmOb.VM -Name "<vm-name>" -ServiceName "<cloud-service-name>
   - `bootstrap_channel`: Specify the channel for installing chef client version from `stable`, `current` or `unstable` release channel.
   - `chef_package_path`: chef_package_path allows installing chef-client from local path. We provided this option so that user is able to install chef-client from the local path. This feature mainly added where there is restrictions on internet access. But also note azure extensions itself has limitations in respect of network access please refer to this [link](https://docs.microsoft.com/en-us/azure/virtual-machines/extensions/features-linux#network-access) which explains this in details.
   - `CHEF_LICENSE`: Affected product versions which require accepting the CHEF EULA license (requires chef 15 + ). Set `CHEF_LICENSE` with either of these values `accept`, `accept-silent` or `accept-no-persist`. Refer to [CHEF EULA license](https://docs.chef.io/chef_license_accept/#accept-the-chef-eula)
-  - `chef_license_key`: Optional Chef license key for licensed downloads. Set this in the extension's public settings as a raw JSON string value. The handler automatically exports it as `CHEF_LICENSE_KEY` before invoking the installer, enabling authenticated access to licensed Chef Infra Client packages.
+  - `chef_license_key`: Your Chef license key, required by default for downloading Chef Infra Client. Set this as a raw JSON string in the extension's public settings, alongside `CHEF_LICENSE`. The extension exports it as `CHEF_LICENSE_KEY` before running the installer and downloads packages from `chefdownload-commercial.chef.io`.
   - `hints`: Specifies the Ohai Hints to be set in the Ohai configuration of the target node.
   - `chef_package_url`: Specifies a url to download Chef Infra Client package (.msi .rpm .deb) and subsequently install.
   Example:
@@ -213,7 +213,7 @@ Update-AzureVM -VM $vmOb.VM -Name "<vm-name>" -ServiceName "<cloud-service-name>
     "properties": {
       "publisher": "Chef.Bootstrap.WindowsAzure",
       "type": "LinuxChefClient",
-      "typeHandlerVersion": "1210.12",
+      "typeHandlerVersion": "1210.15.10",
       "settings": {
         "bootstrap_options": {
           "chef_node_name": "[parameters('chef_node_name')]",
