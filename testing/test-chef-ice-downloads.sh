@@ -31,7 +31,7 @@
 #   --location <region>            Azure region (default: eastus)
 #   --node-name <name>             Chef node name (default: az-ice-test-node)
 #   --runlist <runlist>            Chef run list (default: recipe[base])
-#   --extension-version <ver>      Marketplace extension version (default: 1210.14)
+#   --extension-version <ver>      Marketplace extension version to pin (default: unset, latest)
 #   --azure-tenant <id>            Azure tenant ID
 #   --azure-subscription <id>      Azure subscription ID or name
 #   --azure-use-device-code        Use device code auth for az login
@@ -72,7 +72,7 @@ RESOURCE_GROUP="${RESOURCE_GROUP:-chef-ice-test-rg}"
 LOCATION="${LOCATION:-eastus}"
 NODE_NAME="${NODE_NAME:-az-ice-test-node}"
 RUNLIST="${RUNLIST:-recipe[base]}"
-EXTENSION_VERSION="${EXTENSION_VERSION:-1210.14}"
+EXTENSION_VERSION="${EXTENSION_VERSION:-}"
 AZURE_TENANT="${AZURE_TENANT:-}"
 AZURE_SUBSCRIPTION="${AZURE_SUBSCRIPTION:-}"
 AZURE_USE_DEVICE_CODE="${AZURE_USE_DEVICE_CODE:-false}"
@@ -522,12 +522,14 @@ az vm create \
   --output none
 pass "VM '${LINUX_VM}' created"
 
-info "Installing LinuxChefClient extension v${EXTENSION_VERSION} (marketplace run provides gem + settings)..."
+info "Installing LinuxChefClient extension ${EXTENSION_VERSION:-latest} (marketplace run provides gem + settings)..."
+EXT_VERSION_ARGS=()
+[[ -n "${EXTENSION_VERSION}" ]] && EXT_VERSION_ARGS=(--version "${EXTENSION_VERSION}")
 az vm extension set \
   -g "${RESOURCE_GROUP}" --vm-name "${LINUX_VM}" \
   --name LinuxChefClient \
   --publisher Chef.Bootstrap.WindowsAzure \
-  --version "${EXTENSION_VERSION}" \
+  ${EXT_VERSION_ARGS[@]+"${EXT_VERSION_ARGS[@]}"} \
   --settings "${PUBCONFIG}" \
   --protected-settings "${PRIVCONFIG}" \
   --output none || warn "Marketplace extension reported failure (expected — local code will override)"
