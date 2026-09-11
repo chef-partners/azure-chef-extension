@@ -35,7 +35,7 @@
 #   --license-key <key>        Chef license key for licensed downloads
 #   --license-bypass           Explicitly opt into the deprecated, unlicensed omnitruck
 #                              download path (extension requires a license key otherwise)
-#   --extension-version <ver>  Extension version (default: 1210.14)
+#   --extension-version <ver>  Extension version to pin (default: unset, marketplace latest)
 #   --chef-infra-version <ver> Chef Infra Client version to install (e.g. 18.10.17); omit for latest
 #   --chef-infra-channel <ch>  Install channel: stable (default), current, unstable
 #   --local-ext                After marketplace install (for gem + config setup), upload local
@@ -85,7 +85,7 @@ NODE_NAME="${NODE_NAME:-az-ext-test-node}"
 RUNLIST="${RUNLIST:-recipe[base]}"
 LICENSE_KEY="${LICENSE_KEY:-}"
 LICENSE_BYPASS="${LICENSE_BYPASS:-false}"
-EXTENSION_VERSION="${EXTENSION_VERSION:-1210.14}"
+EXTENSION_VERSION="${EXTENSION_VERSION:-}"
 CHEF_INFRA_VERSION="${CHEF_INFRA_VERSION:-}"
 CHEF_INFRA_CHANNEL="${CHEF_INFRA_CHANNEL:-}"
 LOCAL_EXT="${LOCAL_EXT:-false}"
@@ -128,6 +128,14 @@ fail()    { echo -e "\033[0;31m[FAIL]\033[0m  $*" >&2; exit 1; }
 log_license_key_metadata() {
   [[ -z "${LICENSE_KEY}" ]] && return
   info "License key provided (length: ${#LICENSE_KEY} characters)"
+}
+
+# Populates EXT_VERSION_ARGS with --version/--no-auto-upgrade-minor-version
+# when a specific EXTENSION_VERSION was requested; leaves it empty otherwise
+# so `az vm extension set` installs whatever the marketplace considers latest.
+build_extension_version_args() {
+  EXT_VERSION_ARGS=()
+  [[ -n "${EXTENSION_VERSION}" ]] && EXT_VERSION_ARGS=(--version "${EXTENSION_VERSION}" --no-auto-upgrade-minor-version)
 }
 
 verify_linux_validator_key_checksum() {
@@ -825,7 +833,8 @@ test_linux() {
     --output none
   success "VM '${LINUX_VM}' created"
 
-  info "Installing LinuxChefClient extension (v${EXTENSION_VERSION})..."
+  info "Installing LinuxChefClient extension (${EXTENSION_VERSION:-latest})..."
+  build_extension_version_args
   # With --local-ext the marketplace run may fail (e.g. Chef version requires license);
   # that's OK — we only need it to install the gem and write config/0.settings.
   if [[ "${LOCAL_EXT}" == "true" ]]; then
@@ -834,8 +843,7 @@ test_linux() {
       --vm-name "${LINUX_VM}" \
       --name LinuxChefClient \
       --publisher Chef.Bootstrap.WindowsAzure \
-      --version "${EXTENSION_VERSION}" \
-      --no-auto-upgrade-minor-version \
+      ${EXT_VERSION_ARGS[@]+"${EXT_VERSION_ARGS[@]}"} \
       --settings "${PUBCONFIG}" \
       --protected-settings "${PRIVCONFIG}" \
       --output none || warn "Marketplace extension reported failure (expected when using --local-ext); continuing to patch with local code"
@@ -845,8 +853,7 @@ test_linux() {
       --vm-name "${LINUX_VM}" \
       --name LinuxChefClient \
       --publisher Chef.Bootstrap.WindowsAzure \
-      --version "${EXTENSION_VERSION}" \
-      --no-auto-upgrade-minor-version \
+      ${EXT_VERSION_ARGS[@]+"${EXT_VERSION_ARGS[@]}"} \
       --settings "${PUBCONFIG}" \
       --protected-settings "${PRIVCONFIG}" \
       --output none
@@ -927,7 +934,8 @@ test_windows() {
     --output none
   success "VM '${WINDOWS_VM}' created"
 
-  info "Installing ChefClient extension (v${EXTENSION_VERSION})..."
+  info "Installing ChefClient extension (${EXTENSION_VERSION:-latest})..."
+  build_extension_version_args
   # With --local-ext the marketplace run may fail (e.g. Chef version requires license);
   # that's OK — we only need it to install the gem and write RuntimeSettings/*.settings.
   if [[ "${LOCAL_EXT}" == "true" ]]; then
@@ -936,8 +944,7 @@ test_windows() {
       --vm-name "${WINDOWS_VM}" \
       --name ChefClient \
       --publisher Chef.Bootstrap.WindowsAzure \
-      --version "${EXTENSION_VERSION}" \
-      --no-auto-upgrade-minor-version \
+      ${EXT_VERSION_ARGS[@]+"${EXT_VERSION_ARGS[@]}"} \
       --settings "${WIN_PUBCONFIG}" \
       --protected-settings "${PRIVCONFIG}" \
       --output none || warn "Marketplace extension reported failure (expected when using --local-ext); continuing to patch with local code"
@@ -947,8 +954,7 @@ test_windows() {
       --vm-name "${WINDOWS_VM}" \
       --name ChefClient \
       --publisher Chef.Bootstrap.WindowsAzure \
-      --version "${EXTENSION_VERSION}" \
-      --no-auto-upgrade-minor-version \
+      ${EXT_VERSION_ARGS[@]+"${EXT_VERSION_ARGS[@]}"} \
       --settings "${WIN_PUBCONFIG}" \
       --protected-settings "${PRIVCONFIG}" \
       --output none
