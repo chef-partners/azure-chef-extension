@@ -210,8 +210,11 @@ function Get-ChefLicenseBypass($powershellVersion) {
   Get-PublicSettings-From-Config-Json "chef_license_bypass" $powershellVersion
 }
 
-# When "true", downloads use chefdownload-community.chef.io (no license_id
-# required) instead of the default chefdownload-commercial.chef.io.
+# When "true", downloads use chefdownload-community.chef.io instead of the
+# default chefdownload-commercial.chef.io. NOTE: the community endpoint still
+# requires a license_id — chef_license_key must be set to a Free-tier license
+# (see https://community.chef.io/downloads to obtain one); it just validates
+# against a different license tier than the commercial endpoint.
 function Get-ChefDownloadCommunity($powershellVersion) {
   Get-PublicSettings-From-Config-Json "chef_download_community" $powershellVersion
 }
@@ -225,17 +228,14 @@ function Set-ChefLicenseKeyEnv($licenseKey) {
 }
 
 # Require a license key unless the caller explicitly opted into the
-# unlicensed/omnitruck fallback via the chef_license_bypass setting, or into
-# the community (no license required) download path via chef_download_community.
-function Write-LicenseKeyStatus($licenseKey, $licenseBypass, $downloadCommunity) {
+# unlicensed omnitruck fallback via the chef_license_bypass setting.
+# chef_download_community does NOT bypass this requirement — the community
+# endpoint still requires a (Free-tier) license_id, just at a different host.
+function Write-LicenseKeyStatus($licenseKey, $licenseBypass) {
   if (-Not $licenseKey) {
-    if ($licenseBypass -ne "true" -and $downloadCommunity -ne "true") {
-      Write-Error "[$(Get-Date)] ERROR: No chef_license_key provided. Set chef_license_key in extension settings, set chef_download_community to `"true`" to use the license-free community download, or set chef_license_bypass to `"true`" to explicitly opt into the deprecated, unlicensed omnitruck download path."
+    if ($licenseBypass -ne "true") {
+      Write-Error "[$(Get-Date)] ERROR: No chef_license_key provided. Set chef_license_key in extension settings (a Free-tier license works with chef_download_community), or set chef_license_bypass to `"true`" to explicitly opt into the deprecated, unlicensed omnitruck download path."
       exit 1
-    }
-    if ($downloadCommunity -eq "true") {
-      Write-Host "[$(Get-Date)] chef_download_community is set; using chefdownload-community.chef.io (no license required)"
-      return
     }
     Write-Warning "[$(Get-Date)] WARNING: No chef_license_key provided; chef_license_bypass is set. Omnitruck is being shut down - unlicensed downloads will stop working in the near future."
     Write-Host "[$(Get-Date)] Falling back to omnitruck download (DEPRECATED - will stop working when omnitruck is shut down)"

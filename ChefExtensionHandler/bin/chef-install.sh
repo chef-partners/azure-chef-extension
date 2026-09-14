@@ -18,9 +18,14 @@ read_chef_license_bypass $chef_extension_root
 read_chef_download_community $chef_extension_root
 log_license_key_status
 
-# chefdownload-community.chef.io serves license-free (community) packages;
-# chefdownload-commercial.chef.io is the default and requires license_id.
-if [ "$CHEF_DOWNLOAD_COMMUNITY" = "true" ]; then
+# chefdownload-commercial.chef.io is the default, and requires license_id.
+# chefdownload-community.chef.io requires license_id too (a Free-tier one, not
+# a commercial one) - it's just a different host, not a license-free path.
+# omnitruck.chef.io is the one genuinely license-free host, and is only used
+# as the true chef_license_bypass fallback when no license key is present.
+if [ -z "$CHEF_LICENSE_KEY" ] && [ "$CHEF_LICENSE_BYPASS" = "true" ]; then
+  chef_download_host="omnitruck.chef.io"
+elif [ "$CHEF_DOWNLOAD_COMMUNITY" = "true" ]; then
   chef_download_host="chefdownload-community.chef.io"
 else
   chef_download_host="chefdownload-commercial.chef.io"
@@ -77,18 +82,19 @@ curl_check(){
 run_install_script(){
   _product="$1"; shift
   curl_check "$platform"
-  # chefdownload-commercial.chef.io requires license_id on the install.sh fetch
-  # itself, not just the metadata/package lookup below — without it the endpoint
-  # returns a plain-text error body ("Missing license_id query param") instead of
-  # a script, which then fails cryptically when executed with `sh`. The
-  # community host needs no license_id at all.
+  # chefdownload-commercial.chef.io and chefdownload-community.chef.io both
+  # require license_id on the install.sh fetch itself, not just the
+  # metadata/package lookup below — without it the endpoint returns a
+  # plain-text error body ("Missing license_id query param") instead of a
+  # script, which then fails cryptically when executed with `sh`.
+  # omnitruck.chef.io (the true bypass fallback) needs no license_id at all.
   _install_sh_url="https://${chef_download_host}/install.sh"
-  if [ "$CHEF_DOWNLOAD_COMMUNITY" != "true" ] && [ -n "$CHEF_LICENSE_KEY" ]; then
+  if [ "$chef_download_host" != "omnitruck.chef.io" ] && [ -n "$CHEF_LICENSE_KEY" ]; then
     _install_sh_url="${_install_sh_url}?license_id=${CHEF_LICENSE_KEY}"
   fi
   curl -L -o /tmp/install.sh "${_install_sh_url}"
   echo "install.sh downloaded"
-  if [ "$CHEF_DOWNLOAD_COMMUNITY" != "true" ] && [ -n "$CHEF_LICENSE_KEY" ]; then
+  if [ "$chef_download_host" != "omnitruck.chef.io" ] && [ -n "$CHEF_LICENSE_KEY" ]; then
     _pv=$(. /etc/os-release 2>/dev/null && echo "$VERSION_ID")
     [ -z "$_pv" ] && _pv=$(lsb_release -rs 2>/dev/null || uname -r)
     _arch=$(uname -m)
