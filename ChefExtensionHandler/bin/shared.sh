@@ -173,6 +173,19 @@ read_chef_license_bypass(){
   fi
 }
 
+# Read chef_download_community from settings and export CHEF_DOWNLOAD_COMMUNITY.
+# When "true", downloads use chefdownload-community.chef.io (no license_id
+# required) instead of the default chefdownload-commercial.chef.io.
+read_chef_download_community(){
+  chef_extension_directory_path=$1
+  config_file_name=$(get_config_settings_file $chef_extension_directory_path)
+  chef_download_community_value=$(get_value_from_setting_file $config_file_name "chef_download_community" &)
+  if [ "$chef_download_community_value" = "true" ]; then
+    export CHEF_DOWNLOAD_COMMUNITY="true"
+    echo "Set CHEF_DOWNLOAD_COMMUNITY environment variable from chef_download_community setting"
+  fi
+}
+
 # Warn when requesting a Chef Infra Client version older than 18 without a
 # license key — those versions require license_id to download from packages.chef.io.
 warn_if_legacy_version_needs_license(){
@@ -186,12 +199,17 @@ warn_if_legacy_version_needs_license(){
 }
 
 # Require a license key unless the caller explicitly opted into the
-# unlicensed/omnitruck fallback via the chef_license_bypass setting.
+# unlicensed/omnitruck fallback via the chef_license_bypass setting, or into
+# the community (no license required) download path via chef_download_community.
 log_license_key_status(){
   if [ -z "$CHEF_LICENSE_KEY" ]; then
-    if [ "$CHEF_LICENSE_BYPASS" != "true" ]; then
-      echo "[$(date)] ERROR: No chef_license_key provided. Set chef_license_key in extension settings, or set chef_license_bypass to \"true\" to explicitly opt into the deprecated, unlicensed omnitruck download path." >&2
+    if [ "${CHEF_LICENSE_BYPASS:-}" != "true" ] && [ "${CHEF_DOWNLOAD_COMMUNITY:-}" != "true" ]; then
+      echo "[$(date)] ERROR: No chef_license_key provided. Set chef_license_key in extension settings, set chef_download_community to \"true\" to use the license-free community download, or set chef_license_bypass to \"true\" to explicitly opt into the deprecated, unlicensed omnitruck download path." >&2
       exit 1
+    fi
+    if [ "${CHEF_DOWNLOAD_COMMUNITY:-}" = "true" ]; then
+      echo "[$(date)] chef_download_community is set; using chefdownload-community.chef.io (no license required)"
+      return
     fi
     echo "[$(date)] WARNING: No chef_license_key provided; chef_license_bypass is set. Omnitruck is being shut down — unlicensed downloads will stop working in the near future." >&2
     echo "[$(date)] Falling back to omnitruck download (DEPRECATED — will stop working when omnitruck is shut down)"

@@ -15,7 +15,16 @@ chef_extension_root=$commands_script_path/../
 read_environment_variables $chef_extension_root
 read_chef_license_key $chef_extension_root
 read_chef_license_bypass $chef_extension_root
+read_chef_download_community $chef_extension_root
 log_license_key_status
+
+# chefdownload-community.chef.io serves license-free (community) packages;
+# chefdownload-commercial.chef.io is the default and requires license_id.
+if [ "$CHEF_DOWNLOAD_COMMUNITY" = "true" ]; then
+  chef_download_host="chefdownload-community.chef.io"
+else
+  chef_download_host="chefdownload-commercial.chef.io"
+fi
 
 # install azure chef extension gem
 install_chef_extension_gem(){
@@ -61,7 +70,7 @@ curl_check(){
   fi
 }
 
-# Downloads install.sh from chefdownload-commercial.chef.io and installs the given product.
+# Downloads install.sh from chef_download_host and installs the given product.
 # Usage: run_install_script <product> [flags passed to install.sh]
 # Always pass -P explicitly — install.sh defaults to chef today but will default to
 # chef-ice in a future release; explicit -P keeps this extension's behaviour stable.
@@ -71,18 +80,21 @@ run_install_script(){
   # chefdownload-commercial.chef.io requires license_id on the install.sh fetch
   # itself, not just the metadata/package lookup below — without it the endpoint
   # returns a plain-text error body ("Missing license_id query param") instead of
-  # a script, which then fails cryptically when executed with `sh`.
-  _install_sh_url="https://chefdownload-commercial.chef.io/install.sh"
-  [ -n "$CHEF_LICENSE_KEY" ] && _install_sh_url="${_install_sh_url}?license_id=${CHEF_LICENSE_KEY}"
+  # a script, which then fails cryptically when executed with `sh`. The
+  # community host needs no license_id at all.
+  _install_sh_url="https://${chef_download_host}/install.sh"
+  if [ "$CHEF_DOWNLOAD_COMMUNITY" != "true" ] && [ -n "$CHEF_LICENSE_KEY" ]; then
+    _install_sh_url="${_install_sh_url}?license_id=${CHEF_LICENSE_KEY}"
+  fi
   curl -L -o /tmp/install.sh "${_install_sh_url}"
   echo "install.sh downloaded"
-  if [ -n "$CHEF_LICENSE_KEY" ]; then
+  if [ "$CHEF_DOWNLOAD_COMMUNITY" != "true" ] && [ -n "$CHEF_LICENSE_KEY" ]; then
     _pv=$(. /etc/os-release 2>/dev/null && echo "$VERSION_ID")
     [ -z "$_pv" ] && _pv=$(lsb_release -rs 2>/dev/null || uname -r)
     _arch=$(uname -m)
     _ch="${chef_channel:-stable}"
     _dl_platform=$(chefdownload_platform_code "$platform")
-    _meta_url="https://chefdownload-commercial.chef.io/${_ch}/${_product}/metadata?p=${_dl_platform}&pv=${_pv}&m=${_arch}&license_id=${CHEF_LICENSE_KEY}"
+    _meta_url="https://${chef_download_host}/${_ch}/${_product}/metadata?p=${_dl_platform}&pv=${_pv}&m=${_arch}&license_id=${CHEF_LICENSE_KEY}"
     [ -n "$chef_version" ] && _meta_url="${_meta_url}&v=${chef_version}"
     _dl=$(curl -fsSL "${_meta_url}" 2>/dev/null | grep '^url' | awk '{print $2}')
     if [ -n "$_dl" ]; then
