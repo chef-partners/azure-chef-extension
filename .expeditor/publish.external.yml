@@ -37,11 +37,11 @@ steps:
       hint: "121X.XX.X.X"
     - text: "Region 1"
       key: "deploy-region1"
-      hint: "Which first region should we deploy this to? Please enter region without any quotations, eg., East US"
+      hint: "Which first region should we deploy this to? Please enter region without any quotations, eg., East US. Leave both region fields blank to publish to all regions."
       required: false
     - text: "Region 2"
       key: "deploy-region2"
-      hint: "Which second region should we deploy this to? Please enter region without any quotations, eg., East US"
+      hint: "Which second region should we deploy this to? Please enter region without any quotations, eg., East US. Leave both region fields blank to publish to all regions."
       required: false
     - select: "Confirm deployment type"
       key: "deployment-type"
