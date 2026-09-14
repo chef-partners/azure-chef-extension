@@ -105,7 +105,20 @@ function Install-ChefClient {
         Set-ChefLicenseKeyEnv $chef_license_key
       }
       $chef_license_bypass = Get-ChefLicenseBypass $powershellVersion
+      $chef_download_community = Get-ChefDownloadCommunity $powershellVersion
       Write-LicenseKeyStatus $chef_license_key $chef_license_bypass
+      # chefdownload-commercial.chef.io is the default, requires license_id.
+      # chefdownload-community.chef.io requires license_id too (a Free-tier one,
+      # not a commercial one) - it's just a different host, not a license-free path.
+      # omnitruck.chef.io is the one genuinely license-free host, and is only used
+      # as the true chef_license_bypass fallback when no license key is present.
+      if ( -not $chef_license_key -and $chef_license_bypass -eq "true" ) {
+        $chef_download_host = "omnitruck.chef.io"
+      } elseif ( $chef_download_community -eq "true" ) {
+        $chef_download_host = "chefdownload-community.chef.io"
+      } else {
+        $chef_download_host = "chefdownload-commercial.chef.io"
+      }
       ## Get msi url from config file.
       $chef_package_url = Get-PublicSettings-From-Config-Json "chef_package_url" $powershellVersion
       ## Get locally downloaded msi path string from config file.
@@ -148,26 +161,28 @@ function Install-ChefClient {
           $daemon = "auto"
         }
 
-        # chefdownload-commercial.chef.io requires license_id on the install.ps1 fetch
-        # itself, not just the `install` function call below - without it the endpoint
-        # returns a plain-text error instead of a script.
-        $install_ps1_url = 'https://chefdownload-commercial.chef.io/install.ps1'
-        if ( $chef_license_key ) {
+        # chefdownload-commercial.chef.io and chefdownload-community.chef.io both
+        # require license_id on the install.ps1 fetch itself, not just the `install`
+        # function call below - without it the endpoint returns a plain-text error
+        # instead of a script. omnitruck.chef.io (the true bypass fallback) needs no
+        # license_id at all.
+        $install_ps1_url = "https://${chef_download_host}/install.ps1"
+        if ( $chef_license_key -and $chef_download_host -ne "omnitruck.chef.io" ) {
           # Use ${...} to unambiguously delimit the variable name before the
           # literal "?" - some PowerShell versions can otherwise misparse
           # "$var?text" inside a double-quoted string.
           $install_ps1_url = "${install_ps1_url}?license_id=$chef_license_key"
         }
         iex (new-object net.webclient).downloadstring($install_ps1_url)
-        if ( $chef_license_key ) {
+        if ( $chef_license_key -and $chef_download_host -ne "omnitruck.chef.io" ) {
           # install.ps1's `install` function has no -license_id parameter (unlike
           # install.sh's -l flag) - resolve the licensed download URL ourselves via
           # the metadata endpoint and pass it through -download_url_override instead.
-          Write-Host "Using chef_license_key for licensed commercial download"
+          Write-Host "Using chef_license_key for licensed download from $chef_download_host"
           $arch = "x86_64"
           if ([Environment]::Is64BitOperatingSystem -eq $false) { $arch = "i386" }
           $os_version = (Get-CimInstance Win32_OperatingSystem).Version
-          $meta_url = "https://chefdownload-commercial.chef.io/$chef_package_channel/$project/metadata?p=windows&pv=$os_version&m=$arch&license_id=$chef_license_key"
+          $meta_url = "https://${chef_download_host}/$chef_package_channel/$project/metadata?p=windows&pv=$os_version&m=$arch&license_id=$chef_license_key"
           if ( $chef_package_version -ne "latest" ) {
             $meta_url = "$meta_url&v=$chef_package_version"
           }
