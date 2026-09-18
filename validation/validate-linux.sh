@@ -36,42 +36,24 @@ else
   fail "shared.sh missing read_chef_license_key"
 fi
 
-if grep -q "read_chef_license_bypass" ChefExtensionHandler/bin/shared.sh; then
-  pass "shared.sh contains read_chef_license_bypass"
-else
-  fail "shared.sh missing read_chef_license_bypass"
-fi
-
 if grep -q "log_license_key_status" ChefExtensionHandler/bin/shared.sh; then
   pass "shared.sh contains log_license_key_status"
 else
   fail "shared.sh missing log_license_key_status"
 fi
 
-# 3. chef-install.sh calls read_chef_license_key and read_chef_license_bypass
+# 3. chef-install.sh calls read_chef_license_key
 if grep -q "read_chef_license_key" ChefExtensionHandler/bin/chef-install.sh; then
   pass "chef-install.sh calls read_chef_license_key"
 else
   fail "chef-install.sh missing read_chef_license_key call"
 fi
 
-if grep -q "read_chef_license_bypass" ChefExtensionHandler/bin/chef-install.sh; then
-  pass "chef-install.sh calls read_chef_license_bypass"
+# 4. Extension falls back to omnitruck (no error) without a license key
+if bash -c '. ChefExtensionHandler/bin/shared.sh; CHEF_LICENSE_KEY=""; log_license_key_status' >/dev/null 2>&1; then
+  pass "log_license_key_status succeeds without a license key (omnitruck fallback)"
 else
-  fail "chef-install.sh missing read_chef_license_bypass call"
-fi
-
-# 4. Extension refuses to proceed without a license key unless bypassed
-if bash -c '. ChefExtensionHandler/bin/shared.sh; CHEF_LICENSE_KEY=""; CHEF_LICENSE_BYPASS=""; log_license_key_status' >/dev/null 2>&1; then
-  fail "log_license_key_status did not fail without a license key or bypass"
-else
-  pass "log_license_key_status fails without a license key or bypass"
-fi
-
-if bash -c '. ChefExtensionHandler/bin/shared.sh; CHEF_LICENSE_KEY=""; CHEF_LICENSE_BYPASS="true"; log_license_key_status' >/dev/null 2>&1; then
-  pass "log_license_key_status succeeds when chef_license_bypass is set"
-else
-  fail "log_license_key_status unexpectedly failed with chef_license_bypass set"
+  fail "log_license_key_status unexpectedly failed without a license key"
 fi
 
 # 5. Validate license key format if supplied

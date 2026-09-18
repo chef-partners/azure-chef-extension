@@ -1,17 +1,14 @@
 #!/bin/bash
-# Runs test-azure-extension.sh three times to exercise all license-key states:
-#   1. license      — real --license-key set               → expected to PASS
-#   2. no-license   — no key, no bypass                    → expected to FAIL
-#                      (extension now hard-requires a license key)
-#   3. bypass       — no key, --license-bypass set          → expected to PASS
-#                      (explicit opt-in to the deprecated omnitruck path)
+# Runs test-azure-extension.sh twice to exercise both license-key states:
+#   1. license      — real --license-key set   → expected to PASS (licensed download)
+#   2. no-license   — no key                   → expected to PASS (omnitruck fallback)
 #
 # Usage:
 #   testing/test-license-key-matrix.sh --license-key <key> [any test-azure-extension.sh option]
 #
 # All options are forwarded to every run. --resource-group/--node-name are
 # suffixed per-run so they don't collide. --license-key passed here is used
-# only for the "license" run; the other two runs always have LICENSE_KEY
+# only for the "license" run; the other run always has LICENSE_KEY
 # unset regardless of .env.
 
 set -euo pipefail
@@ -51,7 +48,7 @@ fi
 BASE_RG="${RESOURCE_GROUP:-chef-ext-test-rg}"
 BASE_NODE="${NODE_NAME:-az-ext-test-node}"
 
-TOTAL_CASES=3
+TOTAL_CASES=2
 
 banner() {
   printf '\n\033[1;36m%s\033[0m\n' "════════════════════════════════════════════════════════════════════"
@@ -83,8 +80,7 @@ run_case() {
 
 FAILED=0
 run_case 1 "license"    pass --license-key "${MATRIX_LICENSE_KEY}" || FAILED=1
-run_case 2 "no-license" fail --license-key ""                      || FAILED=1
-run_case 3 "bypass"     pass --license-key "" --license-bypass     || FAILED=1
+run_case 2 "no-license" pass --license-key ""                      || FAILED=1
 
 if [[ "${FAILED}" -eq 0 ]]; then
   banner "[PASS] All license-key matrix cases behaved as expected"

@@ -42,10 +42,6 @@ $hasLicenseKeyFn = $sharedContent -match "Get-ChefLicenseKey"
 Write-ValidationResult "shared.ps1 contains Get-ChefLicenseKey" $hasLicenseKeyFn
 if (-not $hasLicenseKeyFn) { $validationPassed = $false }
 
-$hasLicenseBypassFn = $sharedContent -match "Get-ChefLicenseBypass"
-Write-ValidationResult "shared.ps1 contains Get-ChefLicenseBypass" $hasLicenseBypassFn
-if (-not $hasLicenseBypassFn) { $validationPassed = $false }
-
 $hasSetFn = $sharedContent -match "Set-ChefLicenseKeyEnv"
 Write-ValidationResult "shared.ps1 contains Set-ChefLicenseKeyEnv" $hasSetFn
 if (-not $hasSetFn) { $validationPassed = $false }
@@ -56,25 +52,13 @@ $hasLicenseWire = $installContent -match "Get-ChefLicenseKey"
 Write-ValidationResult "chef-install.psm1 reads chef_license_key" $hasLicenseWire
 if (-not $hasLicenseWire) { $validationPassed = $false }
 
-$hasLicenseBypassWire = $installContent -match "Get-ChefLicenseBypass"
-Write-ValidationResult "chef-install.psm1 reads chef_license_bypass" $hasLicenseBypassWire
-if (-not $hasLicenseBypassWire) { $validationPassed = $false }
-
-# 4. Extension refuses to proceed without a license key unless bypassed
+# 4. Extension falls back to omnitruck (no error) without a license key
 . .\ChefExtensionHandler\bin\shared.ps1
 try {
-  Write-LicenseKeyStatus $null $null
-  Write-ValidationResult "Write-LicenseKeyStatus fails without a license key or bypass" $false
-  $validationPassed = $false
+  Write-LicenseKeyStatus $null
+  Write-ValidationResult "Write-LicenseKeyStatus succeeds without a license key (omnitruck fallback)" $true
 } catch {
-  Write-ValidationResult "Write-LicenseKeyStatus fails without a license key or bypass" $true
-}
-
-try {
-  Write-LicenseKeyStatus $null "true"
-  Write-ValidationResult "Write-LicenseKeyStatus succeeds when chef_license_bypass is set" $true
-} catch {
-  Write-ValidationResult "Write-LicenseKeyStatus succeeds when chef_license_bypass is set" $false
+  Write-ValidationResult "Write-LicenseKeyStatus succeeds without a license key (omnitruck fallback)" $false
   $validationPassed = $false
 }
 

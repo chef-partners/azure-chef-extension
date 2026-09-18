@@ -32,9 +32,7 @@
 #   --location <region>        Azure region (default: eastus)
 #   --node-name <name>         Chef node name (default: az-ext-test-node)
 #   --runlist <runlist>        Chef run list (default: recipe[base])
-#   --license-key <key>        Chef license key for licensed downloads
-#   --license-bypass           Explicitly opt into the deprecated, unlicensed omnitruck
-#                              download path (extension requires a license key otherwise)
+#   --license-key <key>        Chef license key for licensed downloads (omitted → omnitruck fallback)
 #   --extension-version <ver>  Extension version to pin (default: unset, marketplace latest)
 #   --chef-infra-version <ver> Chef Infra Client version to install (e.g. 18.10.17); omit for latest
 #   --chef-infra-channel <ch>  Install channel: stable (default), current, unstable
@@ -84,7 +82,6 @@ LOCATION="${LOCATION:-eastus}"
 NODE_NAME="${NODE_NAME:-az-ext-test-node}"
 RUNLIST="${RUNLIST:-recipe[base]}"
 LICENSE_KEY="${LICENSE_KEY:-}"
-LICENSE_BYPASS="${LICENSE_BYPASS:-false}"
 EXTENSION_VERSION="${EXTENSION_VERSION:-}"
 CHEF_INFRA_VERSION="${CHEF_INFRA_VERSION:-}"
 CHEF_INFRA_CHANNEL="${CHEF_INFRA_CHANNEL:-}"
@@ -275,7 +272,6 @@ while [[ $# -gt 0 ]]; do
     --node-name)               NODE_NAME="$2";                shift 2 ;;
     --runlist)                 RUNLIST="$2";                  shift 2 ;;
     --license-key)             LICENSE_KEY="$2";              shift 2 ;;
-    --license-bypass)          LICENSE_BYPASS=true;            shift ;;
     --extension-version)       EXTENSION_VERSION="$2";        shift 2 ;;
     --chef-infra-version)      CHEF_INFRA_VERSION="$2";       shift 2 ;;
     --chef-infra-channel)      CHEF_INFRA_CHANNEL="$2";       shift 2 ;;
@@ -366,11 +362,10 @@ case "${PLATFORM}" in
     ;;
 esac
 
-# The extension now hard-requires chef_license_key unless chef_license_bypass
-# is explicitly set — fail fast here rather than wasting Azure resources on a
-# VM that will refuse to install Chef.
-if [[ -z "${LICENSE_KEY}" && "${LICENSE_BYPASS}" != "true" ]]; then
-  fail "--license-key is required (or pass --license-bypass to explicitly test the deprecated, unlicensed omnitruck path)"
+# No chef_license_key means the extension falls back to the unlicensed
+# omnitruck.chef.io path — warn but don't block the test run.
+if [[ -z "${LICENSE_KEY}" ]]; then
+  echo "WARNING: --license-key not set; extension will fall back to the deprecated, unlicensed omnitruck download path." >&2
 fi
 
 if [[ "${BUILD_CHEF_SERVER}" == "false" ]]; then
@@ -543,7 +538,6 @@ else
     --arg infra_ver "${CHEF_INFRA_VERSION}" \
     --arg infra_ch  "${CHEF_INFRA_CHANNEL}" \
     --arg pkg_url   "${LINUX_CHEF_PACKAGE_URL}" \
-    --arg lic_bypass "${LICENSE_BYPASS}" \
     '{
       bootstrap_options: ({
         chef_server_url:         $server,
@@ -555,8 +549,7 @@ else
       + (if ($pkg_url   | length) == 0 and ($infra_ver | length) > 0 then {bootstrap_version: $infra_ver} else {} end)
       + (if ($pkg_url   | length) == 0 and ($infra_ch  | length) > 0 then {bootstrap_channel: $infra_ch}  else {} end)),
       runlist:      $runlist,
-      CHEF_LICENSE: "accept-no-persist",
-      chef_license_bypass: $lic_bypass
+      CHEF_LICENSE: "accept-no-persist"
     }' > "${PUBCONFIG}"
 fi
 

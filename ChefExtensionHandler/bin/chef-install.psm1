@@ -104,15 +104,14 @@ function Install-ChefClient {
       if ( $chef_license_key ) {
         Set-ChefLicenseKeyEnv $chef_license_key
       }
-      $chef_license_bypass = Get-ChefLicenseBypass $powershellVersion
       $chef_download_community = Get-ChefDownloadCommunity $powershellVersion
-      Write-LicenseKeyStatus $chef_license_key $chef_license_bypass
+      Write-LicenseKeyStatus $chef_license_key
       # chefdownload-commercial.chef.io is the default, requires license_id.
       # chefdownload-community.chef.io requires license_id too (a Free-tier one,
       # not a commercial one) - it's just a different host, not a license-free path.
-      # omnitruck.chef.io is the one genuinely license-free host, and is only used
-      # as the true chef_license_bypass fallback when no license key is present.
-      if ( -not $chef_license_key -and $chef_license_bypass -eq "true" ) {
+      # omnitruck.chef.io is the one genuinely license-free host, and is used
+      # whenever no license key is present.
+      if ( -not $chef_license_key ) {
         $chef_download_host = "omnitruck.chef.io"
       } elseif ( $chef_download_community -eq "true" ) {
         $chef_download_host = "chefdownload-community.chef.io"
@@ -164,7 +163,7 @@ function Install-ChefClient {
         # chefdownload-commercial.chef.io and chefdownload-community.chef.io both
         # require license_id on the install.ps1 fetch itself, not just the `install`
         # function call below - without it the endpoint returns a plain-text error
-        # instead of a script. omnitruck.chef.io (the true bypass fallback) needs no
+        # instead of a script. omnitruck.chef.io (the no-license-key fallback) needs no
         # license_id at all.
         $install_ps1_url = "https://${chef_download_host}/install.ps1"
         if ( $chef_license_key -and $chef_download_host -ne "omnitruck.chef.io" ) {
