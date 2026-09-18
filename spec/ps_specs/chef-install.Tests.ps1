@@ -44,7 +44,6 @@ describe "#Install-ChefClient" {
     mock Get-PublicSettings-From-Config-Json { return $null }
     mock Get-ChefPackage { return $null }
     mock Get-ChefLicenseKey { return $null }
-    mock Get-ChefLicenseBypass { return "true" }
     mock Write-LicenseKeyStatus
     mock Chef-GetExtensionRoot { return "C:\Packages\Plugin\ChefExtensionHandler" }
     mock Install-AzureChefExtensionGem
