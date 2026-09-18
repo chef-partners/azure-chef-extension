@@ -209,21 +209,17 @@ describe "#Set-ChefLicenseKeyEnv" {
 }
 
 describe "#Write-LicenseKeyStatus" {
-  # ponytail: the "no license, no bypass" path calls `exit 1`, which can't be
-  # safely mocked (exit is a PS keyword, not an interceptable command) without
-  # running it in a subprocess/job. Not worth the added test complexity here;
-  # covered indirectly by the two reachable paths below.
-  it "logs deprecation warning when license key is empty and bypass is set" {
+  it "logs deprecation warning when license key is empty" {
     mock Write-Host
     mock Write-Warning
-    Write-LicenseKeyStatus "" "true"
+    Write-LicenseKeyStatus ""
     Assert-MockCalled Write-Warning -Times 1
     Assert-MockCalled Write-Host -Times 1
   }
 
   it "logs present key message when license key is provided" {
     mock Write-Host
-    Write-LicenseKeyStatus "some-key" "false"
+    Write-LicenseKeyStatus "some-key"
     Assert-MockCalled Write-Host -Times 1
   }
 }

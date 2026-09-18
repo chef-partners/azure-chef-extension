@@ -37,34 +37,20 @@ else
   FAILED=1
 fi
 
-# log_license_key_status now hard-requires a license key unless
-# CHEF_LICENSE_BYPASS="true" is explicitly set.
+# log_license_key_status now falls back to omnitruck (no license_id needed)
+# whenever no chef_license_key is set, instead of erroring out.
 CHEF_LICENSE_KEY=""
-CHEF_LICENSE_BYPASS=""
-if output="$(log_license_key_status 2>&1)"; then
-  echo "[FAIL] expected log_license_key_status to exit non-zero without a license key or bypass, got: ${output}"
-  FAILED=1
-else
-  case "$output" in
-    *"ERROR"*"chef_license_bypass"*) echo "[PASS] fails without license key when bypass is not set" ;;
-    *) echo "[FAIL] expected ERROR mentioning chef_license_bypass, got: ${output}"; FAILED=1 ;;
-  esac
-fi
-
-CHEF_LICENSE_KEY=""
-CHEF_LICENSE_BYPASS="true"
 if output="$(log_license_key_status 2>&1)"; then
   case "$output" in
-    *"Falling back to omnitruck"*) echo "[PASS] falls back to omnitruck when bypass is set" ;;
+    *"Falling back to omnitruck"*) echo "[PASS] falls back to omnitruck when no license key is set" ;;
     *) echo "[FAIL] expected omnitruck fallback message, got: ${output}"; FAILED=1 ;;
   esac
 else
-  echo "[FAIL] expected log_license_key_status to succeed when bypass is set, got: ${output}"
+  echo "[FAIL] expected log_license_key_status to succeed without a license key, got: ${output}"
   FAILED=1
 fi
 
 CHEF_LICENSE_KEY="fake-key"
-CHEF_LICENSE_BYPASS=""
 if output="$(log_license_key_status 2>&1)"; then
   case "$output" in
     *"licensed download will be attempted"*) echo "[PASS] succeeds when license key is set" ;;

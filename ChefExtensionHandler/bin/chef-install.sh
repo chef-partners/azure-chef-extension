@@ -14,16 +14,15 @@ chef_extension_root=$commands_script_path/../
 
 read_environment_variables $chef_extension_root
 read_chef_license_key $chef_extension_root
-read_chef_license_bypass $chef_extension_root
 read_chef_download_community $chef_extension_root
 log_license_key_status
 
 # chefdownload-commercial.chef.io is the default, and requires license_id.
 # chefdownload-community.chef.io requires license_id too (a Free-tier one, not
 # a commercial one) - it's just a different host, not a license-free path.
-# omnitruck.chef.io is the one genuinely license-free host, and is only used
-# as the true chef_license_bypass fallback when no license key is present.
-if [ -z "$CHEF_LICENSE_KEY" ] && [ "$CHEF_LICENSE_BYPASS" = "true" ]; then
+# omnitruck.chef.io is the one genuinely license-free host, and is used
+# whenever no license key is present.
+if [ -z "$CHEF_LICENSE_KEY" ]; then
   chef_download_host="omnitruck.chef.io"
 elif [ "$CHEF_DOWNLOAD_COMMUNITY" = "true" ]; then
   chef_download_host="chefdownload-community.chef.io"
@@ -87,7 +86,7 @@ run_install_script(){
   # metadata/package lookup below — without it the endpoint returns a
   # plain-text error body ("Missing license_id query param") instead of a
   # script, which then fails cryptically when executed with `sh`.
-  # omnitruck.chef.io (the true bypass fallback) needs no license_id at all.
+  # omnitruck.chef.io (the no-license-key fallback) needs no license_id at all.
   _install_sh_url="https://${chef_download_host}/install.sh"
   if [ "$chef_download_host" != "omnitruck.chef.io" ] && [ -n "$CHEF_LICENSE_KEY" ]; then
     _install_sh_url="${_install_sh_url}?license_id=${CHEF_LICENSE_KEY}"
