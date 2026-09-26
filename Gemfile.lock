@@ -76,9 +76,6 @@ GEM
       mixlib-config (>= 2.2.12, < 4.0)
       mixlib-shellout (>= 2.0, < 4.0)
       tomlrb (~> 1.2)
-    chef-gyoku (1.5.0)
-      builder (>= 2.1.2)
-      rexml (~> 3.4)
     chef-licensing (1.4.1)
       chef-config (>= 15)
       faraday (>= 1, < 3)
@@ -95,27 +92,6 @@ GEM
       concurrent-ruby
     chef-vault (4.2.12)
       syslog (~> 0.3)
-    chef-winrm (2.5.0)
-      builder (>= 2.1.2)
-      chef-gyoku (~> 1.5)
-      erubi (~> 1.8)
-      gssapi (~> 1.2)
-      httpclient (~> 2.2, >= 2.2.0.2)
-      logging (>= 1.6.1, < 3.0)
-      nori (~> 2.7)
-      rexml (>= 3.4.2, < 4.0)
-      rubyntlm (~> 0.6.0, >= 0.6.3)
-    chef-winrm-elevated (1.2.5)
-      chef-winrm (>= 2.3.11)
-      chef-winrm-fs (>= 1.3.7)
-      erubi (~> 1.8)
-    chef-winrm-fs (1.4.2)
-      benchmark (~> 0.5.0)
-      chef-winrm (~> 2.4)
-      csv (~> 3.3)
-      erubi (>= 1.7)
-      logging (>= 1.6.1, < 3.0)
-      rubyzip (~> 2.0)
     chef-zero (15.0.11)
       ffi-yajl (~> 2.2)
       hashie (>= 2.0, < 5.0)
@@ -161,6 +137,9 @@ GEM
     fuzzyurl (0.9.0)
     gssapi (1.3.1)
       ffi (>= 1.0.1)
+    gyoku (1.4.0)
+      builder (>= 2.1.2)
+      rexml (~> 3.0)
     hashie (4.1.0)
     http-accept (1.7.0)
     http-cookie (1.1.6)
@@ -208,11 +187,7 @@ GEM
       tty-box (~> 0.6)
       tty-prompt (~> 0.20)
     lint_roller (1.1.0)
-    little-plugger (1.1.4)
     logger (1.7.0)
-    logging (2.4.0)
-      little-plugger (~> 1.1)
-      multi_json (~> 1.14)
     method_source (1.1.0)
     mime-types (3.7.0)
       logger
@@ -344,10 +319,9 @@ GEM
     ruby-progressbar (1.13.0)
     rubyntlm (0.6.5)
       base64
-    rubyzip (2.4.1)
+    rubyzip (3.4.0)
     semverse (3.0.2)
     simplecov (1.1.1)
-    socksify (1.8.1)
     sslshake (1.3.1)
     stringio (3.2.0)
     strings (0.2.1)
@@ -374,11 +348,10 @@ GEM
       aws-sigv4 (~> 1.5)
       rest-client (~> 2.1)
       train-core (~> 3.0)
-    train-winrm (0.4.3)
-      chef-winrm (>= 2.4.4, < 3.0)
-      chef-winrm-elevated (>= 1.2.5, < 2.0)
-      chef-winrm-fs (>= 1.4.1, < 2.0)
-      socksify (~> 1.8)
+    train-winrm (0.2.13)
+      winrm (>= 2.3.6, < 3.0)
+      winrm-elevated (~> 1.2.2)
+      winrm-fs (~> 1.0)
     tty-box (0.7.0)
       pastel (~> 0.8)
       strings (~> 0.2.0)
@@ -409,6 +382,26 @@ GEM
       base64
       net-http-persistent (~> 4.0, >= 4.0.2)
     webrick (1.9.2)
+    winrm (2.4.1)
+      base64 (~> 0.2)
+      builder (>= 2.1.2)
+      erubi (~> 1.8)
+      gssapi (~> 1.2)
+      gyoku (~> 1.0)
+      httpclient (~> 2.2, >= 2.2.0.2)
+      logger (~> 1.6)
+      nori (~> 2.0, >= 2.7.1)
+      rexml (~> 3.0)
+      rubyntlm (~> 0.6.0, >= 0.6.3)
+    winrm-elevated (1.2.4)
+      winrm (~> 2.0)
+      winrm-fs (~> 1.0)
+    winrm-fs (1.3.7)
+      benchmark
+      csv (~> 3.3)
+      logger
+      rubyzip (~> 3.4)
+      winrm (~> 2.0)
     wisper (2.0.1)
     wmi-lite (1.0.7)
 
@@ -457,14 +450,10 @@ CHECKSUMS
   builder (3.3.0) sha256=497918d2f9dca528fdca4b88d84e4ef4387256d984b8154e9d5d3fe5a9c8835f
   chef (18.3.0) sha256=df992f58e8d279b8b11fbaba85179911bde14dca7e01416c1d3b4f1e659e4ec5
   chef-config (18.3.0) sha256=c183a2ff41da8d63b1e4a60853c9c701a053ab9afe13df767a578db5f07072df
-  chef-gyoku (1.5.0) sha256=7354a3cff8243cc9bbf9ac136e63ecfbf4a7b6f07622f5a092a0f7626fcff836
   chef-licensing (1.4.1) sha256=f0e8aedb8a4a9cc408c22953b4ef79341371f633ccbd49e96ade0138d6e0d66a
   chef-telemetry (1.1.1) sha256=bd004fd20cd0677936d3ada881b1d318185a76186e1774634542366707633151
   chef-utils (18.3.0) sha256=827f7aace26ba9f5f8aca45059644205cc715baded80229f1fd5518d21970701
   chef-vault (4.2.12) sha256=33b18c7ab81a30a89b06d51599bbfe62c4bcdeae1ec42dbfbc2386b7ce1b436b
-  chef-winrm (2.5.0) sha256=d0214fc72e39d7830e8bdc28d0efb12e1ef55bd1cd547ae4bf2e509d298b85f3
-  chef-winrm-elevated (1.2.5) sha256=9985b4eb1e5bbfbe1db9e4bbea29a5775ee9e6e7d52cfbb9787bcab605ff5807
-  chef-winrm-fs (1.4.2) sha256=e8d696faf8eb070cfcd688a580469f9cf3cbd1a4d11a3a001469fcc780b8683a
   chef-zero (15.0.11) sha256=656b01d928df7af7a5ce89e643d7ec3c27a711c0ab8ede55763502b8255d40d0
   coderay (1.1.3) sha256=dc530018a4684512f8f38143cd2a096c9f02a1fc2459edcfe534787a7fc77d4b
   concurrent-ruby (1.3.8) sha256=b2f1be836e968ccc78ccfce277ea79c72a88633f22306782c16ff23fb415d1e1
@@ -493,6 +482,7 @@ CHECKSUMS
   ffi-yajl (2.7.11) sha256=6b65fdf89d3658185d777b2fa84031e6c7b2fa4ad52683fdc057de0b3dfdf4db
   fuzzyurl (0.9.0) sha256=542efa80f2bcaadbdc402c2f0b572f2e335a1d53e375aecad68bbb3d86860c0f
   gssapi (1.3.1) sha256=c51cf30842ee39bd93ce7fc33e20405ff8a04cda9dec6092071b61258284aee1
+  gyoku (1.4.0) sha256=389d887384c777f271cb9377bb642f20bbe0c633d1ef5af78569d4db53c1a2cd
   hashie (4.1.0) sha256=7890dcb9ec18a4b66acec797018c73824b89cef5eb8cda36e8e8501845e87a09
   http-accept (1.7.0) sha256=c626860682bfbb3b46462f8c39cd470fd7b0584f61b3cc9df5b2e9eb9972a126
   http-cookie (1.1.6) sha256=ba4b82be64de61dc281243dac70e3c382c45142f20268ed9276a3670c93feaa9
@@ -507,9 +497,7 @@ CHECKSUMS
   libyajl2 (2.1.0) sha256=aa5df6c725776fc050c8418450de0f7c129cb7200b811907c4c0b3b5c0aea0ef
   license-acceptance (2.1.13) sha256=eecb259b87adaebf162cd25e613b0e0f6d3005c92ffd76ddeca0c053e450058a
   lint_roller (1.1.0) sha256=2c0c845b632a7d172cb849cc90c1bce937a28c5c8ccccb50dfd46a485003cc87
-  little-plugger (1.1.4) sha256=d5f347c00d9d648040ef7c17d6eb09d3d0719adf19ca30d1a3b6fb26d0a631bb
   logger (1.7.0) sha256=196edec7cc44b66cfb40f9755ce11b392f21f7967696af15d274dde7edff0203
-  logging (2.4.0) sha256=ba8893a3c211b836f4131bb93b3eb3137a0c3b1fcd0ec3d570e324d8bdc00ccb
   method_source (1.1.0) sha256=181301c9c45b731b4769bc81e8860e72f9161ad7d66dd99103c9ab84f560f5c5
   mime-types (3.7.0) sha256=dcebf61c246f08e15a4de34e386ebe8233791e868564a470c3fe77c00eed5e56
   mime-types-data (3.2026.0701) sha256=cd8811e1fb89d836499ba0582368a10ee74cef929ba956d1d5ddca045e6a730f
@@ -571,10 +559,9 @@ CHECKSUMS
   rubocop-ast (1.50.0) sha256=b9ca88300da0803ee222ad20cdb30494c0a784eed06fdc35d254b06d662788db
   ruby-progressbar (1.13.0) sha256=80fc9c47a9b640d6834e0dc7b3c94c9df37f08cb072b7761e4a71e22cff29b33
   rubyntlm (0.6.5) sha256=47013402b99ae29ee93f930af51edaec8c6008556f4be25705a422b4430314f5
-  rubyzip (2.4.1) sha256=8577c88edc1fde8935eb91064c5cb1aef9ad5494b940cf19c775ee833e075615
+  rubyzip (3.4.0) sha256=6de39bc9eba302b635a476d16c9e16b0872ad24517c2f98f2b3a7ea23caff57b
   semverse (3.0.2) sha256=c9726aee7858d37c84948a4101daffdcf03a0963a12a33ad7cc39a72c03530ef
   simplecov (1.1.1) sha256=25825ef13f0b2e74694d769817dad6ab8e90131dabdaa666e522fea105521e78
-  socksify (1.8.1) sha256=cf2a01720cc32490cc657b3233730620a03b92e98281726872ebebedfea9a856
   sslshake (1.3.1) sha256=1069c97ed93441e1e1c167fb59f0eb952f64156784d9b321f60528d4f5747164
   stringio (3.2.0) sha256=c37cb2e58b4ffbd33fe5cd948c05934af997b36e0b6ca6fdf43afa234cf222e1
   strings (0.2.1) sha256=933293b3c95cf85b81eb44b3cf673e3087661ba739bbadfeadf442083158d6fb
@@ -587,7 +574,7 @@ CHECKSUMS
   tomlrb (1.3.0) sha256=68666bf53fa70ba686a48a7435ce7e086f5227c58c4c993bd9792f4760f2a503
   train-core (3.16.5) sha256=29eebf88237bce2bb3f78752a7f19ceacaad77634ae14edae88f18fcf0362a94
   train-rest (0.5.0) sha256=63dcabb396022570cf1f21a3e77b2f64a8b3a85179a0b6e2be91a6fff9268a63
-  train-winrm (0.4.3) sha256=4fa35666f24254984fec1d3bf677c510f180531219ba0f4feb09293df98784fa
+  train-winrm (0.2.13) sha256=ab0bae0366c2e200d8c84492863d2098b299e6794566156b05e03179208f0a1e
   tty-box (0.7.0) sha256=17f453a0c1df43871fdb6de461ee797b78574dacc652372fa2ae98a00785df8b
   tty-color (0.6.0) sha256=6f9c37ca3a4e2367fb2e6d09722762647d6f455c111f05b59f35730eeb24332a
   tty-cursor (0.7.1) sha256=79534185e6a777888d88628b14b6a1fdf5154a603f285f80b1753e1908e0bf48
@@ -603,6 +590,9 @@ CHECKSUMS
   uuidtools (2.2.0) sha256=c4aed168141746d2357ce907626b83998084aeb3c6ac16670ae902a462191069
   vault (0.20.1) sha256=169cede8b9ea5f21c975ea92f7618c0d777d9d983afc06f2ddd39b3dd571d660
   webrick (1.9.2) sha256=beb4a15fc474defed24a3bda4ffd88a490d517c9e4e6118c3edce59e45864131
+  winrm (2.4.1) sha256=9f8f7a60ec18f3834119efdb33f3bd9b979892622f137e2d489a592577af1572
+  winrm-elevated (1.2.4) sha256=8dc4f4fe3064f4a366825684e9e4bd8b5c89db0029b7acdb8611f0c792d7171c
+  winrm-fs (1.3.7) sha256=90317105577b8ab1b5c5cc90b414f5052a0a291d56000793e5e2fd31b009e05f
   wisper (2.0.1) sha256=ce17bc5c3a166f241a2e6613848b025c8146fce2defba505920c1d1f3f88fae6
   wmi-lite (1.0.7) sha256=116ef5bb470dbe60f58c2db9047af3064c16245d6562c646bc0d90877e27ddda
 
