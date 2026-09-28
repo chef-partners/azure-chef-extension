@@ -129,6 +129,49 @@ get_value_from_setting_file() {
   echo $chef_value
 }
 
+# Path where the Azure Guest Agent provisions the cert/key pair used to
+# encrypt/decrypt protectedSettings, named <thumbprint>.crt / <thumbprint>.prv.
+LINUX_CERT_PATH="/var/lib/waagent"
+
+# Decrypts the CMS/PKCS7-enveloped protectedSettings blob (via openssl, which
+# waagent itself depends on so it's always present) using the cert/key pair
+# matching protectedSettingsCertThumbprint. Prints the decrypted JSON, or
+# nothing if protectedSettings/the cert aren't available.
+decrypt_protected_settings() {
+  config_file_name=$1
+  thumbprint=$(get_value_from_setting_file $config_file_name "protectedSettingsCertThumbprint")
+  encrypted=$(get_value_from_setting_file $config_file_name "protectedSettings")
+  if [ -z "$thumbprint" ] || [ -z "$encrypted" ]; then
+    return
+  fi
+
+  cert_path="${LINUX_CERT_PATH}/${thumbprint}.crt"
+  key_path="${LINUX_CERT_PATH}/${thumbprint}.prv"
+  if [ ! -f "$cert_path" ] || [ ! -f "$key_path" ]; then
+    return
+  fi
+
+  printf '%s\n' "$encrypted" | base64 -d 2>/dev/null | openssl smime -decrypt -inform DER -binary -inkey "$key_path" -recip "$cert_path" 2>/dev/null
+}
+
+# Get a value from the decrypted protectedSettings JSON, or empty if
+# protectedSettings/the cert aren't available or don't contain $2. Joins
+# multi-line (pretty-printed) JSON onto one line first, same as
+# get_value_from_setting_file, so the key/value sed match isn't split across
+# lines. Uses printf instead of echo throughout — dash's echo expands
+# backslash sequences (e.g. the literal "\n" in an escaped PEM string) by
+# default, which would otherwise re-introduce line breaks into the value.
+get_value_from_protected_settings() {
+  config_file_name=$1
+  key=$2
+  decrypted_json=$(decrypt_protected_settings "$config_file_name" | sed ':a;N;$!ba;s/\n//g')
+  protected_value=""
+  if [ -n "$decrypted_json" ] && printf '%s\n' "$decrypted_json" | grep -q "$key"; then
+    protected_value=$(printf '%s\n' "$decrypted_json" | sed 's/.*"'"${key}"'" *: *" *\(.*\)/\1/' | awk -F\" '{ print $1 }' | sed 's/[ \t]*$//')
+  fi
+  printf '%s\n' "$protected_value"
+}
+
 # Get file path of parse_env_variables.py file
 get_file_path_to_parse_env_variables(){
   chef_extension_directory_path=$1
@@ -149,11 +192,23 @@ export_env_vars() {
   eval $commands
 }
 
-# Read chef_license_key from settings and export CHEF_LICENSE_KEY
+# Read chef_license_key, preferring protectedSettings, and export
+# CHEF_LICENSE_KEY. Falls back to the deprecated public settings location
+# with a warning, since ARM deployment history/public extension settings are
+# readable by anyone with Reader access to the VM/deployment.
 read_chef_license_key(){
   chef_extension_directory_path=$1
   config_file_name=$(get_config_settings_file $chef_extension_directory_path)
-  chef_license_key_value=$(get_value_from_setting_file $config_file_name "chef_license_key" &)
+
+  chef_license_key_value=$(get_value_from_protected_settings $config_file_name "chef_license_key")
+
+  if [ -z "$chef_license_key_value" ]; then
+    chef_license_key_value=$(get_value_from_setting_file $config_file_name "chef_license_key" &)
+    if [ ! -z "$chef_license_key_value" ]; then
+      echo "WARNING: chef_license_key was read from public extension settings (DEPRECATED). Move chef_license_key into the extension's protectedSettings instead; public-settings support will be removed in a future release." >&2
+    fi
+  fi
+
   if [ ! -z "$chef_license_key_value" ]; then
     eval "export CHEF_LICENSE_KEY=$chef_license_key_value;"
     echo "Set CHEF_LICENSE_KEY environment variable from chef_license_key setting"

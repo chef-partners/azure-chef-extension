@@ -58,6 +58,26 @@ jobs:
           mkdir -p spec/results
           bundle exec rspec spec/shell_specs --format documentation --format RspecJunitFormatter --out spec/results/results.xml
 
+      # The step above only picks up files matching rspec's default
+      # `*_spec.rb` pattern, so it silently skips every plain shell
+      # self-check in this directory (`*.sh`, e.g. protected_settings_spec.sh)
+      # and reports "No examples found" instead of failing. Run them
+      # directly here so they actually execute in CI.
+      - name: Run shell script self-checks
+        run: |
+          status=0
+          for f in spec/shell_specs/*.sh; do
+            echo "::group::$f"
+            if sh "$f"; then
+              echo "[PASS] $f"
+            else
+              echo "[FAIL] $f"
+              status=1
+            fi
+            echo "::endgroup::"
+          done
+          exit "$status"
+
       - name: Upload shell test results
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
