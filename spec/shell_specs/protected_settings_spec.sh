@@ -23,7 +23,15 @@ openssl req -x509 -newkey rsa:2048 -keyout "$WORK_DIR/${THUMBPRINT}.prv" \
   -out "$WORK_DIR/${THUMBPRINT}.crt" -days 1 -nodes \
   -subj "/CN=protected-settings-test" >/dev/null 2>&1
 
-PROTECTED_JSON='{"chef_license_key":"protected-license-abc"}'
+# Mirrors real callers (e.g. `jq -n`, used by testing/test-azure-extension.sh)
+# which pretty-print protectedSettings as multi-line JSON, with other fields
+# (like validation_key, itself containing escaped \n sequences) around
+# chef_license_key. This caught a real bug: extraction must join lines first,
+# same as get_value_from_setting_file, or the sed match never fires.
+PROTECTED_JSON='{
+  "validation_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQ==\n-----END PRIVATE KEY-----\n",
+  "chef_license_key": "protected-license-abc"
+}'
 ENCRYPTED=$(printf '%s' "$PROTECTED_JSON" | \
   openssl smime -encrypt -aes256 -outform DER -binary "$WORK_DIR/${THUMBPRINT}.crt" | base64 | tr -d '\n')
 

@@ -132,7 +132,9 @@ log_license_key_metadata() {
 # so `az vm extension set` installs whatever the marketplace considers latest.
 build_extension_version_args() {
   EXT_VERSION_ARGS=()
-  [[ -n "${EXTENSION_VERSION}" ]] && EXT_VERSION_ARGS=(--version "${EXTENSION_VERSION}" --no-auto-upgrade-minor-version)
+  if [[ -n "${EXTENSION_VERSION}" ]]; then
+    EXT_VERSION_ARGS=(--version "${EXTENSION_VERSION}" --no-auto-upgrade-minor-version)
+  fi
 }
 
 verify_linux_validator_key_checksum() {
@@ -503,59 +505,37 @@ if [[ -n "${CHEF_INFRA_VERSION}" && -n "${LICENSE_KEY}" && "${PLATFORM}" != "win
 fi
 
 # Public config
-if [[ -n "${LICENSE_KEY}" ]]; then
-  jq -n \
-    --arg server    "${CHEF_SERVER_URL}" \
-    --arg valclient "${VALIDATION_CLIENT_NAME}" \
-    --arg node      "${NODE_NAME}" \
-    --arg runlist   "${RUNLIST}" \
-    --arg lickey    "${LICENSE_KEY}" \
-    --arg sslmode   "${NODE_SSL_VERIFY_MODE}" \
-    --arg infra_ver "${CHEF_INFRA_VERSION}" \
-    --arg infra_ch  "${CHEF_INFRA_CHANNEL}" \
-    --arg pkg_url   "${LINUX_CHEF_PACKAGE_URL}" \
-    '{
-      bootstrap_options: ({
-        chef_server_url:          $server,
-        validation_client_name:   $valclient,
-        chef_node_name:           $node
-      }
-      + (if ($sslmode   | length) > 0 then {node_ssl_verify_mode:  $sslmode}   else {} end)
-      + (if ($pkg_url   | length) > 0 then {chef_package_url:      $pkg_url}   else {} end)
-      + (if ($pkg_url   | length) == 0 and ($infra_ver | length) > 0 then {bootstrap_version: $infra_ver} else {} end)
-      + (if ($pkg_url   | length) == 0 and ($infra_ch  | length) > 0 then {bootstrap_channel: $infra_ch}  else {} end)),
-      runlist:          $runlist,
-      CHEF_LICENSE:     "accept-no-persist",
-      chef_license_key: $lickey
-    }' > "${PUBCONFIG}"
-else
-  jq -n \
-    --arg server    "${CHEF_SERVER_URL}" \
-    --arg valclient "${VALIDATION_CLIENT_NAME}" \
-    --arg node      "${NODE_NAME}" \
-    --arg runlist   "${RUNLIST}" \
-    --arg sslmode   "${NODE_SSL_VERIFY_MODE}" \
-    --arg infra_ver "${CHEF_INFRA_VERSION}" \
-    --arg infra_ch  "${CHEF_INFRA_CHANNEL}" \
-    --arg pkg_url   "${LINUX_CHEF_PACKAGE_URL}" \
-    '{
-      bootstrap_options: ({
-        chef_server_url:         $server,
-        validation_client_name:  $valclient,
-        chef_node_name:          $node
-      }
-      + (if ($sslmode   | length) > 0 then {node_ssl_verify_mode:  $sslmode}   else {} end)
-      + (if ($pkg_url   | length) > 0 then {chef_package_url:      $pkg_url}   else {} end)
-      + (if ($pkg_url   | length) == 0 and ($infra_ver | length) > 0 then {bootstrap_version: $infra_ver} else {} end)
-      + (if ($pkg_url   | length) == 0 and ($infra_ch  | length) > 0 then {bootstrap_channel: $infra_ch}  else {} end)),
-      runlist:      $runlist,
-      CHEF_LICENSE: "accept-no-persist"
-    }' > "${PUBCONFIG}"
-fi
+jq -n \
+  --arg server    "${CHEF_SERVER_URL}" \
+  --arg valclient "${VALIDATION_CLIENT_NAME}" \
+  --arg node      "${NODE_NAME}" \
+  --arg runlist   "${RUNLIST}" \
+  --arg sslmode   "${NODE_SSL_VERIFY_MODE}" \
+  --arg infra_ver "${CHEF_INFRA_VERSION}" \
+  --arg infra_ch  "${CHEF_INFRA_CHANNEL}" \
+  --arg pkg_url   "${LINUX_CHEF_PACKAGE_URL}" \
+  '{
+    bootstrap_options: ({
+      chef_server_url:         $server,
+      validation_client_name:  $valclient,
+      chef_node_name:          $node
+    }
+    + (if ($sslmode   | length) > 0 then {node_ssl_verify_mode:  $sslmode}   else {} end)
+    + (if ($pkg_url   | length) > 0 then {chef_package_url:      $pkg_url}   else {} end)
+    + (if ($pkg_url   | length) == 0 and ($infra_ver | length) > 0 then {bootstrap_version: $infra_ver} else {} end)
+    + (if ($pkg_url   | length) == 0 and ($infra_ch  | length) > 0 then {bootstrap_channel: $infra_ch}  else {} end)),
+    runlist:      $runlist,
+    CHEF_LICENSE: "accept-no-persist"
+  }' > "${PUBCONFIG}"
 
-# Private config
-jq -n --argjson valkey "${VALIDATION_KEY_JSON}" \
-  '{ validation_key: $valkey }' > "${PRIVCONFIG}"
+# Private config — chef_license_key belongs here, not in public settings
+# (public settings/ARM params are readable via deployment history and by
+# anyone with Reader access to the VM extension resource).
+jq -n \
+  --argjson valkey "${VALIDATION_KEY_JSON}" \
+  --arg lickey     "${LICENSE_KEY}" \
+  '{ validation_key: $valkey }
+  + (if ($lickey | length) > 0 then { chef_license_key: $lickey } else {} end)' > "${PRIVCONFIG}"
 
 success "Config files written to ${TMPDIR_CONFIGS}"
 

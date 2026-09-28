@@ -151,20 +151,25 @@ decrypt_protected_settings() {
     return
   fi
 
-  echo "$encrypted" | base64 -d 2>/dev/null | openssl smime -decrypt -inform DER -binary -inkey "$key_path" -recip "$cert_path" 2>/dev/null
+  printf '%s\n' "$encrypted" | base64 -d 2>/dev/null | openssl smime -decrypt -inform DER -binary -inkey "$key_path" -recip "$cert_path" 2>/dev/null
 }
 
 # Get a value from the decrypted protectedSettings JSON, or empty if
-# protectedSettings/the cert aren't available or don't contain $2.
+# protectedSettings/the cert aren't available or don't contain $2. Joins
+# multi-line (pretty-printed) JSON onto one line first, same as
+# get_value_from_setting_file, so the key/value sed match isn't split across
+# lines. Uses printf instead of echo throughout — dash's echo expands
+# backslash sequences (e.g. the literal "\n" in an escaped PEM string) by
+# default, which would otherwise re-introduce line breaks into the value.
 get_value_from_protected_settings() {
   config_file_name=$1
   key=$2
-  decrypted_json=$(decrypt_protected_settings "$config_file_name")
+  decrypted_json=$(decrypt_protected_settings "$config_file_name" | sed ':a;N;$!ba;s/\n//g')
   protected_value=""
-  if [ -n "$decrypted_json" ] && echo "$decrypted_json" | grep -q "$key"; then
-    protected_value=$(echo "$decrypted_json" | sed 's/.*"'"${key}"'" *: *" *\(.*\)/\1/' | awk -F\" '{ print $1 }' | sed 's/[ \t]*$//')
+  if [ -n "$decrypted_json" ] && printf '%s\n' "$decrypted_json" | grep -q "$key"; then
+    protected_value=$(printf '%s\n' "$decrypted_json" | sed 's/.*"'"${key}"'" *: *" *\(.*\)/\1/' | awk -F\" '{ print $1 }' | sed 's/[ \t]*$//')
   fi
-  echo "$protected_value"
+  printf '%s\n' "$protected_value"
 }
 
 # Get file path of parse_env_variables.py file
