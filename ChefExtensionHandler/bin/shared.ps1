@@ -203,7 +203,77 @@ function Get-autoUpdateClientSetting{
 }
 
 function Get-ChefLicenseKey($powershellVersion) {
-  Get-PublicSettings-From-Config-Json "chef_license_key" $powershellVersion
+  $protectedKey = Get-ProtectedSettingValue "chef_license_key" $powershellVersion
+  if ($protectedKey) {
+    return $protectedKey
+  }
+
+  $publicKey = Get-PublicSettings-From-Config-Json "chef_license_key" $powershellVersion
+  if ($publicKey) {
+    Write-Warning "[$(Get-Date)] DEPRECATION WARNING: chef_license_key was read from public extension settings. Public settings (and ARM deployment parameters/history) are readable by anyone with Reader access to the VM/deployment. Move chef_license_key into the extension's protectedSettings instead; public-settings support will be removed in a future release."
+  }
+  $publicKey
+}
+
+# Reads $key from the decrypted protectedSettings blob, or $null if
+# protectedSettings/the cert aren't available or don't contain $key.
+function Get-ProtectedSettingValue($key, $powershellVersion) {
+  Try
+  {
+    if(!$normalized_json)
+    {
+      $azure_config_file = Get-Azure-Config-Path($powershellVersion)
+      $json_contents = Get-Content $azure_config_file
+      $global:normalized_json = normalize_json($json_contents)
+    }
+    if ( $powershellVersion -ge 3 ) {
+      $handlerSettings = $normalized_json | ConvertFrom-Json | Select -expand runtimeSettings | Select -expand handlerSettings
+    }
+    else {
+      $ser = New-Object System.Web.Script.Serialization.JavaScriptSerializer
+      $handlerSettings = $ser.DeserializeObject($normalized_json).runtimeSettings[0].handlerSettings
+    }
+
+    $thumbprint = $handlerSettings.protectedSettingsCertThumbprint
+    $encrypted = $handlerSettings.protectedSettings
+    if (-not $thumbprint -or -not $encrypted) {
+      return $null
+    }
+
+    $decryptedJson = Get-DecryptedProtectedSettingsJson $thumbprint $encrypted
+    if ( $powershellVersion -ge 3 ) {
+      ($decryptedJson | ConvertFrom-Json).$key
+    }
+    else {
+      $ser2 = New-Object System.Web.Script.Serialization.JavaScriptSerializer
+      $ser2.DeserializeObject($decryptedJson).$key
+    }
+  }
+  Catch
+  {
+    Write-Warning "Couldn't read '$key' from protectedSettings: $($_.Exception.Message)"
+    $null
+  }
+}
+
+# Decrypts the CMS/PKCS7-enveloped protectedSettings blob using the
+# certificate the Azure Guest Agent provisioned for this extension (matched
+# by thumbprint, looked up in the Local Machine cert store). Uses .NET's
+# built-in EnvelopedCms so no external dependency is required.
+function Get-DecryptedProtectedSettingsJson($thumbprint, $base64CipherText) {
+  [System.Reflection.Assembly]::LoadWithPartialName("System.Security") | Out-Null
+
+  $encryptedBytes = [Convert]::FromBase64String($base64CipherText)
+
+  $store = New-Object System.Security.Cryptography.X509Certificates.X509Store([System.Security.Cryptography.X509Certificates.StoreLocation]::LocalMachine)
+  $store.Open([System.Security.Cryptography.X509Certificates.OpenFlags]::ReadOnly)
+  $cert = $store.Certificates | Where-Object { $_.Thumbprint -eq $thumbprint }
+
+  $envelope = New-Object System.Security.Cryptography.Pkcs.EnvelopedCms
+  $envelope.Decode($encryptedBytes)
+  $envelope.Decrypt($cert)
+
+  [System.Text.Encoding]::UTF8.GetString($envelope.ContentInfo.Content)
 }
 
 # When "true", downloads use chefdownload-community.chef.io instead of the

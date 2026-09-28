@@ -179,17 +179,54 @@ describe "#Test-ChefExtensionRegistry" {
 }
 
 describe "#Get-ChefLicenseKey" {
-  it "returns chef_license_key value from public settings" {
-    mock Get-PublicSettings-From-Config-Json { return "test-license-key-1234" } -ParameterFilter { $key -eq "chef_license_key" }
+  it "returns chef_license_key from protectedSettings without touching public settings" {
+    mock Get-ProtectedSettingValue { return "protected-license-1234" } -ParameterFilter { $key -eq "chef_license_key" }
+    mock Get-PublicSettings-From-Config-Json
     $result = Get-ChefLicenseKey 3
-    $result | Should -Be "test-license-key-1234"
-    Assert-MockCalled Get-PublicSettings-From-Config-Json -Times 1 -ParameterFilter { $key -eq "chef_license_key" }
+    $result | Should -Be "protected-license-1234"
+    Assert-MockCalled Get-PublicSettings-From-Config-Json -Times 0
   }
 
-  it "returns null when chef_license_key is not set" {
-    mock Get-PublicSettings-From-Config-Json { return $null } -ParameterFilter { $key -eq "chef_license_key" }
+  it "falls back to public settings with a deprecation warning when protectedSettings has no key" {
+    mock Get-ProtectedSettingValue { return $null }
+    mock Get-PublicSettings-From-Config-Json { return "test-license-key-1234" } -ParameterFilter { $key -eq "chef_license_key" }
+    mock Write-Warning
+    $result = Get-ChefLicenseKey 3
+    $result | Should -Be "test-license-key-1234"
+    Assert-MockCalled Write-Warning -Times 1 -ParameterFilter { $Message -like "*DEPRECATION*" }
+  }
+
+  it "returns null when neither protectedSettings nor public settings have chef_license_key" {
+    mock Get-ProtectedSettingValue { return $null }
+    mock Get-PublicSettings-From-Config-Json { return $null }
     $result = Get-ChefLicenseKey 3
     $result | Should -Be $null
+  }
+}
+
+describe "#Get-ProtectedSettingValue" {
+  it "returns the decrypted key when protectedSettings and the cert thumbprint are present" {
+    $global:normalized_json = $null
+    mock Get-Azure-Config-Path { return "fake-config-file" }
+    mock Get-Content { return '{"runtimeSettings":[{"handlerSettings":{"protectedSettingsCertThumbprint":"abc123","protectedSettings":"cipher-text"}}]}' }
+    mock Get-DecryptedProtectedSettingsJson { return '{"chef_license_key":"decrypted-license-key"}' }
+
+    $result = Get-ProtectedSettingValue "chef_license_key" 3
+
+    $result | Should -Be "decrypted-license-key"
+    Assert-MockCalled Get-DecryptedProtectedSettingsJson -Times 1 -ParameterFilter { $thumbprint -eq "abc123" -and $base64CipherText -eq "cipher-text" }
+  }
+
+  it "returns null when protectedSettings is absent" {
+    $global:normalized_json = $null
+    mock Get-Azure-Config-Path { return "fake-config-file" }
+    mock Get-Content { return '{"runtimeSettings":[{"handlerSettings":{"publicSettings":{"chef_license_key":"public-key"}}}]}' }
+    mock Get-DecryptedProtectedSettingsJson
+
+    $result = Get-ProtectedSettingValue "chef_license_key" 3
+
+    $result | Should -Be $null
+    Assert-MockCalled Get-DecryptedProtectedSettingsJson -Times 0
   }
 }
 
