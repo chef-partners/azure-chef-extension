@@ -29,6 +29,12 @@ The extension is tested against the offical Microsoft images on Azure listed bel
 
 **Note**: `Windows Server 2008 R2` gives timeout error intermittently while installing extention when using ASM command `Set-AzureVMExtension`. But it works successfully with other ASM commands and Xplat commands.
 
+## Development / Testing
+
+To test provisioning end-to-end (including validating an internally/privately published
+extension against the tenant used to publish it, via `make publish.internally`), see
+[`testing/README.md`](testing/README.md).
+
 ## Azure Chef Extension usage:
 ##### Options that can be set in publicconfig.config
 ```javascript
